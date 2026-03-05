@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | Transparent Solidarity for Every Cause</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<section class="hero">
+    <div class="hero-overlay">
+        <h1 class="hero-headline">Transparent Solidarity for Every Cause</h1>
+        <p class="hero-subheadline">
+            Join thousands making a real difference. Start your fundraising campaign
+            today with complete transparency and zero hidden fees.
+        </p>
+        <button class="btn-cta">Start a Campaign</button>
+    </div>
+</section>
+
+<section class="campaigns-section">
+    <div class="section-header">
+        <h2 class="section-title">Active Campaigns</h2>
+        <p class="section-subtitle">Support causes that matter to you</p>
+    </div>
+
+    <div class="campaigns-grid">
+        <div class="campaign-card" data-campaign-id="camp-001">
+            <img class="campaign-card-image"
+                 src="https://images.unsplash.com/photo-1584792323914-329ce9bf59db?w=600&q=80"
+                 alt="Help Build a School"/>
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title">Help Build a School in Rural Indonesia</h3>
+                <span class="campaign-card-organizer">by Sarah Johnson</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: 72%"></div>
+                    </div>
+                    <div class="progress-bar-info">
+                        <span><strong>Rp 36,000,000</strong> raised</span>
+                        <span>72%</span>
+                    </div>
+                </div>
+                <div class="campaign-card-actions">
+                    <button class="btn-save" onclick="toggleSave(this, 'camp-001', 'Help Build a School in Rural Indonesia', 'Sarah Johnson', 'https://images.unsplash.com/photo-1584792323914-329ce9bf59db?w=600&amp;q=80')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="campaign-card" data-campaign-id="camp-002">
+            <img class="campaign-card-image"
+                 src="https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=600&q=80"
+                 alt="Emergency Medical Fund"/>
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title">Emergency Medical Fund for Maria</h3>
+                <span class="campaign-card-organizer">by Michael Chen</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: 45%"></div>
+                    </div>
+                    <div class="progress-bar-info">
+                        <span><strong>Rp 22,500,000</strong> raised</span>
+                        <span>45%</span>
+                    </div>
+                </div>
+                <div class="campaign-card-actions">
+                    <button class="btn-save" onclick="toggleSave(this, 'camp-002', 'Emergency Medical Fund for Maria', 'Michael Chen', 'https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=600&amp;q=80')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="campaign-card" data-campaign-id="camp-003">
+            <img class="campaign-card-image"
+                 src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=600&q=80"
+                 alt="Save the Amazon Rainforest"/>
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title">Save the Amazon Rainforest Initiative</h3>
+                <span class="campaign-card-organizer">by Green Earth Foundation</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: 88%"></div>
+                    </div>
+                    <div class="progress-bar-info">
+                        <span><strong>Rp 88,000,000</strong> raised</span>
+                        <span>88%</span>
+                    </div>
+                </div>
+                <div class="campaign-card-actions">
+                    <button class="btn-save" onclick="toggleSave(this, 'camp-003', 'Save the Amazon Rainforest Initiative', 'Green Earth Foundation', 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=600&amp;q=80')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="campaign-card" data-campaign-id="camp-004">
+            <img class="campaign-card-image"
+                 src="https://images.unsplash.com/photo-1739115048712-9ec5da5150ac?w=600&q=80"
+                 alt="Local Animal Orphanage"/>
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title">Local Animal Orphanage Expansion</h3>
+                <span class="campaign-card-organizer">by Pets Care Indonesia</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: 31%"></div>
+                    </div>
+                    <div class="progress-bar-info">
+                        <span><strong>Rp 15,500,000</strong> raised</span>
+                        <span>31%</span>
+                    </div>
+                </div>
+                <div class="campaign-card-actions">
+                    <button class="btn-save" onclick="toggleSave(this, 'camp-004', 'Local Animal Orphanage Expansion', 'Pets Care Indonesia', 'https://images.unsplash.com/photo-1739115048712-9ec5da5150ac?w=600&amp;q=80')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="campaign-card" data-campaign-id="camp-005">
+            <img class="campaign-card-image"
+                 src="https://images.unsplash.com/photo-1661153803575-c20fc331e980?w=600&q=80"
+                 alt="Community Farm"/>
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title">Community Farm &amp; Garden Project</h3>
+                <span class="campaign-card-organizer">by Urban Greens Collective</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: 56%"></div>
+                    </div>
+                    <div class="progress-bar-info">
+                        <span><strong>Rp 28,000,000</strong> raised</span>
+                        <span>56%</span>
+                    </div>
+                </div>
+                <div class="campaign-card-actions">
+                    <button class="btn-save" onclick="toggleSave(this, 'camp-005', 'Community Farm &amp; Garden Project', 'Urban Greens Collective', 'https://images.unsplash.com/photo-1661153803575-c20fc331e980?w=600&amp;q=80')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="campaign-card" data-campaign-id="camp-006">
+            <img class="campaign-card-image"
+                 src="https://images.unsplash.com/photo-1677131923796-0357b68fc7a1?w=600&q=80"
+                 alt="Youth Sports Equipment"/>
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title">Youth Sports Equipment Fund</h3>
+                <span class="campaign-card-organizer">by Sports for All Foundation</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: 19%"></div>
+                    </div>
+                    <div class="progress-bar-info">
+                        <span><strong>Rp 9,500,000</strong> raised</span>
+                        <span>19%</span>
+                    </div>
+                </div>
+                <div class="campaign-card-actions">
+                    <button class="btn-save" onclick="toggleSave(this, 'camp-006', 'Youth Sports Equipment Fund', 'Sports for All Foundation', 'https://images.unsplash.com/photo-1677131923796-0357b68fc7a1?w=600&amp;q=80')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    const CURRENT_USER_ID = 'user-demo-001';
+
+    function showToast(message, type) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function() {
+            toast.className = 'toast';
+        }, 3000);
+    }
+
+    function toggleSave(button, campaignId, title, organizer, imageUrl) {
+        const isSaved = button.classList.contains('saved');
+
+        if (isSaved) {
+            fetch('/api/saved-campaigns/' + CURRENT_USER_ID + '/' + campaignId, {
+                method: 'DELETE'
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    button.classList.remove('saved');
+                    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg> Save';
+                    showToast('Campaign removed from saved list', 'success');
+                }
+            })
+            .catch(function() {
+                showToast('Failed to remove campaign', 'error');
+            });
+        } else {
+            fetch('/api/saved-campaigns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: CURRENT_USER_ID,
+                    campaignId: campaignId,
+                    campaignTitle: title,
+                    campaignOrganizer: organizer,
+                    campaignImageUrl: imageUrl
+                })
+            })
+            .then(function(response) {
+                if (response.ok || response.status === 201) {
+                    button.classList.add('saved');
+                    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg> Saved';
+                    showToast('Campaign saved!', 'success');
+                } else if (response.status === 409) {
+                    button.classList.add('saved');
+                    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg> Saved';
+                    showToast('Campaign already saved', 'success');
+                }
+            })
+            .catch(function() {
+                showToast('Failed to save campaign', 'error');
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var cards = document.querySelectorAll('.campaign-card');
+        cards.forEach(function(card) {
+            var campaignId = card.getAttribute('data-campaign-id');
+            fetch('/api/saved-campaigns/' + CURRENT_USER_ID + '/check/' + campaignId)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.saved) {
+                        var btn = card.querySelector('.btn-save');
+                        if (btn) {
+                            btn.classList.add('saved');
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg> Saved';
+                        }
+                    }
+                })
+                .catch(function() {});
+        });
+    });
+</script>
+
+</body>
+</html>
