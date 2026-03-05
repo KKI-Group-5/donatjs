@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | My Saved Campaigns</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="saved-campaigns-page">
+    <div class="saved-campaigns-header">
+        <h1>My Saved Campaigns</h1>
+        <span class="saved-campaigns-count"
+              th:text="${#lists.size(savedCampaigns)} + ' campaign' + (${#lists.size(savedCampaigns)} != 1 ? 's' : '') + ' saved'">
+        </span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(savedCampaigns)}" class="saved-campaigns-empty">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+        </svg>
+        <h2>No saved campaigns yet</h2>
+        <p>Browse campaigns and save the ones you care about.</p>
+        <a href="/" class="btn-browse">Browse Campaigns</a>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(savedCampaigns)}" class="campaigns-grid">
+        <div th:each="campaign : ${savedCampaigns}" class="campaign-card"
+             th:data-campaign-id="${campaign.campaignId}">
+            <img class="campaign-card-image"
+                 th:src="${campaign.campaignImageUrl}"
+                 th:alt="${campaign.campaignTitle}"
+                 onerror="this.src='https://images.unsplash.com/photo-1593113630400-ea4288922497?w=600&q=80'"/>
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title" th:text="${campaign.campaignTitle}"></h3>
+                <span class="campaign-card-organizer"
+                      th:text="'by ' + ${campaign.campaignOrganizer}"></span>
+                <div class="campaign-card-actions">
+                    <button class="btn-remove"
+                            th:onclick="'removeSaved(\'' + ${campaign.campaignId} + '\', this)'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                        </svg>
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<div id="toast" class="toast"></div>
+
+<script th:inline="javascript">
+    var userId = [[${userId}]];
+
+    function showToast(message, type) {
+        var toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function() {
+            toast.className = 'toast';
+        }, 3000);
+    }
+
+    function removeSaved(campaignId, button) {
+        fetch('/api/saved-campaigns/' + userId + '/' + campaignId, {
+            method: 'DELETE'
+        })
+        .then(function(response) {
+            if (response.ok) {
+                var card = button.closest('.campaign-card');
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                setTimeout(function() {
+                    card.remove();
+                    var remaining = document.querySelectorAll('.campaign-card');
+                    var countEl = document.querySelector('.saved-campaigns-count');
+                    if (countEl) {
+                        countEl.textContent = remaining.length + ' campaign' + (remaining.length !== 1 ? 's' : '') + ' saved';
+                    }
+                    if (remaining.length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+                showToast('Campaign removed', 'success');
+            }
+        })
+        .catch(function() {
+            showToast('Failed to remove campaign', 'error');
+        });
+    }
+</script>
+
+</body>
+</html>
