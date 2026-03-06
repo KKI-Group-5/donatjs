@@ -8,7 +8,6 @@ public class LandingController {
 
     @GetMapping("/")
     public String landingPage() {
-        // This tells Spring Boot to look for a file named "index.html"
         return "index";
     }
 }
