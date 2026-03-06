@@ -89,6 +89,10 @@ tasks.test {
 	finalizedBy(tasks.jacocoTestReport)
 }
 
+tasks.named<Jar>("jar") {
+	enabled = false
+}
+
 tasks.bootRun {
 	environment(env.allVariables())
 }
