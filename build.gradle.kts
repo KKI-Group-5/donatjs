@@ -3,6 +3,7 @@ plugins {
 	jacoco
 	id("org.springframework.boot") version "3.5.10"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("co.uzzu.dotenv.gradle") version "4.0.0"
 }
 
 group = "id.ac.ui.cs.advprog"
@@ -86,6 +87,10 @@ tasks.test {
 	}
 	// Ensures coverage is calculated immediately after tests
 	finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.bootRun {
+	environment(env.allVariables())
 }
 
 tasks.jacocoTestReport {
