@@ -145,7 +145,7 @@ a {
     align-items: center;
     justify-content: center;
     padding: var(--spacing-2xl) 80px;
-    background-image: url('https://images.unsplash.com/photo-1593113630400-ea4288922497?w=1440&q=80');
+    background-image: url('https://images.unsplash.com/photo-1758599668299-beebedfabf7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1440');
     background-size: cover;
     background-position: center;
     min-height: 500px;
@@ -211,6 +211,8 @@ a {
 .section-header {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    text-align: center;
     gap: var(--spacing-sm);
 }
 
@@ -281,23 +283,23 @@ a {
 }
 
 .progress-bar-track {
-    height: 8px;
+    height: 12px;
     background: var(--soft-gray);
-    border-radius: 4px;
+    border-radius: 6px;
     overflow: hidden;
 }
 
 .progress-bar-fill {
     height: 100%;
     background: var(--kelly-green);
-    border-radius: 4px;
+    border-radius: 6px;
     transition: width 0.4s ease;
 }
 
 .progress-bar-info {
     display: flex;
     justify-content: space-between;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
 }
 
