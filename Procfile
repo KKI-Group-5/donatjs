@@ -1,1 +1,1 @@
-web: java -jar build/libs/donatjs-0.0.1-SNAPSHOT.jar --server.port=$PORT
+web: sh -c 'java -Dserver.port=$PORT -jar build/libs/*.jar'
