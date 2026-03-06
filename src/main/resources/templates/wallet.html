@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | My Wallet</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        .wallet-dashboard {
+            padding: var(--spacing-2xl) 80px;
+            min-height: 60vh;
+            background: var(--bg-light);
+            display: flex;
+            gap: var(--spacing-lg);
+            align-items: flex-start;
+        }
+        .balance-card {
+            background: var(--white);
+            border: 1px solid var(--soft-gray);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            flex: 1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            text-align: center;
+        }
+        .balance-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .balance-amount {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: var(--spacing-sm) 0 var(--spacing-lg);
+        }
+        .transaction-card {
+            background: var(--white);
+            border: 1px solid var(--soft-gray);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            flex: 2;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+        .transaction-list {
+            list-style: none;
+            margin-top: var(--spacing-md);
+        }
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) 0;
+            border-bottom: 1px solid var(--soft-gray);
+        }
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+        .tx-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .tx-info p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .tx-amount.positive { color: var(--kelly-green); font-weight: 600; }
+        .tx-amount.negative { color: var(--danger); font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .wallet-dashboard {
+                flex-direction: column;
+                padding: var(--spacing-xl) 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<section class="wallet-dashboard">
+    <div class="balance-card">
+        <div class="balance-label">Total Available Balance</div>
+        <div class="balance-amount" th:text="'Rp ' + ${#numbers.formatDecimal(wallet.balance, 0, 'COMMA', 0, 'POINT')}">Rp 0</div>
+        <button class="btn-cta" style="width: 100%;">Top Up Wallet</button>
+    </div>
+
+    <div class="transaction-card">
+        <h2 class="section-title" style="font-size: 24px;">Transaction History</h2>
+        <ul class="transaction-list">
+            <li class="transaction-item" th:each="tx : ${transactions}">
+                <div class="tx-info">
+                    <h4 th:text="${tx.description}">Description</h4>
+                    <p th:text="${#temporals.format(tx.timestamp, 'dd MMM yyyy HH:mm')}">Date</p>
+                </div>
+                <div th:class="${tx.type.name() == 'DEPOSIT'} ? 'tx-amount positive' : 'tx-amount negative'"
+                     th:text="${tx.type.name() == 'DEPOSIT' ? '+' : '-'} + ' Rp ' + ${#numbers.formatDecimal(tx.amount, 0, 'COMMA', 0, 'POINT')}">
+                </div>
+            </li>
+            <li class="transaction-item" th:if="${#lists.isEmpty(transactions)}">
+                <p style="color: var(--text-light);">No transactions found.</p>
+            </li>
+        </ul>
+    </div>
+</section>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>
