@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${campaign.title}">Campaign Detail</title>
+</head>
+<body>
+<h1 th:text="${campaign.title}">Campaign Title</h1>
+
+<p th:if="${deleteError}">
+    <strong th:text="${deleteError}">Delete error</strong>
+</p>
+
+<p>
+    <strong>Description:</strong>
+    <span th:text="${campaign.description}">Description</span>
+</p>
+
+<p>
+    <strong>Deadline:</strong>
+    <span th:text="${campaign.deadline}">2026-01-01</span>
+</p>
+
+<p>
+    <strong>Target Amount:</strong>
+    <span th:text="${campaign.targetAmount}">0</span>
+</p>
+
+<p>
+    <strong>Total Raised:</strong>
+    <span th:text="${campaign.totalRaised}">0</span>
+</p>
+
+<p>
+    <strong>Status:</strong>
+    <span th:text="${campaign.status}">OPEN</span>
+</p>
+
+<p>
+    <a th:href="@{|/campaigns/${campaign.id}/edit|}">Edit description</a>
+</p>
+
+<form th:action="@{|/campaigns/${campaign.id}/delete|}" method="post">
+    <button type="submit">Delete</button>
+</form>
+
+<p>
+    <a th:href="@{/campaigns}">Back to Campaigns</a> |
+    <a th:href="@{/}">Back to Home</a>
+</p>
+
+</body>
+</html>
+

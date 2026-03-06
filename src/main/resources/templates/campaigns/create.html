@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Campaign</title>
+</head>
+<body>
+<h1>Create Campaign</h1>
+
+<form th:action="@{/campaigns/create}" th:object="${campaign}" method="post">
+    <div>
+        <label for="title">Title</label>
+        <input id="title" type="text" th:field="*{title}"/>
+        <span th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></span>
+    </div>
+
+    <div>
+        <label for="description">Description</label>
+        <textarea id="description" th:field="*{description}"></textarea>
+        <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span>
+    </div>
+
+    <div>
+        <label for="deadline">Deadline</label>
+        <input id="deadline" type="date" th:field="*{deadline}"/>
+        <span th:if="${#fields.hasErrors('deadline')}" th:errors="*{deadline}"></span>
+    </div>
+
+    <div>
+        <label for="targetAmount">Target Amount</label>
+        <input id="targetAmount" type="number" step="0.01" th:field="*{targetAmount}"/>
+        <span th:if="${#fields.hasErrors('targetAmount')}" th:errors="*{targetAmount}"></span>
+    </div>
+
+    <div>
+        <button type="submit">Create</button>
+    </div>
+</form>
+
+<p>
+    <a th:href="@{/}">Back to Home</a> |
+    <a th:href="@{/campaigns}">Back to Campaigns</a>
+    </p>
+</body>
+</html>
+

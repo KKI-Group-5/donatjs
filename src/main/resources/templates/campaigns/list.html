@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Campaigns</title>
+</head>
+<body>
+<h1>Open Campaigns</h1>
+
+<p>
+    <a th:href="@{/}">Back to Home</a> |
+    <a th:href="@{/campaigns/create}">Create New Campaign</a>
+</p>
+
+<table>
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Deadline</th>
+        <th>Target Amount</th>
+        <th>Total Raised</th>
+        <th>Details</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="campaign : ${campaigns}">
+        <td th:text="${campaign.title}">Campaign title</td>
+        <td th:text="${campaign.deadline}">2026-01-01</td>
+        <td th:text="${campaign.targetAmount}">0</td>
+        <td th:text="${campaign.totalRaised}">0</td>
+        <td>
+            <a th:href="@{|/campaigns/${campaign.id}|}">View</a>
+        </td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(campaigns)}">
+        <td colspan="5">No open campaigns.</td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
+

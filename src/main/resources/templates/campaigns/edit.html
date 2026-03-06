@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'Edit Description - ' + ${campaign.title}">Edit Campaign Description</title>
+</head>
+<body>
+<h1 th:text="'Edit Description for ' + ${campaign.title}">Edit Description</h1>
+
+<form th:action="@{|/campaigns/${campaign.id}/edit|}" th:object="${req}" method="post">
+    <div>
+        <label for="description">Description</label>
+        <textarea id="description" th:field="*{description}"></textarea>
+        <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span>
+    </div>
+
+    <div>
+        <button type="submit">Save</button>
+    </div>
+</form>
+
+<p>
+    <a th:href="@{|/campaigns/${campaign.id}|}">Back to Campaign</a>
+</p>
+
+</body>
+</html>
+
