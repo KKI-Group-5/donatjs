@@ -42,6 +42,20 @@ dependencies {
 	testImplementation("io.github.bonigarcia:selenium-jupiter:$seleniumJupiterVersion")
 	testImplementation("io.github.bonigarcia:webdrivermanager:$webdrivermanagerVersion")
 	testImplementation("org.junit.jupiter:junit-jupiter:${junitJupiterVersion}")
+
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	testImplementation("org.springframework.security:spring-security-test")
+
+	runtimeOnly("com.h2database:h2")
+
+	runtimeOnly("com.mysql:mysql-connector-j")
+
+	testCompileOnly("org.projectlombok:lombok")
+	testAnnotationProcessor("org.projectlombok:lombok")
 }
 
 tasks.register<Test>("unitTest") {
@@ -66,7 +80,7 @@ tasks.withType<Test>().configureEach {
 	useJUnitPlatform()
 }
 
-tasks.test{
+tasks.test {
 	filter {
 		excludeTestsMatching("*FunctionalTest")
 	}
