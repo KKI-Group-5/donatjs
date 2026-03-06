@@ -32,16 +32,25 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-web")
-	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumJavaVersion")
 	testImplementation("io.github.bonigarcia:selenium-jupiter:$seleniumJupiterVersion")
 	testImplementation("io.github.bonigarcia:webdrivermanager:$webdrivermanagerVersion")
 	testImplementation("org.junit.jupiter:junit-jupiter:${junitJupiterVersion}")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	runtimeOnly("com.h2database:h2")
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+	runtimeOnly("org.postgresql:postgresql")
+	testImplementation("com.h2database:h2")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+	compileOnly("org.projectlombok:lombok")
+	annotationProcessor("org.projectlombok:lombok")
+	testImplementation("org.springframework.security:spring-security-test")
 }
 
 tasks.register<Test>("unitTest") {
@@ -66,13 +75,31 @@ tasks.withType<Test>().configureEach {
 	useJUnitPlatform()
 }
 
-tasks.test{
+tasks.test {
+	useJUnitPlatform()
 	filter {
+		// Exclude both "FunctionalTest" and "IntegrationTest" (if any)
 		excludeTestsMatching("*FunctionalTest")
 	}
+	// Ensures coverage is calculated immediately after tests
 	finalizedBy(tasks.jacocoTestReport)
 }
 
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+	}
+
+	// Exclude boilerplate code from coverage reports
+	classDirectories.setFrom(files(classDirectories.files.map {
+		fileTree(it) {
+			exclude(
+				"id/ac/ui/cs/advprog/donatjs/DonatJsApplication*",
+				"id/ac/ui/cs/advprog/donatjs/dto/**",
+				"id/ac/ui/cs/advprog/donatjs/model/**"
+			)
+		}
+	}))
 }
