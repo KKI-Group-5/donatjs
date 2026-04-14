@@ -7,4 +7,5 @@ import java.util.List;
 public interface WalletService {
     Wallet getWalletByUserId(String userId);
     List<Transaction> getTransactionHistory(String walletId);
+    Wallet deductBalance(String userId, double amount, String description);
 }

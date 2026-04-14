@@ -1,7 +1,9 @@
 package id.ac.ui.cs.advprog.donatjs.controller;
 
+import id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse;
 import id.ac.ui.cs.advprog.donatjs.model.SavedCampaign;
 import id.ac.ui.cs.advprog.donatjs.service.SavedCampaignService;
+import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,9 +15,11 @@ import java.util.List;
 public class PageController {
 
     private final SavedCampaignService savedCampaignService;
+    private final SubscriptionService subscriptionService;
 
-    public PageController(SavedCampaignService savedCampaignService) {
+    public PageController(SavedCampaignService savedCampaignService, SubscriptionService subscriptionService) {
         this.savedCampaignService = savedCampaignService;
+        this.subscriptionService = subscriptionService;
     }
 
     @GetMapping("/saved-campaigns/{userId}")
@@ -24,5 +28,13 @@ public class PageController {
         model.addAttribute("savedCampaigns", savedCampaigns);
         model.addAttribute("userId", userId);
         return "saved-campaigns";
+    }
+
+    @GetMapping("/subscriptions/{userId}")
+    public String subscriptionsPage(@PathVariable String userId, Model model) {
+        List<SubscriptionResponse> subscriptions = subscriptionService.getSubscriptionsByUser(userId);
+        model.addAttribute("subscriptions", subscriptions);
+        model.addAttribute("userId", userId);
+        return "subscriptions";
     }
 }

@@ -59,4 +59,27 @@ public class WalletServiceImpl implements WalletService {
     public List<Transaction> getTransactionHistory(String walletId) {
         return transactionRepository.findByWalletIdOrderByTimestampDesc(walletId);
     }
+
+    @Override
+    public Wallet deductBalance(String userId, double amount, String description) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found for user: " + userId));
+
+        if (wallet.getBalance() < amount) {
+            throw new IllegalStateException("Insufficient balance");
+        }
+
+        wallet.setBalance(wallet.getBalance() - amount);
+        walletRepository.save(wallet);
+
+        transactionRepository.save(Transaction.builder()
+                .wallet(wallet)
+                .amount(amount)
+                .type(TransactionType.SUBSCRIPTION)
+                .description(description)
+                .timestamp(LocalDateTime.now())
+                .build());
+
+        return wallet;
+    }
 }
