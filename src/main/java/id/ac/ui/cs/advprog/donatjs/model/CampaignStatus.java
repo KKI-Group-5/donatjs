@@ -2,6 +2,11 @@ package id.ac.ui.cs.advprog.donatjs.model;
 
 public enum CampaignStatus {
     WAITING,
-    OPEN
+    OPEN,
+    REJECTED,
+    FRAUD,
+    DELETED,
+    CLOSED,
+    CANCELLED
 }
 
