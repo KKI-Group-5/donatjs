@@ -36,6 +36,11 @@ public class SimpleCampaignService implements CampaignService {
     }
 
     @Override
+    public List<Campaign> findByCreatorId(String creatorId) {
+        return campaignRepository.findByCreatorId(creatorId);
+    }
+
+    @Override
     public Optional<Campaign> findById(Long id) {
         return campaignRepository.findById(id);
     }
