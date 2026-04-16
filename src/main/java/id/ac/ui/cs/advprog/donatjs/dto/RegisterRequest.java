@@ -1,36 +1,15 @@
-package id.ac.ui.cs.advprog.donatjs.model;
+package id.ac.ui.cs.advprog.donatjs.dto;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.util.UUID;
 
-@Entity
-@Table(name = "users")
-public class AppUser {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @Column(unique = true, nullable = false)
+public class RegisterRequest {
     private String email;
-
     private String password;
-
     private String name;
     private String bio;
     private LocalDate dateOfBirth;
 
-    // JPA requires a default, empty constructor
-    public AppUser() {
-    }
-
-    // --- Generate Getters and Setters below this line ---
-    // (In IntelliJ, you can press Alt+Insert -> Getter and Setter -> Select all fields)
-
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
+    // Getters and Setters
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 

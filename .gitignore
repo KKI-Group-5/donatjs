@@ -36,5 +36,6 @@ out/
 ### VS Code ###
 .vscode/
 
-### Environment Variables ###
+### Internal Documentation ###
+internal_documentation/
 .env
