@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.text.NumberFormat;
+import java.util.Locale;
+
 @Controller
 @RequestMapping("/wallet")
 public class WalletController {
@@ -38,8 +41,9 @@ public class WalletController {
             RedirectAttributes redirectAttributes) {
         try {
             walletService.withdraw(CURRENT_USER_ID, amount, description);
+            NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Withdrawal of Rp " + String.format("%,.0f", amount) + " was successful.");
+                    "Withdrawal of Rp " + nf.format((long) amount) + " was successful.");
         } catch (InsufficientBalanceException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (IllegalArgumentException e) {
