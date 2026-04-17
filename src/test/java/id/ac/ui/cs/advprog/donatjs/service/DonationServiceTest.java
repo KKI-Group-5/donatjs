@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
+import org.junit.jupiter.api.BeforeEach;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
 import id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
@@ -49,7 +50,7 @@ class DonationServiceTest {
     @BeforeEach
     void setUp() {
         Campaign openCampaign = mock(Campaign.class);
-        when(openCampaign.getStatus()).thenReturn(CampaignStatus.OPEN);
+        lenient().when(openCampaign.getStatus()).thenReturn(CampaignStatus.OPEN);
         lenient().when(campaignService.findById(anyLong())).thenReturn(Optional.of(openCampaign));
     }
 
@@ -233,4 +234,9 @@ class DonationServiceTest {
 
     @Test
     @DisplayName("getDonationById throws EntityNotFoundException when not found")
-    void getDonat
+    void getDonationById_notFound_throwsEntityNotFoundException() {
+        when(donationRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> donationService.getDonationById(999L));
+    }
+}

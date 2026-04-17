@@ -24,6 +24,8 @@
         .status-open { background: #dcfce7; color: #16a34a; }
         .status-closed { background: #fee2e2; color: #dc2626; }
         .status-waiting { background: #fef9c3; color: #854d0e; }
+        .status-rejected { background: #fee2e2; color: #dc2626; }
+        .status-deleted { background: #f3f4f6; color: #6b7280; }
     </style>
 </head>
 <body>
@@ -54,7 +56,10 @@
         <div class="detail-row" style="border-bottom:none;">
             <span class="detail-label">Status</span>
             <span class="status-badge"
-                  th:classappend="${campaign.status.name() == 'OPEN'} ? 'status-open' : (${campaign.status.name() == 'WAITING'} ? 'status-waiting' : 'status-closed')"
+                  th:classappend="${campaign.status.name() == 'OPEN'} ? 'status-open' :
+                                  (${campaign.status.name() == 'WAITING'} ? 'status-waiting' :
+                                  (${campaign.status.name() == 'REJECTED'} ? 'status-rejected' :
+                                  (${campaign.status.name() == 'DELETED'} ? 'status-deleted' : 'status-closed')))"
                   th:text="${campaign.status}">OPEN</span>
         </div>
 
