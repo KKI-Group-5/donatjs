@@ -11,7 +11,6 @@ public class CreateDonationRequest {
     @NotNull(message = "Campaign ID is required")
     private Long campaignId;
 
-    @NotNull(message = "User ID is required")
     private String userId;
 
     @NotNull(message = "Amount is required")

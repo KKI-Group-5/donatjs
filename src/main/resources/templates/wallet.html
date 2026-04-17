@@ -67,12 +67,85 @@
             margin-top: 4px;
         }
         .tx-amount.positive { color: var(--kelly-green); font-weight: 600; }
-        .tx-amount.negative { color: var(--danger); font-weight: 600; }
+        .tx-amount.negative { color: #e74c3c; font-weight: 600; }
+
+        /* Withdraw form */
+        .withdraw-form {
+            margin-top: var(--spacing-lg);
+            border-top: 1px solid var(--soft-gray);
+            padding-top: var(--spacing-lg);
+            text-align: left;
+        }
+        .withdraw-form h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+        }
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--soft-gray);
+            border-radius: var(--radius-sm, 8px);
+            font-size: 15px;
+            color: var(--text-primary);
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--kelly-green);
+        }
+        .btn-withdraw {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm, 8px);
+            padding: 10px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-withdraw:hover {
+            background: #c0392b;
+        }
+
+        /* Flash messages */
+        .flash-message {
+            padding: 14px 20px;
+            border-radius: var(--radius-sm, 8px);
+            margin: 0 80px var(--spacing-md);
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .flash-success {
+            background: #eafaf1;
+            color: #1e8449;
+            border: 1px solid #a9dfbf;
+        }
+        .flash-error {
+            background: #fdf2f2;
+            color: #c0392b;
+            border: 1px solid #f1a9a0;
+        }
 
         @media (max-width: 768px) {
             .wallet-dashboard {
                 flex-direction: column;
                 padding: var(--spacing-xl) 24px;
+            }
+            .flash-message {
+                margin: 0 24px var(--spacing-md);
             }
         }
     </style>
@@ -81,15 +154,35 @@
 
 <div th:replace="~{fragments/header :: header}"></div>
 
+<!-- Flash messages -->
+<div th:if="${successMessage}" class="flash-message flash-success" th:text="${successMessage}"></div>
+<div th:if="${errorMessage}" class="flash-message flash-error" th:text="${errorMessage}"></div>
+
 <section class="wallet-dashboard">
     <div class="balance-card">
         <div class="balance-label">Total Available Balance</div>
         <div class="balance-amount" th:text="'Rp ' + ${#numbers.formatDecimal(wallet.balance, 0, 'COMMA', 0, 'POINT')}">Rp 0</div>
-        <button class="btn-cta" style="width: 100%;">Top Up Wallet</button>
+        <button class="btn-cta" style="width: 100%; margin-bottom: 12px;">Top Up Wallet</button>
+
+        <!-- Withdraw Funds Form -->
+        <div class="withdraw-form">
+            <h3>Withdraw Funds</h3>
+            <form th:action="@{/wallet/withdraw}" method="post">
+                <div class="form-group">
+                    <label for="amount">Amount (Rp)</label>
+                    <input type="number" id="amount" name="amount" min="1" step="1000" placeholder="e.g. 100000" required/>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description (optional)</label>
+                    <input type="text" id="description" name="description" placeholder="e.g. ATM Withdrawal"/>
+                </div>
+                <button type="submit" class="btn-withdraw">Withdraw</button>
+            </form>
+        </div>
     </div>
 
     <div class="transaction-card">
-        <h2 class="section-title" style="font-size: 24px;">Transaction History</h2>
+        <h2 style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--spacing-sm);">Transaction History</h2>
         <ul class="transaction-list">
             <li class="transaction-item" th:each="tx : ${transactions}">
                 <div class="tx-info">

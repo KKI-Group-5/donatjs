@@ -1,14 +1,17 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
+import org.junit.jupiter.api.BeforeEach;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
+import id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent;
+import id.ac.ui.cs.advprog.donatjs.model.Campaign;
+import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.model.Donation;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationType;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.PaymentMethod;
 import id.ac.ui.cs.advprog.donatjs.repository.DonationRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +27,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,8 +36,23 @@ class DonationServiceTest {
     @Mock
     private DonationRepository donationRepository;
 
+    @Mock
+    private CampaignService campaignService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private DonationService donationService;
+
+    // ── Setup ─────────────────────────────────────────────────────────────────
+
+    @BeforeEach
+    void setUp() {
+        Campaign openCampaign = mock(Campaign.class);
+        lenient().when(openCampaign.getStatus()).thenReturn(CampaignStatus.OPEN);
+        lenient().when(campaignService.findById(anyLong())).thenReturn(Optional.of(openCampaign));
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -214,122 +234,9 @@ class DonationServiceTest {
 
     @Test
     @DisplayName("getDonationById throws EntityNotFoundException when not found")
-    void getDonationById_notFound_throws() {
-        when(donationRepository.findById(99L)).thenReturn(Optional.empty());
+    void getDonationById_notFound_throwsEntityNotFoundException() {
+        when(donationRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class,
-                () -> donationService.getDonationById(99L));
-    }
-
-    // ── getDonationsByUser ────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("getDonationsByUser returns list of donations for user")
-    void getDonationsByUser_returnsList() {
-        List<Donation> donations = List.of(
-                buildSavedDonation(1L, 100_000L, PaymentMethod.GOPAY,    2_000L, DonationStatus.SUCCESS,  DonationType.ONE_TIME),
-                buildSavedDonation(2L, 9_000_000L, PaymentMethod.BANK_BCA, 1_500L, DonationStatus.REJECTED, DonationType.ONE_TIME)
-        );
-        when(donationRepository.findByUserIdOrderByCreatedAtDesc("user-abc-123"))
-                .thenReturn(donations);
-
-        List<DonationResponse> result = donationService.getDonationsByUser("user-abc-123");
-
-        assertEquals(2, result.size());
-        assertEquals(DonationStatus.SUCCESS,  result.get(0).getStatus());
-        assertEquals(DonationStatus.REJECTED, result.get(1).getStatus());
-    }
-
-    @Test
-    @DisplayName("getDonationsByUser returns empty list when user has no donations")
-    void getDonationsByUser_noDonations_returnsEmptyList() {
-        when(donationRepository.findByUserIdOrderByCreatedAtDesc("user-xyz"))
-                .thenReturn(List.of());
-
-        List<DonationResponse> result = donationService.getDonationsByUser("user-xyz");
-
-        assertTrue(result.isEmpty());
-    }
-
-    // ── getTotalDonationsByCampaign ───────────────────────────────────────────
-
-    @Test
-    @DisplayName("getTotalDonationsByCampaign returns sum from repository")
-    void getTotalDonationsByCampaign_returnsSum() {
-        when(donationRepository.sumSuccessfulAmountByCampaignId(1L)).thenReturn(500_000L);
-
-        Long total = donationService.getTotalDonationsByCampaign(1L);
-
-        assertEquals(500_000L, total);
-    }
-
-    @Test
-    @DisplayName("getTotalDonationsByCampaign returns 0 when no donations")
-    void getTotalDonationsByCampaign_noDonations_returnsZero() {
-        when(donationRepository.sumSuccessfulAmountByCampaignId(1L)).thenReturn(0L);
-
-        assertEquals(0L, donationService.getTotalDonationsByCampaign(1L));
-    }
-
-    // ── updateDonationNotes ───────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("updateDonationNotes updates notes when owner calls it")
-    void updateDonationNotes_owner_updatesSuccessfully() {
-        Donation existing = buildSavedDonation(1L, 100_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
-        Donation updated  = buildSavedDonation(1L, 100_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
-        updated.setNotes("Updated notes");
-
-        when(donationRepository.findByIdAndUserId(1L, "user-abc-123")).thenReturn(Optional.of(existing));
-        when(donationRepository.save(any())).thenReturn(updated);
-
-        DonationResponse response = donationService.updateDonationNotes(1L, "user-abc-123", "Updated notes");
-
-        assertEquals("Updated notes", response.getNotes());
-        verify(donationRepository).save(existing);
-    }
-
-    @Test
-    @DisplayName("updateDonationNotes throws EntityNotFoundException for non-owner")
-    void updateDonationNotes_nonOwner_throws() {
-        when(donationRepository.findByIdAndUserId(1L, "other-user")).thenReturn(Optional.empty());
-
-        assertThrows(EntityNotFoundException.class,
-                () -> donationService.updateDonationNotes(1L, "other-user", "Hacked notes"));
-    }
-
-    @Test
-    @DisplayName("updateDonationNotes does not change amount or status")
-    void updateDonationNotes_doesNotMutateAmountOrStatus() {
-        Donation existing = buildSavedDonation(1L, 100_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
-        when(donationRepository.findByIdAndUserId(1L, "user-abc-123")).thenReturn(Optional.of(existing));
-        when(donationRepository.save(any())).thenReturn(existing);
-
-        donationService.updateDonationNotes(1L, "user-abc-123", "New note");
-
-        ArgumentCaptor<Donation> captor = ArgumentCaptor.forClass(Donation.class);
-        verify(donationRepository).save(captor.capture());
-        assertEquals(100_000L,           captor.getValue().getAmount());
-        assertEquals(DonationStatus.SUCCESS, captor.getValue().getStatus());
-    }
-
-    // ── countRejectedDonationsByUser ──────────────────────────────────────────
-
-    @Test
-    @DisplayName("countRejectedDonationsByUser returns count from repository")
-    void countRejectedDonationsByUser_returnsCount() {
-        when(donationRepository.countByUserIdAndStatus("user-abc-123", DonationStatus.REJECTED))
-                .thenReturn(2L);
-
-        assertEquals(2L, donationService.countRejectedDonationsByUser("user-abc-123"));
-    }
-
-    @Test
-    @DisplayName("countRejectedDonationsByUser returns 0 when no rejections")
-    void countRejectedDonationsByUser_noRejections_returnsZero() {
-        when(donationRepository.countByUserIdAndStatus("user-abc-123", DonationStatus.REJECTED))
-                .thenReturn(0L);
-
-        assertEquals(0L, donationService.countRejectedDonationsByUser("user-abc-123"));
+        assertThrows(EntityNotFoundException.class, () -> donationService.getDonationById(999L));
     }
 }

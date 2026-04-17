@@ -74,7 +74,8 @@ public class Donation {
 
     public enum DonationStatus {
         SUCCESS,
-        REJECTED
+        REJECTED,
+        REFUNDED
     }
 
     public enum PaymentMethod {

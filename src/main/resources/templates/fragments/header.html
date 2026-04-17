@@ -12,9 +12,20 @@
         <input type="text" placeholder="Search campaigns..."/>
     </div>
 
-    <div class="auth-buttons">
-        <a href="/oauth2/authorization/google" class="btn-login">Log In</a>
-        <a href="/oauth2/authorization/google" class="btn-signup">Sign Up</a>
+    <div style="display:flex; align-items:center; gap:16px;">
+        <a href="/campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Campaigns</a>
+        <a th:if="${isLoggedIn}" href="/wallet" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">My Wallet</a>
+
+        <div class="auth-buttons" th:if="${!isLoggedIn}">
+            <a href="/login" class="btn-login">Log In</a>
+            <a href="/login" class="btn-signup">Sign Up</a>
+        </div>
+        <div class="auth-buttons" th:if="${isLoggedIn}" style="align-items:center;">
+            <span style="font-size:14px; font-weight:500; color:var(--text-secondary);" th:text="${currentUserName}">User</span>
+            <form action="/logout" method="post" style="display:inline; margin:0;">
+                <button type="submit" class="btn-login" style="cursor:pointer; background:none; font-family:'Montserrat',sans-serif; font-size:14px;">Log Out</button>
+            </form>
+        </div>
     </div>
 </header>
 </html>

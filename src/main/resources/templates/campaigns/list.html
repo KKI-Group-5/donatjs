@@ -1,43 +1,56 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Campaigns</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | Campaigns</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body>
-<h1>Open Campaigns</h1>
 
-<p>
-    <a th:href="@{/}">Back to Home</a> |
-    <a th:href="@{/campaigns/create}">Create New Campaign</a>
-</p>
+<div th:replace="~{fragments/header :: header}"></div>
 
-<table>
-    <thead>
-    <tr>
-        <th>Title</th>
-        <th>Deadline</th>
-        <th>Target Amount</th>
-        <th>Total Raised</th>
-        <th>Details</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="campaign : ${campaigns}">
-        <td th:text="${campaign.title}">Campaign title</td>
-        <td th:text="${campaign.deadline}">2026-01-01</td>
-        <td th:text="${campaign.targetAmount}">0</td>
-        <td th:text="${campaign.totalRaised}">0</td>
-        <td>
-            <a th:href="@{|/campaigns/${campaign.id}|}">View</a>
-        </td>
-    </tr>
-    <tr th:if="${#lists.isEmpty(campaigns)}">
-        <td colspan="5">No open campaigns.</td>
-    </tr>
-    </tbody>
-</table>
+<section class="campaigns-section">
+    <div class="section-header">
+        <h2 class="section-title">Open Campaigns</h2>
+        <p class="section-subtitle">Support causes that matter to you</p>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end;">
+        <a th:href="@{/campaigns/create}">
+            <button class="btn-cta" style="height:44px; font-size:15px; padding:0 24px;">+ New Campaign</button>
+        </a>
+    </div>
+
+    <div class="campaigns-grid" th:unless="${#lists.isEmpty(campaigns)}">
+        <div class="campaign-card" th:each="campaign : ${campaigns}">
+            <div class="campaign-card-content" style="padding:24px; flex:1; display:flex; flex-direction:column; gap:12px;">
+                <h3 class="campaign-card-title" th:text="${campaign.title}">Campaign Title</h3>
+                <span class="campaign-card-organizer"
+                      th:text="'Deadline: ' + ${campaign.deadline}">Deadline</span>
+                <div style="font-size:14px; color:var(--text-secondary); display:flex; flex-direction:column; gap:4px;">
+                    <div>Target: <strong th:text="'Rp ' + ${#numbers.formatDecimal(campaign.targetAmount, 0, 'COMMA', 0, 'POINT')}">0</strong></div>
+                    <div>Raised: <strong th:text="'Rp ' + ${#numbers.formatDecimal(campaign.totalRaised, 0, 'COMMA', 0, 'POINT')}">0</strong></div>
+                </div>
+            </div>
+            <div class="campaign-card-actions" style="padding:0 24px 20px;">
+                <a th:href="@{|/campaigns/${campaign.id}|}" style="flex:1;">
+                    <button class="btn-cta" style="height:40px; font-size:14px; padding:0 20px; width:100%;">View Details</button>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(campaigns)}"
+         style="text-align:center; padding:64px 0; color:var(--text-secondary);">
+        <p style="font-size:18px; font-weight:500;">No open campaigns yet.</p>
+        <p style="margin-top:8px;">Be the first to
+            <a th:href="@{/campaigns/create}" style="color:var(--kelly-green); font-weight:600;">start one</a>.
+        </p>
+    </div>
+</section>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
 
 </body>
 </html>
-

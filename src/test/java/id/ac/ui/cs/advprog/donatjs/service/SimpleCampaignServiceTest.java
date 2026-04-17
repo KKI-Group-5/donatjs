@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
+import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.InMemoryCampaignRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,7 @@ class SimpleCampaignServiceTest {
         Campaign result = service.createCampaign(campaign);
 
         assertThat(result.getTotalRaised()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(result.getStatus()).isEqualTo(CampaignStatus.WAITING);
     }
 
     @Test
@@ -81,7 +83,8 @@ class SimpleCampaignServiceTest {
 
         service.deleteIfNoDonations(id);
 
-        assertThat(repository.findById(id)).isEmpty();
+        assertThat(repository.findById(id)).isPresent();
+        assertThat(repository.findById(id).orElseThrow().getStatus()).isEqualTo(CampaignStatus.DELETED);
     }
 
     @Test
@@ -100,6 +103,35 @@ class SimpleCampaignServiceTest {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
                 });
+    }
+
+    @Test
+    void moderateCampaign_approve_waitingCampaignBecomesOpen() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Waiting campaign");
+        campaign.setDescription("To review");
+        campaign.setStatus(CampaignStatus.WAITING);
+        Campaign saved = repository.save(campaign);
+
+        Campaign moderated = service.moderateCampaign(saved.getId(), true);
+
+        assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.OPEN);
+    }
+
+    @Test
+    void recordSuccessfulDonation_closesCampaignWhenTargetReached() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Donation target");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(new BigDecimal("90"));
+        Campaign saved = repository.save(campaign);
+
+        Campaign updated = service.recordSuccessfulDonation(saved.getId(), new BigDecimal("15"));
+
+        assertThat(updated.getTotalRaised()).isEqualByComparingTo(new BigDecimal("105"));
+        assertThat(updated.getStatus()).isEqualTo(CampaignStatus.CLOSED);
     }
 }
 

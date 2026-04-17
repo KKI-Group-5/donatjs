@@ -1,16 +1,20 @@
-package id.ac.ui.cs.advprog.donatjs.service;
+ package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
+import id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Donation;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationType;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.PaymentMethod;
+import id.ac.ui.cs.advprog.donatjs.model.Campaign;
+import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.model.PaymentFee;
 import id.ac.ui.cs.advprog.donatjs.repository.DonationRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +28,19 @@ public class DonationService {
     private static final long MAX_DONATION_AMOUNT = 5_000_000L;
 
     private final DonationRepository donationRepository;
+    private final CampaignService campaignService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public DonationResponse createDonation(CreateDonationRequest request) {
+
+        Campaign campaign = campaignService.findById(request.getCampaignId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Campaign not found: " + request.getCampaignId()));
+        if (campaign.getStatus() != CampaignStatus.OPEN) {
+            throw new IllegalStateException(
+                    "Campaign " + request.getCampaignId() + " is not open for donations.");
+        }
 
         if (request.getType() == DonationType.SUBSCRIPTION
                 && request.getPaymentMethod() != PaymentMethod.WALLET) {
@@ -59,9 +73,12 @@ public class DonationService {
             log.warn("Donation REJECTED — exceeds Rp 5,000,000 limit. " +
                             "donationId={}, userId={}, campaignId={}, amount={}",
                     saved.getId(), saved.getUserId(), saved.getCampaignId(), saved.getAmount());
+            eventPublisher.publishEvent(new RejectedDonationEvent(this, DonationResponse.from(saved)));
         } else {
             log.info("Donation SUCCESS. donationId={}, userId={}, campaignId={}, amount={}",
                     saved.getId(), saved.getUserId(), saved.getCampaignId(), saved.getAmount());
+            // TODO: campaignService.updateTotalRaised(saved.getCampaignId(), saved.getAmount())
+            //       — wire up once Adit adds updateTotalRaised(Long, Long) to CampaignService
         }
 
         return DonationResponse.from(saved);
@@ -110,5 +127,16 @@ public class DonationService {
     @Transactional(readOnly = true)
     public long countRejectedDonationsByUser(String userId) {
         return donationRepository.countByUserIdAndStatus(userId, DonationStatus.REJECTED);
+    }
+
+    @Transactional
+    public void processRefundForCampaign(Long campaignId) {
+        List<Donation> toRefund = donationRepository
+                .findByCampaignIdAndStatus(campaignId, DonationStatus.SUCCESS);
+
+        toRefund.forEach(d -> d.setStatus(DonationStatus.REFUNDED));
+        donationRepository.saveAll(toRefund);
+
+        log.info("Processed refund for {} donations on campaign {}", toRefund.size(), campaignId);
     }
 }
