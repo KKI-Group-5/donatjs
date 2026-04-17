@@ -11,7 +11,6 @@ import lombok.*;
 @Builder
 public class CreateSubscriptionRequest {
 
-    @NotNull(message = "User ID is required")
     private String userId;
 
     @NotNull(message = "Campaign ID is required")

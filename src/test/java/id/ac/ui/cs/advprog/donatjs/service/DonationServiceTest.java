@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -98,6 +99,7 @@ class DonationServiceTest {
 
         assertEquals(2_000L,   response.getFee());
         assertEquals(152_000L, response.getTotalAmount());
+        verify(campaignService).recordSuccessfulDonation(1L, BigDecimal.valueOf(150_000L));
     }
 
     @Test
@@ -150,6 +152,7 @@ class DonationServiceTest {
                 buildRequest(5_000_001L, PaymentMethod.GOPAY, DonationType.ONE_TIME));
 
         assertEquals(DonationStatus.REJECTED, response.getStatus());
+        verify(campaignService, never()).recordSuccessfulDonation(anyLong(), any());
     }
 
     @Test
@@ -164,6 +167,7 @@ class DonationServiceTest {
         ArgumentCaptor<Donation> captor = ArgumentCaptor.forClass(Donation.class);
         verify(donationRepository).save(captor.capture());
         assertEquals(DonationStatus.REJECTED, captor.getValue().getStatus());
+        verify(eventPublisher).publishEvent(any(RejectedDonationEvent.class));
     }
 
     @Test

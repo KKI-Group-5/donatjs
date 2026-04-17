@@ -2,7 +2,9 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.WalletService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,16 +21,17 @@ import java.util.Locale;
 public class WalletController {
 
     private final WalletService walletService;
-    // Hardcoded until auth is wired up
-    private static final String CURRENT_USER_ID = "user-demo-001";
+    private final CurrentUserService currentUserService;
 
-    public WalletController(WalletService walletService) {
+    public WalletController(WalletService walletService, CurrentUserService currentUserService) {
         this.walletService = walletService;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping
-    public String getWalletDashboard(Model model) {
-        Wallet wallet = walletService.getWalletByUserId(CURRENT_USER_ID);
+    public String getWalletDashboard(Model model, Authentication authentication) {
+        String currentUserId = currentUserService.getCurrentUserId(authentication);
+        Wallet wallet = walletService.getWalletByUserId(currentUserId);
         model.addAttribute("wallet", wallet);
         model.addAttribute("transactions", walletService.getTransactionHistory(wallet.getId()));
         return "wallet";
@@ -38,9 +41,11 @@ public class WalletController {
     public String withdraw(
             @RequestParam("amount") double amount,
             @RequestParam(value = "description", defaultValue = "") String description,
+            Authentication authentication,
             RedirectAttributes redirectAttributes) {
         try {
-            walletService.withdraw(CURRENT_USER_ID, amount, description);
+            String currentUserId = currentUserService.getCurrentUserId(authentication);
+            walletService.withdraw(currentUserId, amount, description);
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
             redirectAttributes.addFlashAttribute("successMessage",
                     "Withdrawal of Rp " + nf.format((long) amount) + " was successful.");

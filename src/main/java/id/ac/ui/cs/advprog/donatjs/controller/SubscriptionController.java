@@ -3,13 +3,16 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.dto.CreateSubscriptionRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse;
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateSubscriptionRequest;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -20,9 +23,12 @@ import java.util.Map;
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+    private final CurrentUserService currentUserService;
 
     @PostMapping
-    public ResponseEntity<Object> createSubscription(@Valid @RequestBody CreateSubscriptionRequest request) {
+    public ResponseEntity<Object> createSubscription(@Valid @RequestBody CreateSubscriptionRequest request,
+                                                     Authentication authentication) {
+        request.setUserId(currentUserService.getCurrentUserId(authentication));
         try {
             SubscriptionResponse response = subscriptionService.createSubscription(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -38,7 +44,8 @@ public class SubscriptionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> cancelSubscription(
             @PathVariable Long id,
-            @RequestParam String userId) {
+            Authentication authentication) {
+        String userId = currentUserService.getCurrentUserId(authentication);
         try {
             SubscriptionResponse response = subscriptionService.cancelSubscription(id, userId);
             return ResponseEntity.ok(response);
@@ -52,8 +59,9 @@ public class SubscriptionController {
     @PatchMapping("/{id}/frequency")
     public ResponseEntity<Object> updateFrequency(
             @PathVariable Long id,
-            @RequestParam String userId,
-            @Valid @RequestBody UpdateSubscriptionRequest request) {
+            @Valid @RequestBody UpdateSubscriptionRequest request,
+            Authentication authentication) {
+        String userId = currentUserService.getCurrentUserId(authentication);
         try {
             SubscriptionResponse response = subscriptionService.updateFrequency(id, userId, request.getFrequency());
             return ResponseEntity.ok(response);
@@ -65,7 +73,18 @@ public class SubscriptionController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<SubscriptionResponse>> getSubscriptionsByUser(@PathVariable String userId) {
-        return ResponseEntity.ok(subscriptionService.getSubscriptionsByUser(userId));
+    public ResponseEntity<List<SubscriptionResponse>> getSubscriptionsByUser(@PathVariable String userId,
+                                                                             Authentication authentication) {
+        String currentUserId = currentUserService.getCurrentUserId(authentication);
+        if (!currentUserId.equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only access your own subscriptions");
+        }
+        return ResponseEntity.ok(subscriptionService.getSubscriptionsByUser(currentUserId));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<SubscriptionResponse>> getMySubscriptions(Authentication authentication) {
+        return ResponseEntity.ok(subscriptionService.getSubscriptionsByUser(
+                currentUserService.getCurrentUserId(authentication)));
     }
 }

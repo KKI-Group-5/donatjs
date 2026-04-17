@@ -22,6 +22,8 @@ public class UserProfileDTO {
     private List<Campaign> createdCampaigns;
     private List<DonationResponse> donations;
     private List<SavedCampaign> savedCampaigns;
+    private List<SubscriptionResponse> subscriptions;
+    private List<UserActivityUpdate> activityUpdates;
 
     public UserProfileDTO(String name, String email, String bio, LocalDate dateOfBirth) {
         this.name = name;

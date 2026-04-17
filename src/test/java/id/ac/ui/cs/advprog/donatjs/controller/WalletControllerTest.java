@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.WalletService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ class WalletControllerTest {
     @MockitoBean
     private WalletService walletService;
 
+    @MockitoBean
+    private CurrentUserService currentUserService;
+
     private Wallet demoWallet() {
         return Wallet.builder().id("w-demo").userId("user-demo-001").balance(1500000.0).build();
     }
@@ -39,6 +43,7 @@ class WalletControllerTest {
 
     @Test
     void getDashboard_returnsWalletView() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn("user-demo-001");
         when(walletService.getWalletByUserId("user-demo-001")).thenReturn(demoWallet());
         when(walletService.getTransactionHistory("w-demo")).thenReturn(List.of());
 
@@ -53,6 +58,7 @@ class WalletControllerTest {
 
     @Test
     void withdraw_success_redirectsWithSuccessMessage() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn("user-demo-001");
         when(walletService.withdraw("user-demo-001", 200000.0, "ATM"))
                 .thenReturn(demoWallet());
 
@@ -66,6 +72,7 @@ class WalletControllerTest {
 
     @Test
     void withdraw_insufficientBalance_redirectsWithErrorMessage() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn("user-demo-001");
         when(walletService.withdraw(eq("user-demo-001"), anyDouble(), anyString()))
                 .thenThrow(new InsufficientBalanceException("Insufficient balance"));
 
@@ -79,6 +86,7 @@ class WalletControllerTest {
 
     @Test
     void withdraw_illegalAmount_redirectsWithErrorMessage() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn("user-demo-001");
         when(walletService.withdraw(eq("user-demo-001"), anyDouble(), anyString()))
                 .thenThrow(new IllegalArgumentException("Withdrawal amount must be positive."));
 

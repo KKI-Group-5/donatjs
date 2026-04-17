@@ -6,6 +6,7 @@ import id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse;
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateSubscriptionRequest;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionFrequency;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ class SubscriptionControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private SubscriptionService subscriptionService;
+    @MockitoBean private CurrentUserService currentUserService;
     @Autowired private ObjectMapper objectMapper;
 
     private static final String USER_ID     = "user-001";
@@ -52,10 +54,11 @@ class SubscriptionControllerTest {
     @Test
     void createSubscription_returnsCreated() throws Exception {
         CreateSubscriptionRequest request = CreateSubscriptionRequest.builder()
-                .userId(USER_ID).campaignId(CAMPAIGN_ID)
+                .campaignId(CAMPAIGN_ID)
                 .amount(AMOUNT).frequency(SubscriptionFrequency.MONTHLY)
                 .build();
 
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
         when(subscriptionService.createSubscription(any())).thenReturn(buildResponse(SubscriptionStatus.ACTIVE));
 
         mockMvc.perform(post("/api/subscriptions")
@@ -70,10 +73,11 @@ class SubscriptionControllerTest {
     @Test
     void createSubscription_duplicate_returnsConflict() throws Exception {
         CreateSubscriptionRequest request = CreateSubscriptionRequest.builder()
-                .userId(USER_ID).campaignId(CAMPAIGN_ID)
+                .campaignId(CAMPAIGN_ID)
                 .amount(AMOUNT).frequency(SubscriptionFrequency.MONTHLY)
                 .build();
 
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
         when(subscriptionService.createSubscription(any()))
                 .thenThrow(new IllegalStateException("Active subscription already exists for this campaign"));
 
@@ -88,10 +92,11 @@ class SubscriptionControllerTest {
     @Test
     void createSubscription_insufficientBalance_returnsUnprocessable() throws Exception {
         CreateSubscriptionRequest request = CreateSubscriptionRequest.builder()
-                .userId(USER_ID).campaignId(CAMPAIGN_ID)
+                .campaignId(CAMPAIGN_ID)
                 .amount(AMOUNT).frequency(SubscriptionFrequency.MONTHLY)
                 .build();
 
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
         when(subscriptionService.createSubscription(any()))
                 .thenThrow(new IllegalStateException("Insufficient balance"));
 
@@ -105,36 +110,36 @@ class SubscriptionControllerTest {
 
     @Test
     void cancelSubscription_returnsOk() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
         when(subscriptionService.cancelSubscription(SUB_ID, USER_ID))
                 .thenReturn(buildResponse(SubscriptionStatus.CANCELLED));
 
         mockMvc.perform(delete("/api/subscriptions/{id}", SUB_ID)
-                        .with(csrf())
-                        .param("userId", USER_ID))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
     }
 
     @Test
     void cancelSubscription_notFound_returns404() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
         when(subscriptionService.cancelSubscription(99L, USER_ID))
                 .thenThrow(new EntityNotFoundException("Subscription not found: 99"));
 
         mockMvc.perform(delete("/api/subscriptions/{id}", 99L)
-                        .with(csrf())
-                        .param("userId", USER_ID))
+                        .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Subscription not found: 99"));
     }
 
     @Test
     void cancelSubscription_wrongUser_returnsForbidden() throws Exception {
-        when(subscriptionService.cancelSubscription(SUB_ID, "other-user"))
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
+        when(subscriptionService.cancelSubscription(SUB_ID, USER_ID))
                 .thenThrow(new IllegalStateException("You do not own this subscription"));
 
         mockMvc.perform(delete("/api/subscriptions/{id}", SUB_ID)
-                        .with(csrf())
-                        .param("userId", "other-user"))
+                        .with(csrf()))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("You do not own this subscription"));
     }
@@ -145,12 +150,12 @@ class SubscriptionControllerTest {
 
         SubscriptionResponse updated = buildResponse(SubscriptionStatus.ACTIVE);
 
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
         when(subscriptionService.updateFrequency(SUB_ID, USER_ID, SubscriptionFrequency.WEEKLY))
                 .thenReturn(updated);
 
         mockMvc.perform(patch("/api/subscriptions/{id}/frequency", SUB_ID)
                         .with(csrf())
-                        .param("userId", USER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -159,6 +164,7 @@ class SubscriptionControllerTest {
 
     @Test
     void getSubscriptionsByUser_returnsList() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
         when(subscriptionService.getSubscriptionsByUser(USER_ID))
                 .thenReturn(List.of(buildResponse(SubscriptionStatus.ACTIVE)));
 
@@ -166,5 +172,13 @@ class SubscriptionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].userId").value(USER_ID));
+    }
+
+    @Test
+    void getSubscriptionsByUser_otherUser_returnsForbidden() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
+
+        mockMvc.perform(get("/api/subscriptions/user/{userId}", "other-user"))
+                .andExpect(status().isForbidden());
     }
 }
