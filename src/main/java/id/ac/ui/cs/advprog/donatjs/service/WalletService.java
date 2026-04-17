@@ -7,4 +7,6 @@ import java.util.List;
 public interface WalletService {
     Wallet getWalletByUserId(String userId);
     List<Transaction> getTransactionHistory(String walletId);
+    Wallet withdraw(String userId, double amount, String description);
+    Wallet deductForDonation(String userId, double amount, String campaignName);
 }
