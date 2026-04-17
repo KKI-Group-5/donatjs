@@ -18,7 +18,7 @@
 
         <div class="auth-buttons" th:if="${!isLoggedIn}">
             <a href="/login" class="btn-login">Log In</a>
-            <a href="/login" class="btn-signup">Sign Up</a>
+            <a href="/register" class="btn-signup">Sign Up</a>
         </div>
         <div class="auth-buttons" th:if="${isLoggedIn}" style="align-items:center;">
             <span style="font-size:14px; font-weight:500; color:var(--text-secondary);" th:text="${currentUserName}">User</span>

@@ -15,6 +15,7 @@ public class ProfileService {
     private final CampaignService campaignService;
     private final DonationService donationService;
     private final SavedCampaignService savedCampaignService;
+    private final SubscriptionService subscriptionService;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public UserProfileDTO getUserProfile(String email) {
@@ -27,6 +28,12 @@ public class ProfileService {
         dto.setCreatedCampaigns(campaignService.findByCreatorId(userId));
         dto.setDonations(donationService.getDonationsByUser(userId));
         dto.setSavedCampaigns(savedCampaignService.getSavedCampaigns(userId));
+        dto.setSubscriptions(subscriptionService.getSubscriptionsByUser(userId));
+        
+        // Map new Milestone 3 metrics
+        dto.setRejectedDonationCount(user.getRejectedDonationCount());
+        dto.setRejectedCampaignCount(user.getRejectedCampaignCount());
+        dto.setSuspended(user.isSuspended());
         
         return dto;
     }

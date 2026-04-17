@@ -26,16 +26,22 @@ public class SecurityConfig {
                         // Static assets and public API endpoints
                         .requestMatchers("/", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/h2-console/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/campaigns/**", "/api/saved-campaigns/**").permitAll()
-                        // Guests can browse campaigns (M2: redirected only when attempting donations)
-                        .requestMatchers(HttpMethod.GET, "/campaigns", "/campaigns/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/login", "/register").permitAll()
+                        // Guests can browse campaigns (M2: allowed only GET for listing and detail)
+                        .requestMatchers(HttpMethod.GET, "/campaigns", "/campaigns/").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/campaigns/{id:[0-9]+}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/campaigns/**").permitAll()
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form.defaultSuccessUrl("/", true))
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .permitAll()
+                        .defaultSuccessUrl("/", false)
+                )
                 .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("/", true)
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/", false)
                 );
 
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));

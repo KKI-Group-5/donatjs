@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sign Up | DonatJS</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 200px);
+            padding: var(--spacing-2xl) 24px;
+            background: var(--bg-light);
+        }
+        .auth-card {
+            background: var(--white);
+            padding: var(--spacing-2xl);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+        }
+        .auth-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+        .auth-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        .auth-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-md);
+        }
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px var(--spacing-md);
+            border: 1px solid var(--soft-gray);
+            border-radius: var(--radius-md);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .form-input:focus, .form-textarea:focus {
+            border-color: var(--kelly-green);
+        }
+        .btn-auth {
+            width: 100%;
+            height: 48px;
+            background: var(--kelly-green);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: var(--spacing-sm);
+        }
+        .btn-auth:hover {
+            background: var(--kelly-green-hover);
+        }
+        .auth-footer {
+            margin-top: var(--spacing-xl);
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .auth-link {
+            color: var(--kelly-green);
+            font-weight: 600;
+        }
+        .status-message {
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join us and start supporting causes you care about</p>
+        </div>
+
+        <div id="statusBox" class="status-message"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="name" class="form-input" placeholder="John Doe" required/>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="email" class="form-input" placeholder="john@example.com" required/>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" id="dateOfBirth" class="form-input" required/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Bio (Brief description about yourself)</label>
+                <textarea id="bio" class="form-textarea" placeholder="Tell us about yourself..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn-auth">Sign Up</button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a th:href="@{/login}" class="auth-link">Log In</a>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const statusBox = document.getElementById('statusBox');
+        const data = {
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            dateOfBirth: document.getElementById('dateOfBirth').value,
+            bio: document.getElementById('bio').value
+        };
+
+        fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(async response => {
+            const message = await response.text();
+            statusBox.style.display = 'block';
+            if (response.ok) {
+                statusBox.style.background = '#ECFDF5';
+                statusBox.style.color = '#065F46';
+                statusBox.textContent = 'Registration successful! Redirecting to login...';
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            } else {
+                statusBox.style.background = '#FEE2E2';
+                statusBox.style.color = '#991B1B';
+                statusBox.textContent = 'Error: ' + message;
+            }
+        })
+        .catch(error => {
+            statusBox.style.display = 'block';
+            statusBox.style.background = '#FEE2E2';
+            statusBox.style.color = '#991B1B';
+            statusBox.textContent = 'Something went wrong. Please try again.';
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -36,6 +36,9 @@ public class ProfileServiceTest {
     private SavedCampaignService savedCampaignService;
 
     @Mock
+    private SubscriptionService subscriptionService;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
@@ -61,6 +64,7 @@ public class ProfileServiceTest {
         when(campaignService.findByCreatorId(anyString())).thenReturn(new ArrayList<>());
         when(donationService.getDonationsByUser(anyString())).thenReturn(new ArrayList<>());
         when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(new ArrayList<>());
+        when(subscriptionService.getSubscriptionsByUser(anyString())).thenReturn(new ArrayList<>());
 
         // Act
         UserProfileDTO result = profileService.getUserProfile(testEmail);
@@ -72,6 +76,7 @@ public class ProfileServiceTest {
         assertNotNull(result.getDonations());
         verify(campaignService).findByCreatorId(testId.toString());
         verify(donationService).getDonationsByUser(testId.toString());
+        verify(subscriptionService).getSubscriptionsByUser(testId.toString());
     }
 
     @Test
@@ -88,6 +93,7 @@ public class ProfileServiceTest {
         when(campaignService.findByCreatorId(anyString())).thenReturn(new ArrayList<>());
         when(donationService.getDonationsByUser(anyString())).thenReturn(new ArrayList<>());
         when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(new ArrayList<>());
+        when(subscriptionService.getSubscriptionsByUser(anyString())).thenReturn(new ArrayList<>());
 
         // Act
         UserProfileDTO result = profileService.updateUserProfile(testEmail, request);
@@ -105,5 +111,26 @@ public class ProfileServiceTest {
         assertThrows(RuntimeException.class, () -> {
             profileService.getUserProfile("wrong@email.com");
         });
+    }
+    @Test
+    void testGetUserProfile_IncludesRejectionMetrics() {
+        // Arrange
+        sampleUser.setRejectedDonationCount(2);
+        sampleUser.setRejectedCampaignCount(1);
+        sampleUser.setSuspended(true);
+
+        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(sampleUser));
+        when(campaignService.findByCreatorId(anyString())).thenReturn(new ArrayList<>());
+        when(donationService.getDonationsByUser(anyString())).thenReturn(new ArrayList<>());
+        when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(new ArrayList<>());
+        when(subscriptionService.getSubscriptionsByUser(anyString())).thenReturn(new ArrayList<>());
+
+        // Act
+        UserProfileDTO result = profileService.getUserProfile(testEmail);
+
+        // Assert
+        assertEquals(2, result.getRejectedDonationCount());
+        assertEquals(1, result.getRejectedCampaignCount());
+        assertTrue(result.isSuspended());
     }
 }

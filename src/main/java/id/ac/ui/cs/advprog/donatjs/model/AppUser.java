@@ -21,6 +21,11 @@ public class AppUser {
     private String bio;
     private LocalDate dateOfBirth;
 
+    // Milestone 3: Tracking for FRAUD/REJECTED activity
+    private int rejectedDonationCount = 0;
+    private int rejectedCampaignCount = 0;
+    private boolean isSuspended = false;
+
     // JPA requires a default, empty constructor
     public AppUser() {
     }
@@ -45,4 +50,13 @@ public class AppUser {
 
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
+    public int getRejectedDonationCount() { return rejectedDonationCount; }
+    public void setRejectedDonationCount(int rejectedDonationCount) { this.rejectedDonationCount = rejectedDonationCount; }
+
+    public int getRejectedCampaignCount() { return rejectedCampaignCount; }
+    public void setRejectedCampaignCount(int rejectedCampaignCount) { this.rejectedCampaignCount = rejectedCampaignCount; }
+
+    public boolean isSuspended() { return isSuspended; }
+    public void setSuspended(boolean suspended) { isSuspended = suspended; }
 }
