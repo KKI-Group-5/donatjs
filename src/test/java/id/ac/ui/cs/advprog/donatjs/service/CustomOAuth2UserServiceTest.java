@@ -7,10 +7,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,30 +28,42 @@ public class CustomOAuth2UserServiceTest {
     private CustomOAuth2UserService customOAuth2UserService;
 
     @Test
-    void testLoadUser_NewUserSaved() {
+    void testProcessOAuth2User_NewUserSaved() {
         String email = "aldebaran@ui.ac.id";
         String name = "Aldebaran";
 
-        // Use lenient() so Mockito doesn't complain if these aren't called in the way it expects
-        lenient().when(oAuth2User.getAttribute("email")).thenReturn(email);
-        lenient().when(oAuth2User.getAttribute("name")).thenReturn(name);
-
-        // Mock repository to return empty
+        when(oAuth2User.getAttribute("email")).thenReturn(email);
+        when(oAuth2User.getAttribute("name")).thenReturn(name);
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
-        // Since super.loadUser(userRequest) is hard to trigger in a pure Unit Test,
-        // we test the logic that follows it.
-        Optional<AppUser> userOptional = userRepository.findByEmail(email);
-
-        if (userOptional.isEmpty()) {
-            AppUser newUser = new AppUser();
-            newUser.setEmail(email);
-            newUser.setName(name);
-            userRepository.save(newUser);
-        }
+        // Act
+        customOAuth2UserService.processOAuth2User(oAuth2User);
 
         // Assert
         verify(userRepository, times(1)).save(any(AppUser.class));
         verify(userRepository, times(1)).findByEmail(email);
+    }
+
+    @Test
+    void testProcessOAuth2User_ExistingUserNotSaved() {
+        String email = "existing@ui.ac.id";
+        when(oAuth2User.getAttribute("email")).thenReturn(email);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(new AppUser()));
+
+        // Act
+        customOAuth2UserService.processOAuth2User(oAuth2User);
+
+        // Assert
+        verify(userRepository, never()).save(any(AppUser.class));
+    }
+
+    @Test
+    void testProcessOAuth2User_MissingEmailThrowsException() {
+        when(oAuth2User.getAttribute("email")).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(OAuth2AuthenticationException.class, () -> {
+            customOAuth2UserService.processOAuth2User(oAuth2User);
+        });
     }
 }
