@@ -24,9 +24,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         // Let Spring get the user from Google
         OAuth2User oAuth2User = super.loadUser(userRequest);
+        return processOAuth2User(oAuth2User);
+    }
 
+    public OAuth2User processOAuth2User(OAuth2User oAuth2User) {
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
+
+        if (email == null) {
+            throw new OAuth2AuthenticationException("Email not found from Google");
+        }
 
         // Check if this user already exists
         Optional<AppUser> userOptional = userRepository.findByEmail(email);

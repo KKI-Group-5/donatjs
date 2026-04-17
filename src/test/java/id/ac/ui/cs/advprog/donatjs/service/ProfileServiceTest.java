@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateProfileRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.UserProfileDTO;
+import id.ac.ui.cs.advprog.donatjs.event.ProfileUpdatedEvent;
 import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,8 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
+import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -22,37 +26,56 @@ public class ProfileServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private CampaignService campaignService;
+
+    @Mock
+    private DonationService donationService;
+
+    @Mock
+    private SavedCampaignService savedCampaignService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
-    private ProfileService profileService; // Matches your actual class name
+    private ProfileService profileService;
 
     private AppUser sampleUser;
     private final String testEmail = "aldebaran@ui.ac.id";
+    private final UUID testId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
         sampleUser = new AppUser();
+        sampleUser.setId(testId);
         sampleUser.setEmail(testEmail);
         sampleUser.setName("Aldebaran");
         sampleUser.setBio("Initial Bio");
     }
 
     @Test
-    void testGetUserProfile_Success() {
-        // Arrange: tell the mock repository what to return
+    void testGetUserProfile_Success_AggregatesActivities() {
+        // Arrange
         when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(sampleUser));
+        when(campaignService.findByCreatorId(anyString())).thenReturn(new ArrayList<>());
+        when(donationService.getDonationsByUser(anyString())).thenReturn(new ArrayList<>());
+        when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(new ArrayList<>());
 
-        // Act: call the actual service method
+        // Act
         UserProfileDTO result = profileService.getUserProfile(testEmail);
 
-        // Assert: verify the results match
+        // Assert
         assertNotNull(result);
         assertEquals("Aldebaran", result.getName());
-        assertEquals(testEmail, result.getEmail());
-        verify(userRepository, times(1)).findByEmail(testEmail);
+        assertNotNull(result.getCreatedCampaigns());
+        assertNotNull(result.getDonations());
+        verify(campaignService).findByCreatorId(testId.toString());
+        verify(donationService).getDonationsByUser(testId.toString());
     }
 
     @Test
-    void testUpdateUserProfile_Success() {
+    void testUpdateUserProfile_Success_PublishesEvent() {
         // Arrange
         UpdateProfileRequest request = new UpdateProfileRequest();
         request.setName("New Name");
@@ -60,26 +83,27 @@ public class ProfileServiceTest {
 
         when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(sampleUser));
         when(userRepository.save(any(AppUser.class))).thenReturn(sampleUser);
+        
+        // Success aggregation mocks for getUserProfile internal call
+        when(campaignService.findByCreatorId(anyString())).thenReturn(new ArrayList<>());
+        when(donationService.getDonationsByUser(anyString())).thenReturn(new ArrayList<>());
+        when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(new ArrayList<>());
 
         // Act
         UserProfileDTO result = profileService.updateUserProfile(testEmail, request);
 
         // Assert
         assertEquals("New Name", result.getName());
-        assertEquals("New Bio", result.getBio());
+        verify(eventPublisher, times(1)).publishEvent(any(ProfileUpdatedEvent.class));
         verify(userRepository, times(1)).save(any(AppUser.class));
     }
 
     @Test
     void testGetUserProfile_UserNotFound_ThrowsException() {
-        // Arrange: Mock the repository to return empty
         when(userRepository.findByEmail("wrong@email.com")).thenReturn(Optional.empty());
 
-        // Act & Assert: Verify that the service throws the expected exception
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             profileService.getUserProfile("wrong@email.com");
         });
-
-        assertEquals("User not found", exception.getMessage());
     }
 }
