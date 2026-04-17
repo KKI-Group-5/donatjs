@@ -33,9 +33,9 @@ public class SecurityConfig {
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form.defaultSuccessUrl("/api/profile/me", true))
+                .formLogin(form -> form.defaultSuccessUrl("/", true))
                 .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("/api/profile/me", true)
+                        .defaultSuccessUrl("/", true)
                 );
 
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));

@@ -11,8 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class WalletServiceImpl implements WalletService {
@@ -74,8 +76,10 @@ public class WalletServiceImpl implements WalletService {
         }
         Wallet wallet = getWalletByUserId(userId);
         if (wallet.getBalance() < amount) {
+            NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
             throw new InsufficientBalanceException(
-                "Insufficient balance. Available: Rp " + wallet.getBalance() + ", Requested: Rp " + amount);
+                "Insufficient balance. Available: Rp " + nf.format((long) wallet.getBalance().doubleValue())
+                + ", Requested: Rp " + nf.format((long) amount));
         }
         wallet.setBalance(wallet.getBalance() - amount);
         walletRepository.save(wallet);
@@ -101,8 +105,10 @@ public class WalletServiceImpl implements WalletService {
         }
         Wallet wallet = getWalletByUserId(userId);
         if (wallet.getBalance() < amount) {
+            NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
             throw new InsufficientBalanceException(
-                "Insufficient balance for donation. Available: Rp " + wallet.getBalance() + ", Required: Rp " + amount);
+                "Insufficient balance for donation. Available: Rp " + nf.format((long) wallet.getBalance().doubleValue())
+                + ", Required: Rp " + nf.format((long) amount));
         }
         wallet.setBalance(wallet.getBalance() - amount);
         walletRepository.save(wallet);

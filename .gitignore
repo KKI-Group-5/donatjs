@@ -39,3 +39,6 @@ out/
 ### Internal Documentation ###
 internal_documentation/
 .env
+
+### Local dev config (contains real credentials — never commit) ###
+src/main/resources/application-local.properties

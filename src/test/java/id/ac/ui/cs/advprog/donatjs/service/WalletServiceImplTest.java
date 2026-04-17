@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -161,5 +162,56 @@ class WalletServiceImplTest {
 
         // Wallet balance must remain unchanged
         assertThat(wallet.getBalance()).isEqualTo(100.0);
+    }
+
+    // ── getWalletByUserId() ──────────────────────────────────────────────────
+
+    @Test
+    void getWalletByUserId_found_returnsWallet() {
+        when(walletRepository.findByUserId("user-001")).thenReturn(Optional.of(wallet));
+
+        Wallet result = walletService.getWalletByUserId("user-001");
+
+        assertThat(result).isSameAs(wallet);
+    }
+
+    @Test
+    void getWalletByUserId_notFound_throwsRuntimeException() {
+        when(walletRepository.findByUserId("no-one")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> walletService.getWalletByUserId("no-one"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("not found");
+    }
+
+    // ── getTransactionHistory() ──────────────────────────────────────────────
+
+    @Test
+    void getTransactionHistory_returnsListFromRepository() {
+        Transaction tx = Transaction.builder()
+                .id("tx-1")
+                .wallet(wallet)
+                .amount(100000.0)
+                .type(TransactionType.DEPOSIT)
+                .description("Top up")
+                .timestamp(java.time.LocalDateTime.now())
+                .build();
+        when(transactionRepository.findByWalletIdOrderByTimestampDesc("wallet-1"))
+                .thenReturn(List.of(tx));
+
+        List<Transaction> result = walletService.getTransactionHistory("wallet-1");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getType()).isEqualTo(TransactionType.DEPOSIT);
+    }
+
+    @Test
+    void getTransactionHistory_emptyWallet_returnsEmptyList() {
+        when(transactionRepository.findByWalletIdOrderByTimestampDesc("wallet-1"))
+                .thenReturn(List.of());
+
+        List<Transaction> result = walletService.getTransactionHistory("wallet-1");
+
+        assertThat(result).isEmpty();
     }
 }
