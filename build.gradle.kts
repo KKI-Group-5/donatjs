@@ -3,6 +3,7 @@ plugins {
 	jacoco
 	id("org.springframework.boot") version "3.5.10"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("co.uzzu.dotenv.gradle") version "4.0.0"
 }
 
 group = "id.ac.ui.cs.advprog"
@@ -32,30 +33,28 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	runtimeOnly("com.h2database:h2")
+	runtimeOnly("org.postgresql:postgresql")
+	runtimeOnly("com.mysql:mysql-connector-j")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	testImplementation("org.springframework.security:spring-security-test")
 	testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumJavaVersion")
 	testImplementation("io.github.bonigarcia:selenium-jupiter:$seleniumJupiterVersion")
 	testImplementation("io.github.bonigarcia:webdrivermanager:$webdrivermanagerVersion")
 	testImplementation("org.junit.jupiter:junit-jupiter:${junitJupiterVersion}")
-
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-
-	implementation("org.springframework.boot:spring-boot-starter-validation")
-
-	implementation("org.springframework.boot:spring-boot-starter-security")
-	testImplementation("org.springframework.security:spring-security-test")
-
-	runtimeOnly("com.h2database:h2")
-
-	runtimeOnly("com.mysql:mysql-connector-j")
-
+	testImplementation("com.h2database:h2")
 	testCompileOnly("org.projectlombok:lombok")
 	testAnnotationProcessor("org.projectlombok:lombok")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.register<Test>("unitTest") {
@@ -81,12 +80,38 @@ tasks.withType<Test>().configureEach {
 }
 
 tasks.test {
+	useJUnitPlatform()
 	filter {
+		// Exclude both "FunctionalTest" and "IntegrationTest" (if any)
 		excludeTestsMatching("*FunctionalTest")
 	}
+	// Ensures coverage is calculated immediately after tests
 	finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.named<Jar>("jar") {
+	enabled = false
+}
+
+tasks.bootRun {
+	environment(env.allVariables())
 }
 
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+	}
+
+	// Exclude boilerplate code from coverage reports
+	classDirectories.setFrom(files(classDirectories.files.map {
+		fileTree(it) {
+			exclude(
+				"id/ac/ui/cs/advprog/donatjs/DonatJsApplication*",
+				"id/ac/ui/cs/advprog/donatjs/dto/**",
+				"id/ac/ui/cs/advprog/donatjs/model/**"
+			)
+		}
+	}))
 }
