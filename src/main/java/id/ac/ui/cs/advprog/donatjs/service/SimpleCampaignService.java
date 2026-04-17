@@ -1,11 +1,14 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
+import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,15 +24,19 @@ public class SimpleCampaignService implements CampaignService {
 
     @Override
     public Campaign createCampaign(Campaign campaign) {
+        return createCampaign(campaign, campaign.getCreatorId());
+    }
+
+    @Override
+    public Campaign createCampaign(Campaign campaign, String creatorId) {
         if (campaign.getCreatedAt() == null) {
             campaign.setCreatedAt(LocalDateTime.now());
         }
         if (campaign.getTotalRaised() == null) {
-            campaign.setTotalRaised(java.math.BigDecimal.ZERO);
+            campaign.setTotalRaised(BigDecimal.ZERO);
         }
-        if (campaign.getStatus() == null || campaign.getStatus() == id.ac.ui.cs.advprog.donatjs.model.CampaignStatus.WAITING) {
-            campaign.setStatus(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus.OPEN);
-        }
+        campaign.setStatus(CampaignStatus.WAITING);
+        campaign.setCreatorId(creatorId);
         return campaignRepository.save(campaign);
     }
 
@@ -50,26 +57,109 @@ public class SimpleCampaignService implements CampaignService {
 
     @Override
     public Campaign updateDescription(Long id, String description) {
+        return updateDescription(id, null, false, description);
+    }
+
+    @Override
+    public Campaign updateDescription(Long id, String actorId, boolean isAdmin, String description) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        validateActorPermission(campaign, actorId, isAdmin);
+        if (campaign.getStatus() != CampaignStatus.WAITING && campaign.getStatus() != CampaignStatus.OPEN) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign cannot be edited in current status");
+        }
         campaign.setDescription(description);
         return campaignRepository.save(campaign);
     }
 
     @Override
     public void deleteIfNoDonations(Long id) {
+        deleteIfNoDonations(id, null, false);
+    }
+
+    @Override
+    public void deleteIfNoDonations(Long id, String actorId, boolean isAdmin) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        validateActorPermission(campaign, actorId, isAdmin);
 
         if (campaign.getTotalRaised() != null
-                && campaign.getTotalRaised().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                && campaign.getTotalRaised().compareTo(BigDecimal.ZERO) > 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Cannot delete campaign with donations"
             );
         }
+        campaign.setStatus(CampaignStatus.DELETED);
+        campaignRepository.save(campaign);
+    }
 
-        campaignRepository.deleteById(id);
+    @Override
+    public Campaign moderateCampaign(Long id, boolean approve) {
+        Campaign campaign = campaignRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (campaign.getStatus() != CampaignStatus.WAITING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only WAITING campaign can be moderated");
+        }
+        campaign.setStatus(approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED);
+        return campaignRepository.save(campaign);
+    }
+
+    @Override
+    public Campaign adminUpdateCampaign(Long id, String title, LocalDate deadline, BigDecimal targetAmount) {
+        Campaign campaign = campaignRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (title != null && !title.isBlank()) {
+            campaign.setTitle(title);
+        }
+        if (deadline != null) {
+            if (!deadline.isAfter(LocalDate.now())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deadline must be in the future");
+            }
+            campaign.setDeadline(deadline);
+        }
+        if (targetAmount != null) {
+            if (targetAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Target amount must be positive");
+            }
+            campaign.setTargetAmount(targetAmount);
+            if (campaign.getTotalRaised() != null
+                    && campaign.getTotalRaised().compareTo(campaign.getTargetAmount()) >= 0
+                    && campaign.getStatus() == CampaignStatus.OPEN) {
+                campaign.setStatus(CampaignStatus.CLOSED);
+            }
+        }
+        return campaignRepository.save(campaign);
+    }
+
+    @Override
+    public Campaign recordSuccessfulDonation(Long id, BigDecimal amount) {
+        Campaign campaign = campaignRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (campaign.getStatus() != CampaignStatus.OPEN) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign is not open for donations");
+        }
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Donation amount must be positive");
+        }
+        BigDecimal current = campaign.getTotalRaised() == null ? BigDecimal.ZERO : campaign.getTotalRaised();
+        campaign.setTotalRaised(current.add(amount));
+        if (campaign.getTargetAmount() != null && campaign.getTotalRaised().compareTo(campaign.getTargetAmount()) >= 0) {
+            campaign.setStatus(CampaignStatus.CLOSED);
+        }
+        return campaignRepository.save(campaign);
+    }
+
+    private void validateActorPermission(Campaign campaign, String actorId, boolean isAdmin) {
+        if (isAdmin) {
+            return;
+        }
+        if (actorId == null || actorId.isBlank()) {
+            return;
+        }
+        if (campaign.getCreatorId() == null || !campaign.getCreatorId().equals(actorId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to modify this campaign");
+        }
     }
 }
 
