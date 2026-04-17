@@ -2,11 +2,14 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
+import id.ac.ui.cs.advprog.donatjs.model.AppUser;
+import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
 import id.ac.ui.cs.advprog.donatjs.service.DonationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,11 +23,15 @@ public class DonationController {
 
     @PostMapping
     public ResponseEntity<DonationResponse> createDonation(
-            @Valid @RequestBody CreateDonationRequest request) {
+            @Valid @RequestBody CreateDonationRequest request,
+            Authentication auth) {
+
+        AppUser user = (AppUser) auth.getPrincipal();
+        request.setUserId(user.getId().toString());
 
         DonationResponse response = donationService.createDonation(request);
 
-        HttpStatus status = response.getStatus() == id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus.REJECTED
+        HttpStatus status = response.getStatus() == DonationStatus.REJECTED
                 ? HttpStatus.UNPROCESSABLE_ENTITY
                 : HttpStatus.CREATED;
 
@@ -59,11 +66,17 @@ public class DonationController {
             @PathVariable Long id,
             @RequestParam String userId,
             @RequestParam String notes) {
-
         return ResponseEntity.ok(donationService.updateDonationNotes(id, userId, notes));
     }
+
     @GetMapping("/user/{userId}/rejected-count")
     public ResponseEntity<Long> getRejectedDonationCount(@PathVariable String userId) {
         return ResponseEntity.ok(donationService.countRejectedDonationsByUser(userId));
+    }
+
+    @PostMapping("/campaign/{campaignId}/refund")
+    public ResponseEntity<Void> processCampaignRefund(@PathVariable Long campaignId) {
+        donationService.processRefundForCampaign(campaignId);
+        return ResponseEntity.ok().build();
     }
 }
