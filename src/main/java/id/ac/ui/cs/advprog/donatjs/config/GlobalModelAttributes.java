@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.donatjs.config;
 
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -9,6 +10,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 
 @ControllerAdvice
 public class GlobalModelAttributes {
+
+    private final CurrentUserService currentUserService;
+
+    public GlobalModelAttributes(CurrentUserService currentUserService) {
+        this.currentUserService = currentUserService;
+    }
 
     @ModelAttribute
     public void addAuthAttributes(Authentication authentication, Model model) {
@@ -24,6 +31,7 @@ public class GlobalModelAttributes {
                 if (name == null) name = oauth.getAttribute("email");
             }
             model.addAttribute("currentUserName", name != null ? name : "User");
+            model.addAttribute("currentUserId", currentUserService.getCurrentUserId(authentication));
         }
     }
 }
