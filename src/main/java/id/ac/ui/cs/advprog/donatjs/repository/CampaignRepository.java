@@ -16,6 +16,8 @@ public interface CampaignRepository {
 
     List<Campaign> findByStatus(CampaignStatus status);
 
+    List<Campaign> findByCreatorId(String creatorId);
+
     void deleteById(Long id);
 }
 

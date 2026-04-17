@@ -27,12 +27,20 @@ public class SimpleCampaignService implements CampaignService {
         if (campaign.getTotalRaised() == null) {
             campaign.setTotalRaised(java.math.BigDecimal.ZERO);
         }
+        if (campaign.getStatus() == null || campaign.getStatus() == id.ac.ui.cs.advprog.donatjs.model.CampaignStatus.WAITING) {
+            campaign.setStatus(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus.OPEN);
+        }
         return campaignRepository.save(campaign);
     }
 
     @Override
     public List<Campaign> findOpenCampaigns() {
         return campaignRepository.findByStatus(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus.OPEN);
+    }
+
+    @Override
+    public List<Campaign> findByCreatorId(String creatorId) {
+        return campaignRepository.findByCreatorId(creatorId);
     }
 
     @Override

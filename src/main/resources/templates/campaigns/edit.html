@@ -1,28 +1,52 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title th:text="'Edit Description - ' + ${campaign.title}">Edit Campaign Description</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="'DonatJS | Edit – ' + ${campaign.title}">Edit Campaign</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        .form-page { padding: var(--spacing-2xl) 80px; background: var(--bg-light); min-height: 70vh; display: flex; justify-content: center; align-items: flex-start; }
+        .form-card { background: var(--white); border: 1px solid var(--soft-gray); border-radius: var(--radius-lg); padding: var(--spacing-2xl); width: 100%; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .form-card h1 { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .form-card .subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: var(--spacing-xl); }
+        .form-group { margin-bottom: var(--spacing-md); }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--soft-gray); border-radius: var(--radius-md); font-family: 'Montserrat', sans-serif; font-size: 15px; color: var(--text-primary); box-sizing: border-box; min-height: 140px; resize: vertical; }
+        .form-group textarea:focus { outline: none; border-color: var(--kelly-green); }
+        .field-error { color: var(--danger); font-size: 13px; margin-top: 4px; display: block; }
+        .form-actions { display: flex; gap: var(--spacing-md); margin-top: var(--spacing-xl); }
+        .btn-secondary { height: 44px; padding: 0 24px; border: 1px solid var(--soft-gray); border-radius: var(--radius-md); background: var(--white); font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: border-color 0.2s; }
+        .btn-secondary:hover { border-color: var(--text-secondary); }
+    </style>
 </head>
 <body>
-<h1 th:text="'Edit Description for ' + ${campaign.title}">Edit Description</h1>
 
-<form th:action="@{|/campaigns/${campaign.id}/edit|}" th:object="${req}" method="post">
-    <div>
-        <label for="description">Description</label>
-        <textarea id="description" th:field="*{description}"></textarea>
-        <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="form-page">
+    <div class="form-card">
+        <h1>Edit Description</h1>
+        <p class="subtitle" th:text="${campaign.title}">Campaign Title</p>
+
+        <form th:action="@{|/campaigns/${campaign.id}/edit|}" th:object="${req}" method="post">
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" th:field="*{description}" placeholder="Update the campaign description..."></textarea>
+                <span class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-cta" style="height:44px; font-size:15px; padding:0 32px;">Save Changes</button>
+                <a th:href="@{|/campaigns/${campaign.id}|}">
+                    <button type="button" class="btn-secondary">Cancel</button>
+                </a>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div>
-        <button type="submit">Save</button>
-    </div>
-</form>
-
-<p>
-    <a th:href="@{|/campaigns/${campaign.id}|}">Back to Campaign</a>
-</p>
+<div th:replace="~{fragments/footer :: footer}"></div>
 
 </body>
 </html>
-
