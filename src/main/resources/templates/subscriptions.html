@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | My Subscriptions</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        .subs-page { max-width: 1080px; margin: 32px auto; padding: 0 24px; }
+        .subs-page h1 { font-size: 28px; font-weight: 700; margin: 0 0 8px; }
+        .subs-page .muted { color: var(--text-secondary); margin: 0 0 24px; }
+        .subs-table { width: 100%; border-collapse: separate; border-spacing: 0;
+                      background: #fff; border-radius: 12px; overflow: hidden;
+                      box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .subs-table th, .subs-table td { padding: 14px 18px; text-align: left;
+                                          border-bottom: 1px solid #eee; font-size: 14px; }
+        .subs-table th { background: #fafafa; font-weight: 600; color: #444; }
+        .subs-table tr:last-child td { border-bottom: none; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 999px;
+                 font-size: 12px; font-weight: 600; }
+        .badge.ACTIVE { background: #e6f7ed; color: #0f7b3a; }
+        .badge.CANCELLED { background: #fde7e7; color: #b02121; }
+        .badge.PAUSED { background: #fff4d6; color: #8a6000; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px;
+                  border: 1px solid transparent; cursor: pointer; background: #fff; }
+        .btn-sm.primary { background: var(--accent, #2d6cdf); color: #fff; border-color: var(--accent, #2d6cdf); }
+        .btn-sm.danger  { background: #fff; color: #b02121; border-color: #f0c2c2; }
+        .btn-sm.neutral { background: #fff; color: #333; border-color: #ddd; }
+        .subs-empty { text-align: center; padding: 64px 24px; color: #666; }
+        .subs-empty h2 { margin: 12px 0 4px; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+                 padding: 12px 20px; border-radius: 8px; color: #fff; opacity: 0;
+                 pointer-events: none; transition: opacity 0.2s; }
+        .toast.show { opacity: 1; }
+        .toast.success { background: #0f7b3a; }
+        .toast.error   { background: #b02121; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="subs-page">
+    <h1>My Subscriptions</h1>
+    <p class="muted">
+        Recurring donations are automatically debited from your wallet on each cycle.
+        Change the cadence, pause, or cancel at any time.
+    </p>
+
+    <div th:if="${#lists.isEmpty(subscriptions)}" class="subs-empty">
+        <h2>No subscriptions yet</h2>
+        <p>Pick a campaign and start a daily, weekly, or monthly donation.</p>
+        <a href="/campaigns" class="btn-sm primary">Browse Campaigns</a>
+    </div>
+
+    <table th:unless="${#lists.isEmpty(subscriptions)}" class="subs-table">
+        <thead>
+            <tr>
+                <th>Campaign</th>
+                <th>Amount (Rp)</th>
+                <th>Cadence</th>
+                <th>Status</th>
+                <th>Next billing</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="s : ${subscriptions}" th:data-id="${s.id}">
+                <td>
+                    <a th:href="@{'/campaigns/' + ${s.campaignId}}" th:text="${s.campaignTitle}"></a>
+                </td>
+                <td>
+                    <span th:text="${#numbers.formatInteger(s.amount, 1, 'POINT')}"></span>
+                </td>
+                <td th:text="${s.interval}"></td>
+                <td>
+                    <span th:classappend="${s.status}" class="badge" th:text="${s.status}"></span>
+                    <div th:if="${s.lastFailureMessage != null}"
+                         style="color:#b02121; font-size:12px; margin-top:4px;"
+                         th:text="${s.lastFailureMessage}"></div>
+                </td>
+                <td th:text="${s.status.name() == 'CANCELLED' ? '—' : #temporals.format(s.nextBillingAt, 'dd MMM yyyy HH:mm')}"></td>
+                <td>
+                    <div class="actions" th:if="${s.status.name() != 'CANCELLED'}">
+                        <button class="btn-sm neutral" th:onclick="|changeInterval(${s.id}, 'DAILY')|">Daily</button>
+                        <button class="btn-sm neutral" th:onclick="|changeInterval(${s.id}, 'WEEKLY')|">Weekly</button>
+                        <button class="btn-sm neutral" th:onclick="|changeInterval(${s.id}, 'MONTHLY')|">Monthly</button>
+                        <button th:if="${s.status.name() == 'PAUSED'}"
+                                class="btn-sm primary"
+                                th:onclick="|resumeSubscription(${s.id})|">Resume</button>
+                        <button class="btn-sm danger"
+                                th:onclick="|cancelSubscription(${s.id})|">Cancel</button>
+                    </div>
+                    <span th:if="${s.status.name() == 'CANCELLED'}" class="muted">—</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script th:inline="javascript">
+    function showToast(message, type) {
+        var toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function () { toast.className = 'toast'; }, 3000);
+    }
+
+    function handle(response) {
+        if (response.ok) { location.reload(); return; }
+        return response.json().then(function (json) {
+            showToast(json.error || json.message || 'Request failed', 'error');
+        }).catch(function () { showToast('Request failed', 'error'); });
+    }
+
+    function changeInterval(id, interval) {
+        fetch('/api/subscriptions/' + id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ interval: interval })
+        }).then(handle);
+    }
+
+    function cancelSubscription(id) {
+        if (!confirm('Cancel this subscription? It will stop future billings immediately.')) return;
+        fetch('/api/subscriptions/' + id + '/cancel', { method: 'POST' }).then(handle);
+    }
+
+    function resumeSubscription(id) {
+        fetch('/api/subscriptions/' + id + '/resume', { method: 'POST' }).then(handle);
+    }
+</script>
+</body>
+</html>

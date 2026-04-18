@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.WalletService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,16 +20,17 @@ import java.util.Locale;
 public class WalletController {
 
     private final WalletService walletService;
-    // Hardcoded until auth is wired up
-    private static final String CURRENT_USER_ID = "user-demo-001";
+    private final CurrentUserService currentUserService;
 
-    public WalletController(WalletService walletService) {
+    public WalletController(WalletService walletService, CurrentUserService currentUserService) {
         this.walletService = walletService;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping
     public String getWalletDashboard(Model model) {
-        Wallet wallet = walletService.getWalletByUserId(CURRENT_USER_ID);
+        String userId = currentUserService.requireCurrentUserId();
+        Wallet wallet = walletService.getWalletByUserId(userId);
         model.addAttribute("wallet", wallet);
         model.addAttribute("transactions", walletService.getTransactionHistory(wallet.getId()));
         return "wallet";
@@ -39,14 +41,13 @@ public class WalletController {
             @RequestParam("amount") double amount,
             @RequestParam(value = "description", defaultValue = "") String description,
             RedirectAttributes redirectAttributes) {
+        String userId = currentUserService.requireCurrentUserId();
         try {
-            walletService.withdraw(CURRENT_USER_ID, amount, description);
+            walletService.withdraw(userId, amount, description);
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
             redirectAttributes.addFlashAttribute("successMessage",
                     "Withdrawal of Rp " + nf.format((long) amount) + " was successful.");
-        } catch (InsufficientBalanceException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (InsufficientBalanceException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/wallet";

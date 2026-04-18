@@ -6,7 +6,6 @@ import id.ac.ui.cs.advprog.donatjs.model.TransactionType;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
 import id.ac.ui.cs.advprog.donatjs.repository.TransactionRepository;
 import id.ac.ui.cs.advprog.donatjs.repository.WalletRepository;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,38 +28,24 @@ public class WalletServiceImpl implements WalletService {
         this.transactionRepository = transactionRepository;
     }
 
-    // This creates our dummy integration slice data on startup
-    @PostConstruct
-    public void initDummyData() {
-        if (walletRepository.findByUserId("user-demo-001").isEmpty()) {
-            Wallet wallet = Wallet.builder()
-                    .userId("user-demo-001")
-                    .balance(1500000.0)
-                    .build();
-            walletRepository.save(wallet);
-
-            transactionRepository.save(Transaction.builder()
-                    .wallet(wallet)
-                    .amount(2000000.0)
-                    .type(TransactionType.DEPOSIT)
-                    .description("Initial Top Up")
-                    .timestamp(LocalDateTime.now().minusDays(2))
-                    .build());
-
-            transactionRepository.save(Transaction.builder()
-                    .wallet(wallet)
-                    .amount(500000.0)
-                    .type(TransactionType.DONATION)
-                    .description("Donation to: Help Build a School")
-                    .timestamp(LocalDateTime.now().minusDays(1))
-                    .build());
-        }
-    }
-
     @Override
+    @Transactional
     public Wallet getWalletByUserId(String userId) {
-        return walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+        return walletRepository.findByUserId(userId).orElseGet(() -> {
+            log.info("Auto-provisioning wallet for userId={}", userId);
+            Wallet wallet = walletRepository.save(Wallet.builder()
+                    .userId(userId)
+                    .balance(0.0)
+                    .build());
+            transactionRepository.save(Transaction.builder()
+                    .wallet(wallet)
+                    .amount(0.0)
+                    .type(TransactionType.DEPOSIT)
+                    .description("Wallet created")
+                    .timestamp(LocalDateTime.now())
+                    .build());
+            return wallet;
+        });
     }
 
     @Override

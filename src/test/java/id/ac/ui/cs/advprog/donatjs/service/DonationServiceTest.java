@@ -40,6 +40,9 @@ class DonationServiceTest {
     private CampaignService campaignService;
 
     @Mock
+    private WalletService walletService;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
@@ -51,6 +54,7 @@ class DonationServiceTest {
     void setUp() {
         Campaign openCampaign = mock(Campaign.class);
         lenient().when(openCampaign.getStatus()).thenReturn(CampaignStatus.OPEN);
+        lenient().when(openCampaign.getTitle()).thenReturn("Mocked Campaign");
         lenient().when(campaignService.findById(anyLong())).thenReturn(Optional.of(openCampaign));
     }
 
