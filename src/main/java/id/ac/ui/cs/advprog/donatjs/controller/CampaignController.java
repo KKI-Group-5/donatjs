@@ -160,4 +160,3 @@ public class CampaignController {
         return ResponseEntity.ok(campaignService.recordSuccessfulDonation(id, request.getAmount()));
     }
 }
-

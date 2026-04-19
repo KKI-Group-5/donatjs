@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.donatjs.dto.SaveCampaignRequest;
 import id.ac.ui.cs.advprog.donatjs.model.SavedCampaign;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.SavedCampaignService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -41,6 +42,13 @@ class SavedCampaignControllerTest {
 
     private static final String USER_ID = "user-001";
     private static final String CAMPAIGN_ID = "camp-001";
+
+    @BeforeEach
+    void stubCurrentUser() {
+        when(currentUserService.requireCurrentUserId())
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.UNAUTHORIZED));
+    }
 
     @Test
     void saveCampaign_returnsCreated() throws Exception {
