@@ -6,6 +6,7 @@ import id.ac.ui.cs.advprog.donatjs.dto.CampaignModerationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationUpdateRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateCampaignDescriptionRequest;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -30,9 +31,21 @@ import java.time.LocalDate;
 public class CampaignController {
 
     private final CampaignService campaignService;
+    private final CurrentUserService currentUserService;
 
-    public CampaignController(CampaignService campaignService) {
+    public CampaignController(CampaignService campaignService,
+                              CurrentUserService currentUserService) {
         this.campaignService = campaignService;
+        this.currentUserService = currentUserService;
+    }
+
+    private String resolveUserId(String headerUserId) {
+        if (headerUserId != null && !headerUserId.isBlank()) {
+            return headerUserId;
+        }
+        return currentUserService.findCurrentUser()
+                .map(u -> u.getId().toString())
+                .orElse(null);
     }
 
     @GetMapping
@@ -59,7 +72,7 @@ public class CampaignController {
             return "campaigns/create";
         }
 
-        campaignService.createCampaign(campaign, userId);
+        campaignService.createCampaign(campaign, resolveUserId(userId));
         return "redirect:/campaigns";
     }
 
@@ -99,7 +112,7 @@ public class CampaignController {
             return "campaigns/edit";
         }
 
-        Campaign updated = campaignService.updateDescription(id, userId, isAdmin, req.getDescription());
+        Campaign updated = campaignService.updateDescription(id, resolveUserId(userId), isAdmin, req.getDescription());
         return "redirect:/campaigns/" + updated.getId();
     }
 
@@ -109,7 +122,7 @@ public class CampaignController {
                                  @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
                                  RedirectAttributes redirectAttributes) {
         try {
-            campaignService.deleteIfNoDonations(id, userId, isAdmin);
+            campaignService.deleteIfNoDonations(id, resolveUserId(userId), isAdmin);
             return "redirect:/campaigns";
         } catch (ResponseStatusException ex) {
             if (ex.getStatusCode() == HttpStatus.BAD_REQUEST) {
