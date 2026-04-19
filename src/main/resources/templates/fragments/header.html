@@ -14,7 +14,8 @@
 
     <div style="display:flex; align-items:center; gap:16px;">
         <a href="/campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Campaigns</a>
-        <a th:if="${isLoggedIn}" th:href="@{/saved-campaigns/{userId}(userId=${currentUserId})}" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Saved Campaigns</a>
+        <a th:if="${isLoggedIn}" href="/saved-campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Saved</a>
+        <a th:if="${isLoggedIn}" href="/subscriptions" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Subscriptions</a>
         <a th:if="${isLoggedIn}" href="/wallet" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">My Wallet</a>
 
         <div class="auth-buttons" th:if="${!isLoggedIn}">

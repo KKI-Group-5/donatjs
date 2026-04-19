@@ -176,12 +176,20 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void getWalletByUserId_notFound_throwsRuntimeException() {
+    void getWalletByUserId_notFound_autoProvisionsFreshWallet() {
+        // When no wallet exists for a user we now auto-create one with zero
+        // balance rather than throwing. This keeps wallet-related features
+        // friction-free for newly registered users.
         when(walletRepository.findByUserId("no-one")).thenReturn(Optional.empty());
+        Wallet provisioned = Wallet.builder().id("w-new").userId("no-one").balance(0.0).build();
+        when(walletRepository.save(org.mockito.ArgumentMatchers.any(Wallet.class)))
+                .thenReturn(provisioned);
 
-        assertThatThrownBy(() -> walletService.getWalletByUserId("no-one"))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("not found");
+        Wallet result = walletService.getWalletByUserId("no-one");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getUserId()).isEqualTo("no-one");
+        assertThat(result.getBalance()).isZero();
     }
 
     // ── getTransactionHistory() ──────────────────────────────────────────────

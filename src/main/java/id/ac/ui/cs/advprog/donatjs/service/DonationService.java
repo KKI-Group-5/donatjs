@@ -1,8 +1,9 @@
- package id.ac.ui.cs.advprog.donatjs.service;
+package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
 import id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent;
+import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Donation;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationType;
@@ -30,6 +31,7 @@ public class DonationService {
 
     private final DonationRepository donationRepository;
     private final CampaignService campaignService;
+    private final WalletService walletService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -56,6 +58,19 @@ public class DonationService {
                 ? DonationStatus.REJECTED
                 : DonationStatus.SUCCESS;
 
+        // Wallet-funded donations debit the wallet before we commit the donation.
+        // A failed debit (insufficient funds) surfaces as InsufficientBalanceException
+        // to the caller; the donation itself is never persisted in that case.
+        if (status == DonationStatus.SUCCESS && request.getPaymentMethod() == PaymentMethod.WALLET) {
+            try {
+                walletService.deductForDonation(request.getUserId(), totalAmount, campaign.getTitle());
+            } catch (InsufficientBalanceException ex) {
+                log.warn("Wallet donation rejected — insufficient balance. userId={}, campaignId={}, required={}",
+                        request.getUserId(), request.getCampaignId(), totalAmount);
+                throw ex;
+            }
+        }
+
         Donation donation = Donation.builder()
                 .userId(request.getUserId())
                 .campaignId(request.getCampaignId())
@@ -71,14 +86,20 @@ public class DonationService {
         Donation saved = donationRepository.save(donation);
 
         if (status == DonationStatus.REJECTED) {
-            log.warn("Donation REJECTED — exceeds Rp 5,000,000 limit. " +
+            log.warn("Donation REJECTED - exceeds Rp 5,000,000 limit. " +
                             "donationId={}, userId={}, campaignId={}, amount={}",
                     saved.getId(), saved.getUserId(), saved.getCampaignId(), saved.getAmount());
             eventPublisher.publishEvent(new RejectedDonationEvent(this, DonationResponse.from(saved)));
         } else {
             log.info("Donation SUCCESS. donationId={}, userId={}, campaignId={}, amount={}",
                     saved.getId(), saved.getUserId(), saved.getCampaignId(), saved.getAmount());
-            campaignService.recordSuccessfulDonation(saved.getCampaignId(), BigDecimal.valueOf(saved.getAmount()));
+            try {
+                campaignService.recordSuccessfulDonation(
+                        saved.getCampaignId(), BigDecimal.valueOf(saved.getAmount()));
+            } catch (RuntimeException ex) {
+                log.error("Failed to update campaign total for donationId={}: {}",
+                        saved.getId(), ex.getMessage());
+            }
         }
 
         return DonationResponse.from(saved);

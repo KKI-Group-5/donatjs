@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse;
 import id.ac.ui.cs.advprog.donatjs.model.SavedCampaign;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.SavedCampaignService;
 import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
 import org.springframework.stereotype.Controller;
@@ -16,10 +17,14 @@ public class PageController {
 
     private final SavedCampaignService savedCampaignService;
     private final SubscriptionService subscriptionService;
+    private final CurrentUserService currentUserService;
 
-    public PageController(SavedCampaignService savedCampaignService, SubscriptionService subscriptionService) {
+    public PageController(SavedCampaignService savedCampaignService,
+                          SubscriptionService subscriptionService,
+                          CurrentUserService currentUserService) {
         this.savedCampaignService = savedCampaignService;
         this.subscriptionService = subscriptionService;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping("/saved-campaigns/{userId}")
@@ -30,11 +35,23 @@ public class PageController {
         return "saved-campaigns";
     }
 
+    @GetMapping("/saved-campaigns")
+    public String mySavedCampaignsPage(Model model) {
+        String userId = currentUserService.requireCurrentUserId();
+        return savedCampaignsPage(userId, model);
+    }
+
     @GetMapping("/subscriptions/{userId}")
     public String subscriptionsPage(@PathVariable String userId, Model model) {
         List<SubscriptionResponse> subscriptions = subscriptionService.getSubscriptionsByUser(userId);
         model.addAttribute("subscriptions", subscriptions);
         model.addAttribute("userId", userId);
         return "subscriptions";
+    }
+
+    @GetMapping("/subscriptions")
+    public String mySubscriptionsPage(Model model) {
+        String userId = currentUserService.requireCurrentUserId();
+        return subscriptionsPage(userId, model);
     }
 }

@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,14 @@ import org.springframework.web.server.ResponseStatusException;
 public class CurrentUserService {
 
     private final UserRepository userRepository;
+
+    public AppUser requireCurrentUser() {
+        return getCurrentUser(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    public String requireCurrentUserId() {
+        return requireCurrentUser().getId().toString();
+    }
 
     public AppUser getCurrentUser(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null

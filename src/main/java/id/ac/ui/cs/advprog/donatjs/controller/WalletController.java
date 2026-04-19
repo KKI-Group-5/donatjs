@@ -49,9 +49,7 @@ public class WalletController {
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
             redirectAttributes.addFlashAttribute("successMessage",
                     "Withdrawal of Rp " + nf.format((long) amount) + " was successful.");
-        } catch (InsufficientBalanceException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (InsufficientBalanceException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/wallet";
