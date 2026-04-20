@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -30,13 +29,13 @@ class WalletServiceImplTest {
     @Mock
     private TransactionRepository transactionRepository;
 
-    @InjectMocks
     private WalletServiceImpl walletService;
 
     private Wallet wallet;
 
     @BeforeEach
     void setUp() {
+        walletService = new WalletServiceImpl(walletRepository, transactionRepository, 0.0);
         wallet = Wallet.builder()
                 .id("wallet-1")
                 .userId("user-001")

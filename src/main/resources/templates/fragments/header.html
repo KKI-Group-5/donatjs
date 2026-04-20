@@ -18,7 +18,7 @@
         <a th:if="${isLoggedIn}" href="/subscriptions" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Subscriptions</a>
         <a th:if="${isLoggedIn}" href="/wallet" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">My Wallet</a>
 
-        <div class="auth-buttons" th:if="${!isLoggedIn}">
+        <div class="auth-buttons" th:if="${isLoggedIn != true}">
             <a href="/login" class="btn-login">Log In</a>
             <a href="/login" class="btn-signup">Sign Up</a>
         </div>

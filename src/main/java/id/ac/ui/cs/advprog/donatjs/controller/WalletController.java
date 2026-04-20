@@ -4,6 +4,10 @@ import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.WalletService;
+import id.ac.ui.cs.advprog.donatjs.util.IdrMoney;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,6 +23,8 @@ import java.util.Locale;
 @Controller
 @RequestMapping("/wallet")
 public class WalletController {
+
+    private static final Logger log = LoggerFactory.getLogger(WalletController.class);
 
     private final WalletService walletService;
     private final CurrentUserService currentUserService;
@@ -47,10 +53,15 @@ public class WalletController {
             String currentUserId = currentUserService.getCurrentUserId(authentication);
             walletService.withdraw(currentUserId, amount, description);
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
+            long rupiah = IdrMoney.wholeRupiah(amount);
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Withdrawal of Rp " + nf.format((long) amount) + " was successful.");
+                    "Withdrawal of Rp " + nf.format(rupiah) + " was successful.");
         } catch (InsufficientBalanceException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (DataAccessException e) {
+            log.warn("Withdraw failed (database)", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Could not complete withdrawal due to a database error. Please try again.");
         }
         return "redirect:/wallet";
     }

@@ -6,8 +6,10 @@ import id.ac.ui.cs.advprog.donatjs.model.TransactionType;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
 import id.ac.ui.cs.advprog.donatjs.repository.TransactionRepository;
 import id.ac.ui.cs.advprog.donatjs.repository.WalletRepository;
+import id.ac.ui.cs.advprog.donatjs.util.IdrMoney;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.text.NumberFormat;
@@ -22,26 +24,31 @@ public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final double walletInitialBalance;
 
-    public WalletServiceImpl(WalletRepository walletRepository, TransactionRepository transactionRepository) {
+    public WalletServiceImpl(WalletRepository walletRepository,
+                             TransactionRepository transactionRepository,
+                             @Value("${donatjs.wallet.initial-balance:0}") double walletInitialBalance) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.walletInitialBalance = walletInitialBalance;
     }
 
     @Override
     @Transactional
     public Wallet getWalletByUserId(String userId) {
         return walletRepository.findByUserId(userId).orElseGet(() -> {
-            log.info("Auto-provisioning wallet for userId={}", userId);
+            long opening = Math.max(0L, IdrMoney.wholeRupiah(walletInitialBalance));
+            log.info("Auto-provisioning wallet for userId={} with opening balance Rp {}", userId, opening);
             Wallet wallet = walletRepository.save(Wallet.builder()
                     .userId(userId)
-                    .balance(0.0)
+                    .balance(IdrMoney.asDouble(opening))
                     .build());
             transactionRepository.save(Transaction.builder()
                     .wallet(wallet)
-                    .amount(0.0)
+                    .amount(IdrMoney.asDouble(opening))
                     .type(TransactionType.DEPOSIT)
-                    .description("Wallet created")
+                    .description(opening > 0 ? "Opening balance (configured)" : "Wallet created")
                     .timestamp(LocalDateTime.now())
                     .build());
             return wallet;
@@ -56,19 +63,22 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public Wallet deductBalance(String userId, double amount, String description) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Deduction amount must be positive.");
+        long amt = IdrMoney.wholeRupiah(amount);
+        if (amt <= 0) {
+            throw new IllegalArgumentException("Deduction amount must be a positive whole rupiah amount.");
         }
         Wallet wallet = getWalletByUserId(userId);
-        if (wallet.getBalance() < amount) {
+        long bal = IdrMoney.wholeRupiah(wallet.getBalance());
+        if (bal < amt) {
             throw new IllegalStateException("Insufficient balance");
         }
-        wallet.setBalance(wallet.getBalance() - amount);
+        long newBal = bal - amt;
+        wallet.setBalance(IdrMoney.asDouble(newBal));
         walletRepository.save(wallet);
 
         transactionRepository.save(Transaction.builder()
                 .wallet(wallet)
-                .amount(amount)
+                .amount(IdrMoney.asDouble(amt))
                 .type(TransactionType.SUBSCRIPTION)
                 .description(description != null && !description.isBlank() ? description : "Subscription debit")
                 .timestamp(LocalDateTime.now())
@@ -80,58 +90,64 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public Wallet withdraw(String userId, double amount, String description) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Withdrawal amount must be positive.");
+        long amt = IdrMoney.wholeRupiah(amount);
+        if (amt <= 0) {
+            throw new IllegalArgumentException("Withdrawal amount must be a positive whole rupiah amount.");
         }
         Wallet wallet = getWalletByUserId(userId);
-        if (wallet.getBalance() < amount) {
+        long bal = IdrMoney.wholeRupiah(wallet.getBalance());
+        if (bal < amt) {
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
             throw new InsufficientBalanceException(
-                "Insufficient balance. Available: Rp " + nf.format((long) wallet.getBalance().doubleValue())
-                + ", Requested: Rp " + nf.format((long) amount));
+                "Insufficient balance. Available: Rp " + nf.format(bal)
+                + ", Requested: Rp " + nf.format(amt));
         }
-        wallet.setBalance(wallet.getBalance() - amount);
+        long newBal = bal - amt;
+        wallet.setBalance(IdrMoney.asDouble(newBal));
         walletRepository.save(wallet);
 
         transactionRepository.save(Transaction.builder()
                 .wallet(wallet)
-                .amount(amount)
+                .amount(IdrMoney.asDouble(amt))
                 .type(TransactionType.WITHDRAWAL)
                 .description(description != null && !description.isBlank() ? description : "Withdrawal")
                 .timestamp(LocalDateTime.now())
                 .build());
 
         log.info("[NOTIFICATION] Withdrawal of Rp {} processed for user {}. New balance: Rp {}",
-                amount, userId, wallet.getBalance());
+                amt, userId, newBal);
         return wallet;
     }
 
     @Override
     @Transactional
     public Wallet deductForDonation(String userId, double amount, String campaignName) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Donation amount must be positive.");
+        long amt = IdrMoney.wholeRupiah(amount);
+        if (amt <= 0) {
+            throw new IllegalArgumentException("Donation amount must be a positive whole rupiah amount.");
         }
         Wallet wallet = getWalletByUserId(userId);
-        if (wallet.getBalance() < amount) {
+        long bal = IdrMoney.wholeRupiah(wallet.getBalance());
+        if (bal < amt) {
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
             throw new InsufficientBalanceException(
-                "Insufficient balance for donation. Available: Rp " + nf.format((long) wallet.getBalance().doubleValue())
-                + ", Required: Rp " + nf.format((long) amount));
+                "Insufficient balance for donation. Available: Rp " + nf.format(bal)
+                + ", Required: Rp " + nf.format(amt));
         }
-        wallet.setBalance(wallet.getBalance() - amount);
+        long newBal = bal - amt;
+        wallet.setBalance(IdrMoney.asDouble(newBal));
         walletRepository.save(wallet);
 
         transactionRepository.save(Transaction.builder()
                 .wallet(wallet)
-                .amount(amount)
+                .amount(IdrMoney.asDouble(amt))
                 .type(TransactionType.DONATION)
                 .description("Donation to: " + campaignName)
                 .timestamp(LocalDateTime.now())
                 .build());
 
         log.info("[NOTIFICATION] Donation of Rp {} deducted for user {} to campaign '{}'. New balance: Rp {}",
-                amount, userId, campaignName, wallet.getBalance());
+                amt, userId, campaignName, newBal);
         return wallet;
     }
 }
