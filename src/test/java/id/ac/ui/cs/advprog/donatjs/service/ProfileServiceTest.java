@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateProfileRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.UserProfileDTO;
+import id.ac.ui.cs.advprog.donatjs.dto.UserActivityUpdate;
 import id.ac.ui.cs.advprog.donatjs.event.ProfileUpdatedEvent;
 import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
@@ -36,6 +37,12 @@ public class ProfileServiceTest {
     private SavedCampaignService savedCampaignService;
 
     @Mock
+    private SubscriptionService subscriptionService;
+
+    @Mock
+    private UserActivityService userActivityService;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
@@ -61,6 +68,8 @@ public class ProfileServiceTest {
         when(campaignService.findByCreatorId(anyString())).thenReturn(new ArrayList<>());
         when(donationService.getDonationsByUser(anyString())).thenReturn(new ArrayList<>());
         when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(new ArrayList<>());
+        when(subscriptionService.getSubscriptionsByUser(anyString())).thenReturn(new ArrayList<>());
+        when(userActivityService.getUserActivities(anyString())).thenReturn(new ArrayList<>());
 
         // Act
         UserProfileDTO result = profileService.getUserProfile(testEmail);
@@ -70,8 +79,12 @@ public class ProfileServiceTest {
         assertEquals("Aldebaran", result.getName());
         assertNotNull(result.getCreatedCampaigns());
         assertNotNull(result.getDonations());
+        assertNotNull(result.getSubscriptions());
+        assertNotNull(result.getActivityUpdates());
         verify(campaignService).findByCreatorId(testId.toString());
         verify(donationService).getDonationsByUser(testId.toString());
+        verify(subscriptionService).getSubscriptionsByUser(testId.toString());
+        verify(userActivityService).getUserActivities(testId.toString());
     }
 
     @Test
@@ -88,6 +101,8 @@ public class ProfileServiceTest {
         when(campaignService.findByCreatorId(anyString())).thenReturn(new ArrayList<>());
         when(donationService.getDonationsByUser(anyString())).thenReturn(new ArrayList<>());
         when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(new ArrayList<>());
+        when(subscriptionService.getSubscriptionsByUser(anyString())).thenReturn(new ArrayList<>());
+        when(userActivityService.getUserActivities(anyString())).thenReturn(new ArrayList<>());
 
         // Act
         UserProfileDTO result = profileService.updateUserProfile(testEmail, request);
@@ -105,5 +120,29 @@ public class ProfileServiceTest {
         assertThrows(RuntimeException.class, () -> {
             profileService.getUserProfile("wrong@email.com");
         });
+    }
+
+    @Test
+    void testGetUserProfile_IncludesTrackedActivities() {
+        UserActivityUpdate update = new UserActivityUpdate(
+                testId.toString(),
+                "42",
+                UserActivityUpdate.ActivityType.DONATION,
+                UserActivityUpdate.ActivityStatus.REJECTED,
+                "Exceeded limit"
+        );
+
+        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(sampleUser));
+        when(campaignService.findByCreatorId(anyString())).thenReturn(new ArrayList<>());
+        when(donationService.getDonationsByUser(anyString())).thenReturn(new ArrayList<>());
+        when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(new ArrayList<>());
+        when(subscriptionService.getSubscriptionsByUser(anyString())).thenReturn(new ArrayList<>());
+        when(userActivityService.getUserActivities(anyString())).thenReturn(java.util.List.of(update));
+
+        UserProfileDTO result = profileService.getUserProfile(testEmail);
+
+        assertEquals(1, result.getActivityUpdates().size());
+        assertEquals(UserActivityUpdate.ActivityStatus.REJECTED,
+                result.getActivityUpdates().get(0).getStatus());
     }
 }

@@ -2,11 +2,10 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateProfileRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.UserProfileDTO;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.ProfileService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,23 +14,16 @@ import org.springframework.web.bind.annotation.*;
 public class ProfileController {
 
     private final ProfileService profileService;
+    private final CurrentUserService currentUserService;
 
-    public ProfileController(ProfileService profileService) {
+    public ProfileController(ProfileService profileService, CurrentUserService currentUserService) {
         this.profileService = profileService;
-    }
-
-    private String getEmailFromPrincipal(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof OAuth2User) {
-            return ((OAuth2User) authentication.getPrincipal()).getAttribute("email");
-        } else if (authentication.getPrincipal() instanceof UserDetails) {
-            return ((UserDetails) authentication.getPrincipal()).getUsername();
-        }
-        return authentication.getName();
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping("/me")
     public UserProfileDTO getMyProfile(Authentication authentication) {
-        String email = getEmailFromPrincipal(authentication);
+        String email = currentUserService.getCurrentUserEmail(authentication);
         return profileService.getUserProfile(email);
     }
 
@@ -39,8 +31,7 @@ public class ProfileController {
     public UserProfileDTO updateMyProfile(
             Authentication authentication,
             @RequestBody UpdateProfileRequest request) {
-
-        String email = getEmailFromPrincipal(authentication);
+        String email = currentUserService.getCurrentUserEmail(authentication);
         return profileService.updateUserProfile(email, request);
     }
 }

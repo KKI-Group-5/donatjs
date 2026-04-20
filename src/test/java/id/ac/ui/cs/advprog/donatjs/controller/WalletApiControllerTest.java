@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.config.SecurityConfig;
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.WalletService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,9 @@ class WalletApiControllerTest {
 
     @MockitoBean
     private WalletService walletService;
+
+    @MockitoBean
+    private CurrentUserService currentUserService;
 
     // ── POST /api/internal/wallet/deduct ──────────────────────────────────────
 

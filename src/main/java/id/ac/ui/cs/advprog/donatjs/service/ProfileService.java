@@ -15,6 +15,8 @@ public class ProfileService {
     private final CampaignService campaignService;
     private final DonationService donationService;
     private final SavedCampaignService savedCampaignService;
+    private final SubscriptionService subscriptionService;
+    private final UserActivityService userActivityService;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public UserProfileDTO getUserProfile(String email) {
@@ -27,6 +29,8 @@ public class ProfileService {
         dto.setCreatedCampaigns(campaignService.findByCreatorId(userId));
         dto.setDonations(donationService.getDonationsByUser(userId));
         dto.setSavedCampaigns(savedCampaignService.getSavedCampaigns(userId));
+        dto.setSubscriptions(subscriptionService.getSubscriptionsByUser(userId));
+        dto.setActivityUpdates(userActivityService.getUserActivities(userId));
         
         return dto;
     }
