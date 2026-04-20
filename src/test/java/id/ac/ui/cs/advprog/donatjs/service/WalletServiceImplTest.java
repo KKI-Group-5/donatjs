@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -30,13 +29,13 @@ class WalletServiceImplTest {
     @Mock
     private TransactionRepository transactionRepository;
 
-    @InjectMocks
     private WalletServiceImpl walletService;
 
     private Wallet wallet;
 
     @BeforeEach
     void setUp() {
+        walletService = new WalletServiceImpl(walletRepository, transactionRepository, 0.0);
         wallet = Wallet.builder()
                 .id("wallet-1")
                 .userId("user-001")
@@ -176,12 +175,20 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void getWalletByUserId_notFound_throwsRuntimeException() {
+    void getWalletByUserId_notFound_autoProvisionsFreshWallet() {
+        // When no wallet exists for a user we now auto-create one with zero
+        // balance rather than throwing. This keeps wallet-related features
+        // friction-free for newly registered users.
         when(walletRepository.findByUserId("no-one")).thenReturn(Optional.empty());
+        Wallet provisioned = Wallet.builder().id("w-new").userId("no-one").balance(0.0).build();
+        when(walletRepository.save(org.mockito.ArgumentMatchers.any(Wallet.class)))
+                .thenReturn(provisioned);
 
-        assertThatThrownBy(() -> walletService.getWalletByUserId("no-one"))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("not found");
+        Wallet result = walletService.getWalletByUserId("no-one");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getUserId()).isEqualTo("no-one");
+        assertThat(result.getBalance()).isZero();
     }
 
     // ── getTransactionHistory() ──────────────────────────────────────────────

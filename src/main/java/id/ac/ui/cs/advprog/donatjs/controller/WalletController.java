@@ -2,7 +2,13 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.WalletService;
+import id.ac.ui.cs.advprog.donatjs.util.IdrMoney;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,17 +24,20 @@ import java.util.Locale;
 @RequestMapping("/wallet")
 public class WalletController {
 
-    private final WalletService walletService;
-    // Hardcoded until auth is wired up
-    private static final String CURRENT_USER_ID = "user-demo-001";
+    private static final Logger log = LoggerFactory.getLogger(WalletController.class);
 
-    public WalletController(WalletService walletService) {
+    private final WalletService walletService;
+    private final CurrentUserService currentUserService;
+
+    public WalletController(WalletService walletService, CurrentUserService currentUserService) {
         this.walletService = walletService;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping
-    public String getWalletDashboard(Model model) {
-        Wallet wallet = walletService.getWalletByUserId(CURRENT_USER_ID);
+    public String getWalletDashboard(Model model, Authentication authentication) {
+        String currentUserId = currentUserService.getCurrentUserId(authentication);
+        Wallet wallet = walletService.getWalletByUserId(currentUserId);
         model.addAttribute("wallet", wallet);
         model.addAttribute("transactions", walletService.getTransactionHistory(wallet.getId()));
         return "wallet";
@@ -38,16 +47,21 @@ public class WalletController {
     public String withdraw(
             @RequestParam("amount") double amount,
             @RequestParam(value = "description", defaultValue = "") String description,
+            Authentication authentication,
             RedirectAttributes redirectAttributes) {
         try {
-            walletService.withdraw(CURRENT_USER_ID, amount, description);
+            String currentUserId = currentUserService.getCurrentUserId(authentication);
+            walletService.withdraw(currentUserId, amount, description);
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
+            long rupiah = IdrMoney.wholeRupiah(amount);
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Withdrawal of Rp " + nf.format((long) amount) + " was successful.");
-        } catch (InsufficientBalanceException e) {
+                    "Withdrawal of Rp " + nf.format(rupiah) + " was successful.");
+        } catch (InsufficientBalanceException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (DataAccessException e) {
+            log.warn("Withdraw failed (database)", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Could not complete withdrawal due to a database error. Please try again.");
         }
         return "redirect:/wallet";
     }

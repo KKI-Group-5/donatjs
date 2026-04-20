@@ -1,5 +1,57 @@
 README for DonatJS.
 
+## Getting Started (Local Development)
+
+Zero-setup. Clone, then:
+
+```bash
+./gradlew bootRun          # macOS / Linux
+./gradlew.bat bootRun      # Windows (PowerShell or cmd)
+```
+
+Open <http://localhost:8080> and log in with either demo account:
+
+| Role  | Email                | Password     |
+|-------|----------------------|--------------|
+| User  | `test@donatjs.com`   | `password123`|
+| Admin | `admin@donatjs.com`  | `admin123`   |
+
+What happens under the hood:
+
+- The `local` Spring profile is active by default — uses an in-memory H2 database
+  (PostgreSQL compatibility mode) that is seeded with a test user, admin user,
+  wallets with starter balances, demo campaigns, a donation, a saved campaign
+  and a sample subscription every time you boot.
+- H2 console is live at <http://localhost:8080/h2-console>
+  (JDBC URL `jdbc:h2:mem:donatjsdb`, user `sa`, empty password).
+- OAuth (Google) is wired up with placeholder credentials — the form login
+  works out of the box; to exercise Google sign-in, set `GOOGLE_CLIENT_ID`
+  and `GOOGLE_CLIENT_SECRET` in a `.env` file.
+
+### Running against Supabase / production DB
+
+When `SPRING_PROFILES_ACTIVE=supabase` is set (or the deployment target sets
+it for you), the app reads `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` from the
+environment and applies pgBouncer-safe Hikari tuning plus HTTPS-only cookies.
+See `src/main/resources/application-supabase.properties`.
+
+### Running the test suite
+
+```bash
+./gradlew test
+./gradlew jacocoTestReport     # coverage in build/reports/jacoco/test/html/
+```
+
+### Project layout
+
+| Module                         | Highlights                                                                     |
+|--------------------------------|---------------------------------------------------------------------------------|
+| Authentication & User Profile  | `AuthController`, `ProfileService`, `CurrentUserService`, `ProfileUpdatedEvent` |
+| Application Wallet             | `WalletServiceImpl`, `WalletApiController` (internal API for donations)         |
+| Donation Management            | `DonationService` (5 M limit → REJECTED/SUCCESS, wallet debit, campaign update) |
+| Campaign Management            | `SimpleCampaignService` (moderation, admin edit, total-raised aggregate)        |
+| Saved Campaign & Subscription  | `SavedCampaignServiceImpl`, `SubscriptionService` (daily/weekly/monthly)        |
+
 ## Work Plan & Milestones
 This project is divided into 5 main milestones. The tasks below detail the development plan for each module. Please add your specific module tasks and assign a Person In Charge (PIC) for each item.
 

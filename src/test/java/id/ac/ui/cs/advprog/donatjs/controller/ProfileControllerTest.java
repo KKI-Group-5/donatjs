@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.dto.UserProfileDTO;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.ProfileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +33,14 @@ public class ProfileControllerTest {
     @MockitoBean
     private ProfileService profileService;
 
+    @MockitoBean
+    private CurrentUserService currentUserService;
+
     @Test
     void testGetMyProfile_Success() throws Exception {
         UserProfileDTO mockDto = new UserProfileDTO("Aldebaran", "aldebaran@ui.ac.id", "Bio", null);
 
+        when(currentUserService.getCurrentUserEmail(any())).thenReturn("aldebaran@ui.ac.id");
         when(profileService.getUserProfile(anyString())).thenReturn(mockDto);
 
         mockMvc.perform(get("/api/profile/me")
@@ -53,6 +58,7 @@ public class ProfileControllerTest {
     void testUpdateMyProfile_Success() throws Exception {
         UserProfileDTO updatedDto = new UserProfileDTO("New Name", "aldebaran@ui.ac.id", "New Bio", null);
 
+        when(currentUserService.getCurrentUserEmail(any())).thenReturn("aldebaran@ui.ac.id");
         when(profileService.updateUserProfile(anyString(), any())).thenReturn(updatedDto);
 
         // Change 'post' to 'put' to match your @PutMapping annotation

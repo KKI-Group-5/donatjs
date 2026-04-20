@@ -51,7 +51,7 @@ class SimpleCampaignServiceTest {
         Campaign result = service.createCampaign(campaign);
 
         assertThat(result.getTotalRaised()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(result.getStatus()).isEqualTo(CampaignStatus.WAITING);
+        assertThat(result.getStatus()).isEqualTo(CampaignStatus.OPEN);
     }
 
     @Test

@@ -2,7 +2,9 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.WalletService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -25,21 +27,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithMockUser
 class WalletControllerTest {
 
+    private static final String TEST_USER_ID = "user-demo-001";
+
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
     private WalletService walletService;
 
-    private Wallet demoWallet() {
-        return Wallet.builder().id("w-demo").userId("user-demo-001").balance(1500000.0).build();
+    @MockitoBean
+    private CurrentUserService currentUserService;
+
+    @BeforeEach
+    void stubCurrentUser() {
+        when(currentUserService.getCurrentUserId(any())).thenReturn(TEST_USER_ID);
+        when(currentUserService.requireCurrentUserId()).thenReturn(TEST_USER_ID);
     }
 
-    // ── GET /wallet ───────────────────────────────────────────────────────────
+    private Wallet demoWallet() {
+        return Wallet.builder().id("w-demo").userId(TEST_USER_ID).balance(1500000.0).build();
+    }
 
     @Test
     void getDashboard_returnsWalletView() throws Exception {
-        when(walletService.getWalletByUserId("user-demo-001")).thenReturn(demoWallet());
+        when(walletService.getWalletByUserId(TEST_USER_ID)).thenReturn(demoWallet());
         when(walletService.getTransactionHistory("w-demo")).thenReturn(List.of());
 
         mockMvc.perform(get("/wallet"))
@@ -49,11 +60,9 @@ class WalletControllerTest {
                 .andExpect(model().attributeExists("transactions"));
     }
 
-    // ── POST /wallet/withdraw ─────────────────────────────────────────────────
-
     @Test
     void withdraw_success_redirectsWithSuccessMessage() throws Exception {
-        when(walletService.withdraw("user-demo-001", 200000.0, "ATM"))
+        when(walletService.withdraw(TEST_USER_ID, 200000.0, "ATM"))
                 .thenReturn(demoWallet());
 
         mockMvc.perform(post("/wallet/withdraw")
@@ -66,7 +75,7 @@ class WalletControllerTest {
 
     @Test
     void withdraw_insufficientBalance_redirectsWithErrorMessage() throws Exception {
-        when(walletService.withdraw(eq("user-demo-001"), anyDouble(), anyString()))
+        when(walletService.withdraw(eq(TEST_USER_ID), anyDouble(), anyString()))
                 .thenThrow(new InsufficientBalanceException("Insufficient balance"));
 
         mockMvc.perform(post("/wallet/withdraw")
@@ -79,7 +88,7 @@ class WalletControllerTest {
 
     @Test
     void withdraw_illegalAmount_redirectsWithErrorMessage() throws Exception {
-        when(walletService.withdraw(eq("user-demo-001"), anyDouble(), anyString()))
+        when(walletService.withdraw(eq(TEST_USER_ID), anyDouble(), anyString()))
                 .thenThrow(new IllegalArgumentException("Withdrawal amount must be positive."));
 
         mockMvc.perform(post("/wallet/withdraw")
