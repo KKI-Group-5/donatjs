@@ -63,4 +63,21 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Email is already registered"));
     }
+    @Test
+    void register_InvalidRequest_Returns400() throws Exception {
+        String invalidJson = """
+                {
+                    "email": "invalid-email",
+                    "password": "pwd",
+                    "name": "No Bio",
+                    "bio": "", 
+                    "dateOfBirth": "2000-01-01"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidJson))
+                .andExpect(status().isBadRequest());
+    }
 }

@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.donatjs.service;
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import org.junit.jupiter.api.BeforeEach;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
-import id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.model.Donation;
@@ -22,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;

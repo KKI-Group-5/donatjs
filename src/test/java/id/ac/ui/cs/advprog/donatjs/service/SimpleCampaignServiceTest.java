@@ -13,16 +13,23 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
+import org.springframework.context.ApplicationEventPublisher;
 
 class SimpleCampaignServiceTest {
 
     private InMemoryCampaignRepository repository;
+    private ApplicationEventPublisher eventPublisher;
     private SimpleCampaignService service;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryCampaignRepository();
-        service = new SimpleCampaignService(repository);
+        eventPublisher = mock(ApplicationEventPublisher.class);
+        service = new SimpleCampaignService(repository, eventPublisher);
     }
 
     @Test
@@ -116,6 +123,21 @@ class SimpleCampaignServiceTest {
         Campaign moderated = service.moderateCampaign(saved.getId(), true);
 
         assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.OPEN);
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void moderateCampaign_reject_publishesEvent() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Waiting campaign");
+        campaign.setDescription("To review");
+        campaign.setStatus(CampaignStatus.WAITING);
+        Campaign saved = repository.save(campaign);
+
+        Campaign moderated = service.moderateCampaign(saved.getId(), false);
+
+        assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
+        verify(eventPublisher).publishEvent(any(id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent.class));
     }
 
     @Test

@@ -1,4 +1,4 @@
- package id.ac.ui.cs.advprog.donatjs.service;
+package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
@@ -18,6 +18,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -77,8 +78,10 @@ public class DonationService {
         } else {
             log.info("Donation SUCCESS. donationId={}, userId={}, campaignId={}, amount={}",
                     saved.getId(), saved.getUserId(), saved.getCampaignId(), saved.getAmount());
-            // TODO: campaignService.updateTotalRaised(saved.getCampaignId(), saved.getAmount())
-            //       — wire up once Adit adds updateTotalRaised(Long, Long) to CampaignService
+            
+            // Milestone 3 Integration: Update campaign total raised
+            campaignService.recordSuccessfulDonation(saved.getCampaignId(), 
+                    BigDecimal.valueOf(saved.getAmount()));
         }
 
         return DonationResponse.from(saved);

@@ -17,9 +17,11 @@ import java.util.Optional;
 public class SimpleCampaignService implements CampaignService {
 
     private final CampaignRepository campaignRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    public SimpleCampaignService(CampaignRepository campaignRepository) {
+    public SimpleCampaignService(CampaignRepository campaignRepository, org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.campaignRepository = campaignRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -102,7 +104,11 @@ public class SimpleCampaignService implements CampaignService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only WAITING campaign can be moderated");
         }
         campaign.setStatus(approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED);
-        return campaignRepository.save(campaign);
+        Campaign saved = campaignRepository.save(campaign);
+        if (!approve) {
+            eventPublisher.publishEvent(new id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent(this, saved));
+        }
+        return saved;
     }
 
     @Override

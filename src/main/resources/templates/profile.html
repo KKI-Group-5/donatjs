@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>My Profile | DonatJS</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="profile-page">
+    <div id="suspendedBanner" class="suspended-banner"></div>
+    
+    <div class="profile-header">
+        <h1>My Profile</h1>
+    </div>
+
+    <div class="profile-container">
+        <!-- Identity Settings -->
+        <div class="glass-card">
+            <h3 style="margin-bottom: 20px; font-size: 20px; color: var(--text-primary);">Personal Information</h3>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="inputEmail">Email Address</label>
+                    <input type="email" id="inputEmail" class="form-control" disabled />
+                </div>
+                <div class="form-group">
+                    <label for="inputName">Full Name</label>
+                    <input type="text" id="inputName" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label for="inputDob">Date of Birth</label>
+                    <input type="date" id="inputDob" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label for="inputBio">Biography</label>
+                    <textarea id="inputBio" class="form-control" placeholder="Tell the community about yourself..."></textarea>
+                </div>
+                <button type="submit" id="btnSave" class="btn-primary">Save Changes</button>
+            </form>
+        </div>
+
+        <!-- Aggregated Activities -->
+        <div class="profile-activities">
+            <div class="activity-section">
+                <h3>My Campaigns</h3>
+                <div id="campaignsList" class="activity-list">
+                    <p style="color: var(--text-light); font-size: 14px;">Loading campaigns...</p>
+                </div>
+            </div>
+
+            <div class="activity-section">
+                <h3>My Donations</h3>
+                <div id="donationsList" class="activity-list">
+                    <p style="color: var(--text-light); font-size: 14px;">Loading donations...</p>
+                </div>
+            </div>
+
+            <div class="activity-section">
+                <h3>My Subscriptions</h3>
+                <div id="subscriptionsList" class="activity-list">
+                    <p style="color: var(--text-light); font-size: 14px;">Loading subscriptions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    function showToast(message, type) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function() {
+            toast.className = 'toast';
+        }, 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch Profile Data
+        fetch('/api/profile/me')
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                     window.location.href = '/login';
+                     throw new Error('Not authenticated');
+                }
+                if (!res.ok) throw new Error('Failed to load profile');
+                return res.json();
+            })
+            .then(data => {
+                 // Populate form
+                 document.getElementById('inputName').value = data.name || '';
+                 document.getElementById('inputEmail').value = data.email || '';
+                 document.getElementById('inputBio').value = data.bio || '';
+                 document.getElementById('inputDob').value = data.dateOfBirth || '';
+
+                 // Suspended check
+                 if (data.suspended) {
+                     const banner = document.getElementById('suspendedBanner');
+                     banner.style.display = 'block';
+                     banner.textContent = 'Account Suspended: You have ' + (data.rejectedDonationCount + data.rejectedCampaignCount) + ' violations (Campaign/Donation rejections). Contact admin.';
+                     document.getElementById('btnSave').disabled = true;
+                     document.getElementById('btnSave').style.background = 'var(--text-light)';
+                 }
+
+                 // Render Campaigns
+                 const campList = document.getElementById('campaignsList');
+                 if (data.createdCampaigns && data.createdCampaigns.length > 0) {
+                     campList.innerHTML = data.createdCampaigns.map(c => `
+                         <div class="activity-item">
+                             <div class="activity-details">
+                                 <span class="activity-title">${c.title}</span>
+                                 <span class="activity-meta">Status: ${c.status} | Target: Rp ${c.targetAmount}</span>
+                             </div>
+                             <div class="activity-amount">Raised: Rp ${c.totalRaised}</div>
+                         </div>
+                     `).join('');
+                 } else {
+                     campList.innerHTML = '<p style="color: var(--text-light); font-size: 14px;">No campaigns created yet.</p>';
+                 }
+
+                 // Render Donations
+                 const donList = document.getElementById('donationsList');
+                 if (data.donations && data.donations.length > 0) {
+                     donList.innerHTML = data.donations.map(d => `
+                         <div class="activity-item">
+                             <div class="activity-details">
+                                 <span class="activity-title">Donation to Campaign #${d.campaignId}</span>
+                                 <span class="activity-meta">Type: ${d.type} | Status: ${d.status}</span>
+                             </div>
+                             <div class="activity-amount">Rp ${d.amount}</div>
+                         </div>
+                     `).join('');
+                 } else {
+                     donList.innerHTML = '<p style="color: var(--text-light); font-size: 14px;">No donations made yet.</p>';
+                 }
+
+                 // Render Subscriptions
+                 const subList = document.getElementById('subscriptionsList');
+                 if (data.subscriptions && data.subscriptions.length > 0) {
+                     subList.innerHTML = data.subscriptions.map(s => `
+                         <div class="activity-item">
+                             <div class="activity-details">
+                                 <span class="activity-title">Subscription id: ${s.id}</span>
+                                 <span class="activity-meta">Active: ${s.activeStatus}</span>
+                             </div>
+                             <div class="activity-amount">---</div>
+                         </div>
+                     `).join('');
+                 } else {
+                     subList.innerHTML = '<p style="color: var(--text-light); font-size: 14px;">No active subscriptions.</p>';
+                 }
+            })
+            .catch(err => {
+                 if(err.message !== 'Not authenticated') {
+                     showToast(err.message, 'error');
+                 }
+            });
+
+        // Handle Profile Update Submission
+        document.getElementById('profileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSave');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            const payload = {};
+            const nameVal = document.getElementById('inputName').value;
+            const bioVal = document.getElementById('inputBio').value;
+            const dobVal = document.getElementById('inputDob').value;
+
+            if (nameVal) payload.name = nameVal;
+            if (bioVal) payload.bio = bioVal;
+            if (dobVal) payload.dateOfBirth = dobVal;
+
+            fetch('/api/profile/update', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) {
+                    showToast('Profile updated successfully!', 'success');
+                    // Update header if name changed
+                    if (payload.name) {
+                        const headerLinks = document.querySelectorAll('.profile-link');
+                        headerLinks.forEach(link => link.textContent = payload.name);
+                    }
+                } else {
+                    return res.json().then(errData => { 
+                        throw new Error(errData.message || 'Error updating profile'); 
+                    }).catch(() => {
+                        throw new Error('Server error updating profile');
+                    });
+                }
+            })
+            .catch(err => {
+                showToast(err.message, 'error');
+            })
+            .finally(() => {
+                btn.textContent = 'Save Changes';
+                btn.disabled = false;
+            });
+        });
+    });
+</script>
+</body>
+</html>

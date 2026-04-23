@@ -1,8 +1,10 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
+import id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent;
 import id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent;
 import id.ac.ui.cs.advprog.donatjs.model.AppUser;
+import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,6 +76,38 @@ public class UserActivityListenerTest {
         // Assert
         assertEquals(3, sampleUser.getRejectedDonationCount());
         assertTrue(sampleUser.isSuspended());
+        verify(userRepository).save(sampleUser);
+    }
+
+    @Test
+    void testHandleRejectedCampaign_IncrementsCount() {
+        Campaign campaign = new Campaign();
+        campaign.setCreatorId(userId.toString());
+        RejectedCampaignEvent event = new RejectedCampaignEvent(this, campaign);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
+
+        userActivityListener.handleRejectedCampaign(event);
+
+        assertEquals(1, sampleUser.getRejectedCampaignCount());
+        assertFalse(sampleUser.isSuspended());
+        verify(userRepository).save(sampleUser);
+    }
+
+    @Test
+    void testHandleRejectedCampaign_SuspendsUserAtThreshold() {
+        sampleUser.setRejectedCampaignCount(1);
+        sampleUser.setRejectedDonationCount(1); // Total 2
+        Campaign campaign = new Campaign();
+        campaign.setCreatorId(userId.toString());
+        RejectedCampaignEvent event = new RejectedCampaignEvent(this, campaign);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
+
+        userActivityListener.handleRejectedCampaign(event);
+
+        assertEquals(2, sampleUser.getRejectedCampaignCount());
+        assertTrue(sampleUser.isSuspended()); // 2 + 1 = 3 -> Should suspend
         verify(userRepository).save(sampleUser);
     }
 }

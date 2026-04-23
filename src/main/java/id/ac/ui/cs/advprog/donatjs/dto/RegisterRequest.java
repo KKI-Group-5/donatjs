@@ -1,12 +1,27 @@
 package id.ac.ui.cs.advprog.donatjs.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import java.time.LocalDate;
 
 public class RegisterRequest {
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String email;
+
+    @NotBlank(message = "Password is required")
     private String password;
+
+    @NotBlank(message = "Name is required")
     private String name;
+
+    @NotBlank(message = "Bio is required")
     private String bio;
+
+    @NotNull(message = "Date of birth is required")
+    @Past(message = "Date of birth must be in the past")
     private LocalDate dateOfBirth;
 
     // Getters and Setters

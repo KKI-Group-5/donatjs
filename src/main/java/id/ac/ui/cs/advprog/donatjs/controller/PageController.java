@@ -25,4 +25,9 @@ public class PageController {
         model.addAttribute("userId", userId);
         return "saved-campaigns";
     }
+
+    @GetMapping("/profile")
+    public String profilePage() {
+        return "profile";
+    }
 }

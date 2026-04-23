@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
 import id.ac.ui.cs.advprog.donatjs.service.WalletService;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,6 +31,9 @@ class WalletControllerTest {
 
     @MockitoBean
     private WalletService walletService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     private Wallet demoWallet() {
         return Wallet.builder().id("w-demo").userId("user-demo-001").balance(1500000.0).build();

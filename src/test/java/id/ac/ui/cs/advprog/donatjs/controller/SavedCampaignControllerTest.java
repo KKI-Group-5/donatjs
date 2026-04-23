@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.donatjs.dto.SaveCampaignRequest;
 import id.ac.ui.cs.advprog.donatjs.model.SavedCampaign;
 import id.ac.ui.cs.advprog.donatjs.service.SavedCampaignService;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -31,6 +32,9 @@ class SavedCampaignControllerTest {
 
     @MockitoBean
     private SavedCampaignService savedCampaignService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @Autowired
     private ObjectMapper objectMapper;

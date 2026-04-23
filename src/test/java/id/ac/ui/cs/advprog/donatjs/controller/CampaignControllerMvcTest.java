@@ -4,10 +4,10 @@ import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
 import id.ac.ui.cs.advprog.donatjs.config.SecurityConfig;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
@@ -39,6 +39,9 @@ class CampaignControllerMvcTest {
 
     @MockitoBean
     private CampaignService campaignService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @Test
     @WithMockUser
@@ -93,4 +96,3 @@ class CampaignControllerMvcTest {
                 .andExpect(status().isNotFound());
     }
 }
-
