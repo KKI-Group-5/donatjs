@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SavedCampaignController.class)
 @WithMockUser
+@SuppressWarnings("null")
 class SavedCampaignControllerTest {
 
     @Autowired

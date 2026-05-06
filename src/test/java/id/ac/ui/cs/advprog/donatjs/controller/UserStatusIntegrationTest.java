@@ -24,7 +24,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-public class UserStatusIntegrationTest {
+public @SuppressWarnings("null")
+class UserStatusIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

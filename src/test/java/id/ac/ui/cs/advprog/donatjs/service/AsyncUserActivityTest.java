@@ -21,7 +21,8 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-public class AsyncUserActivityTest {
+public @SuppressWarnings("null")
+class AsyncUserActivityTest {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;

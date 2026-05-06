@@ -27,28 +27,34 @@ public class GlobalModelAttributes {
 
     @ModelAttribute
     public void addAuthAttributes(Authentication authentication, Model model) {
-        boolean loggedIn = authentication != null && authentication.isAuthenticated()
-                && !(authentication.getPrincipal() instanceof String);
-        model.addAttribute("isLoggedIn", loggedIn);
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() instanceof String) {
+            model.addAttribute("isLoggedIn", false);
+            model.addAttribute("currentUserName", "User");
+            model.addAttribute("currentUserId", null);
+            return;
+        }
+
+        model.addAttribute("isLoggedIn", true);
 
         String name = null;
         String currentUserId = null;
 
-        if (loggedIn) {
-            if (authentication.getPrincipal() instanceof UserDetails ud) {
-                name = ud.getUsername();
-            } else if (authentication.getPrincipal() instanceof OAuth2User oauth) {
-                name = oauth.getAttribute("name");
-                if (name == null) name = oauth.getAttribute("email");
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails ud) {
+            name = ud.getUsername();
+        } else if (principal instanceof OAuth2User oauth) {
+            name = oauth.getAttribute("name");
+            if (name == null) {
+                name = oauth.getAttribute("email");
             }
+        }
 
-            CurrentUserService currentUserService = currentUserServiceProvider.getIfAvailable();
-            if (currentUserService != null) {
-                try {
-                    currentUserId = currentUserService.getCurrentUserId(authentication);
-                } catch (Exception ignored) {
-                    currentUserId = null;
-                }
+        CurrentUserService currentUserService = currentUserServiceProvider.getIfAvailable();
+        if (currentUserService != null) {
+            try {
+                currentUserId = currentUserService.getCurrentUserId(authentication);
+            } catch (Exception ignored) {
+                currentUserId = null;
             }
         }
 

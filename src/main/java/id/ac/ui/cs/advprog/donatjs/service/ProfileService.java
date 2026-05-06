@@ -35,6 +35,7 @@ public class ProfileService {
         return dto;
     }
 
+    @SuppressWarnings("null")
     public UserProfileDTO updateUserProfile(String email, UpdateProfileRequest request) {
         AppUser user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));

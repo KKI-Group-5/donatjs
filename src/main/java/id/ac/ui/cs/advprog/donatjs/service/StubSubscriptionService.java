@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.donatjs.service;
 import id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,19 +14,34 @@ import java.util.List;
 public class StubSubscriptionService implements SubscriptionService {
 
     @Override
+    public id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse createSubscription(id.ac.ui.cs.advprog.donatjs.dto.CreateSubscriptionRequest request) {
+        return null;
+    }
+
+    @Override
+    public id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse cancelSubscription(Long subscriptionId, String userId) {
+        return null;
+    }
+
+    @Override
+    public id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse updateFrequency(Long subscriptionId, String userId, id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionFrequency frequency) {
+        return null;
+    }
+
+    @Override
     public List<SubscriptionResponse> getSubscriptionsByUser(String userId) {
         // Returns hardcoded data for demonstration if the demo user is used
         List<SubscriptionResponse> subs = new ArrayList<>();
         
         if ("user-demo-001".equals(userId)) {
             subs.add(SubscriptionResponse.builder()
-                    .subscriptionId("SUB-001")
+                    .id(1L)
+                    .userId(userId)
                     .campaignId(1L)
-                    .campaignTitle("Help Build a School")
                     .amount(50000L)
-                    .frequency("MONTHLY")
-                    .status("ACTIVE")
-                    .nextBillingDate(LocalDateTime.now().plusWeeks(2))
+                    .frequency(id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionFrequency.MONTHLY)
+                    .status(id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus.ACTIVE)
+                    .nextDebitDate(java.time.LocalDate.now().plusWeeks(2))
                     .build());
         }
         

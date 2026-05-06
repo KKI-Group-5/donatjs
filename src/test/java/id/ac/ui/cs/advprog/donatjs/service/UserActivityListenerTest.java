@@ -20,7 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserActivityListenerTest {
+public @SuppressWarnings("null")
+class UserActivityListenerTest {
 
     @Mock
     private UserRepository userRepository;

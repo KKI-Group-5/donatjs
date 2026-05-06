@@ -18,6 +18,7 @@ public class SavedCampaignServiceImpl implements SavedCampaignService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public SavedCampaign saveCampaign(String userId, String campaignId, String campaignTitle,
                                       String campaignOrganizer, String campaignImageUrl) {
         if (savedCampaignRepository.existsByUserIdAndCampaignId(userId, campaignId)) {
@@ -37,6 +38,7 @@ public class SavedCampaignServiceImpl implements SavedCampaignService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public void removeSavedCampaign(String userId, String campaignId) {
         SavedCampaign savedCampaign = savedCampaignRepository
                 .findByUserIdAndCampaignId(userId, campaignId)

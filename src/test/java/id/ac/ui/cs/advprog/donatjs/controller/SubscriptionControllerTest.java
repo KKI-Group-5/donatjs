@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SubscriptionController.class)
 @WithMockUser
+@SuppressWarnings("null")
 class SubscriptionControllerTest {
 
     @Autowired private MockMvc mockMvc;

@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,7 +13,8 @@ public class WebConfig implements WebMvcConfigurer {
     private final UserStatusInterceptor userStatusInterceptor;
 
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
+    @SuppressWarnings("null")
+    public void addInterceptors(@NonNull InterceptorRegistry registry) {
         // Apply status checks to all API endpoints
         registry.addInterceptor(userStatusInterceptor)
                 .addPathPatterns("/api/**");

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import org.springframework.context.ApplicationEventPublisher;
 
+@SuppressWarnings("null")
 class SimpleCampaignServiceTest {
 
     private InMemoryCampaignRepository repository;

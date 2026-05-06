@@ -22,6 +22,7 @@ public class UserActivityListener {
     @Async
     @EventListener
     @Transactional
+    @SuppressWarnings("null")
     public void handleRejectedDonation(RejectedDonationEvent event) {
         String userIdStr = event.getDonation().getUserId();
         log.info("Handling rejected donation for user: {}", userIdStr);
@@ -42,6 +43,7 @@ public class UserActivityListener {
     @Async
     @EventListener
     @Transactional
+    @SuppressWarnings("null")
     public void handleRejectedCampaign(RejectedCampaignEvent event) {
         String userIdStr = event.getCampaign().getCreatorId();
         if (userIdStr == null || userIdStr.isBlank()) return;

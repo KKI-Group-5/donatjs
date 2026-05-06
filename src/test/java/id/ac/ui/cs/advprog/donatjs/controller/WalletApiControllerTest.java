@@ -22,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(WalletApiController.class)
 @Import(SecurityConfig.class)
 @WithMockUser
+@SuppressWarnings("null")
 class WalletApiControllerTest {
 
     @Autowired

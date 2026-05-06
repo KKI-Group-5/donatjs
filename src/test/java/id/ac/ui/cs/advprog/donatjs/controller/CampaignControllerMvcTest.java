@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(CampaignController.class)
 @Import(SecurityConfig.class)
+@SuppressWarnings("null")
 class CampaignControllerMvcTest {
 
     @Autowired

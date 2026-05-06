@@ -3,19 +3,11 @@ package id.ac.ui.cs.advprog.donatjs.config;
 import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
 import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Collections;
-import java.util.Optional;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 public class LocalDataInitializerTest {
 
@@ -32,6 +24,7 @@ public class LocalDataInitializerTest {
     private LocalDataInitializer localDataInitializer;
 
     @BeforeEach
+    @SuppressWarnings("null")
     void setUp() {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(localDataInitializer, "testUserPassword", "password123");

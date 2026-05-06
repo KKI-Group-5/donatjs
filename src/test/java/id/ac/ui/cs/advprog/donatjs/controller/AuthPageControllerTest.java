@@ -13,7 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-public class AuthPageControllerTest {
+public @SuppressWarnings("null")
+class AuthPageControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
