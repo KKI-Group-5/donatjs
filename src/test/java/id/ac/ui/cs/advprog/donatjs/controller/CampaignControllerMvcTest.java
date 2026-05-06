@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,9 @@ class CampaignControllerMvcTest {
 
     @MockitoBean
     private CurrentUserService currentUserService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @Test
     @WithMockUser

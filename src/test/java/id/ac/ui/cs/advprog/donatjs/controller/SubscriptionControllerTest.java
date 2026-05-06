@@ -6,6 +6,7 @@ import id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse;
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateSubscriptionRequest;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionFrequency;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
 import jakarta.persistence.EntityNotFoundException;
@@ -35,6 +36,7 @@ class SubscriptionControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockitoBean private SubscriptionService subscriptionService;
     @MockitoBean private CurrentUserService currentUserService;
+    @MockitoBean private UserRepository userRepository;
     @Autowired private ObjectMapper objectMapper;
 
     private static final String USER_ID     = "user-001";
