@@ -45,9 +45,4 @@ class PageControllerTest {
         verify(model).addAttribute("userId", userId);
     }
 
-    @Test
-    void testProfilePage() {
-        String viewName = pageController.profilePage();
-        assertEquals("profile", viewName);
-    }
 }

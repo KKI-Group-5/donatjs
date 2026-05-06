@@ -3,17 +3,14 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
-import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.DonationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -24,28 +21,14 @@ import java.util.Map;
 public class DonationController {
 
     private final DonationService donationService;
-    private final UserRepository userRepository;
-
-    private String resolveUserId(Authentication auth) {
-        String email;
-        if (auth.getPrincipal() instanceof OAuth2User oauth) {
-            email = oauth.getAttribute("email");
-        } else if (auth.getPrincipal() instanceof UserDetails ud) {
-            email = ud.getUsername();
-        } else {
-            email = auth.getName();
-        }
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"))
-                .getId().toString();
-    }
+    private final CurrentUserService currentUserService;
 
     @PostMapping
     public ResponseEntity<DonationResponse> createDonation(
             @Valid @RequestBody CreateDonationRequest request,
             Authentication auth) {
 
-        request.setUserId(resolveUserId(auth));
+        request.setUserId(currentUserService.getCurrentUserId(auth));
 
         DonationResponse response = donationService.createDonation(request);
 

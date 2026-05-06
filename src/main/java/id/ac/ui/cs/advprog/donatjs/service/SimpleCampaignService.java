@@ -37,7 +37,11 @@ public class SimpleCampaignService implements CampaignService {
         if (campaign.getTotalRaised() == null) {
             campaign.setTotalRaised(BigDecimal.ZERO);
         }
-        campaign.setStatus(CampaignStatus.WAITING);
+        // Campaigns are published as OPEN immediately so that contributors can
+        // discover and donate to them right after creation. Moderation (approve
+        // / reject) still exists for admins via moderateCampaign() on any
+        // campaign that needs intervention.
+        campaign.setStatus(CampaignStatus.OPEN);
         campaign.setCreatorId(creatorId);
         return campaignRepository.save(campaign);
     }
@@ -100,8 +104,9 @@ public class SimpleCampaignService implements CampaignService {
     public Campaign moderateCampaign(Long id, boolean approve) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (campaign.getStatus() != CampaignStatus.WAITING) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only WAITING campaign can be moderated");
+        if (campaign.getStatus() != CampaignStatus.WAITING
+                && campaign.getStatus() != CampaignStatus.OPEN) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign is no longer moderatable");
         }
         campaign.setStatus(approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED);
         Campaign saved = campaignRepository.save(campaign);

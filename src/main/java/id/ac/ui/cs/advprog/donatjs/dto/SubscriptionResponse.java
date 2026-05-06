@@ -1,22 +1,39 @@
 package id.ac.ui.cs.advprog.donatjs.dto;
 
-import lombok.AllArgsConstructor;
+import id.ac.ui.cs.advprog.donatjs.model.Subscription;
+import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionFrequency;
+import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class SubscriptionResponse {
-    private String subscriptionId;
+
+    private Long id;
+    private String userId;
     private Long campaignId;
-    private String campaignTitle;
     private Long amount;
-    private String frequency; // e.g., DAILY, WEEKLY, MONTHLY
-    private String status;
-    private LocalDateTime nextBillingDate;
+    private SubscriptionFrequency frequency;
+    private SubscriptionStatus status;
+    private LocalDate nextDebitDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    public static SubscriptionResponse from(Subscription subscription) {
+        return SubscriptionResponse.builder()
+                .id(subscription.getId())
+                .userId(subscription.getUserId())
+                .campaignId(subscription.getCampaignId())
+                .amount(subscription.getAmount())
+                .frequency(subscription.getFrequency())
+                .status(subscription.getStatus())
+                .nextDebitDate(subscription.getNextDebitDate())
+                .createdAt(subscription.getCreatedAt())
+                .updatedAt(subscription.getUpdatedAt())
+                .build();
+    }
 }

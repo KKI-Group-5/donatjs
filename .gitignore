@@ -1,4 +1,5 @@
 HELP.md
+.commit-msg.tmp
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -40,6 +41,9 @@ out/
 ### Internal Documentation ###
 internal_documentation/
 .env
+.env.local
 
-### Local dev config (contains real credentials — never commit) ###
-src/main/resources/application-local.properties
+### macOS / JetBrains clutter ###
+.DS_Store
+**/.DS_Store
+pencil-new.pen

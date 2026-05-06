@@ -3,8 +3,8 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.config.SecurityConfig;
-import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +41,7 @@ class CampaignControllerMvcTest {
     private CampaignService campaignService;
 
     @MockitoBean
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @Test
     @WithMockUser
@@ -53,6 +53,23 @@ class CampaignControllerMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("campaigns/create"))
                 .andExpect(model().attributeHasFieldErrors("campaign", "title", "description"));
+    }
+
+    @Test
+    @WithMockUser
+    void postCreate_usesAuthenticatedUserId() throws Exception {
+        Mockito.when(currentUserService.getCurrentUserId(Mockito.any())).thenReturn("user-123");
+
+        mockMvc.perform(post("/campaigns/create")
+                        .with(csrf())
+                        .param("title", "Build Library")
+                        .param("description", "Support our village library")
+                        .param("deadline", LocalDate.now().plusDays(7).toString())
+                        .param("targetAmount", "100000"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/campaigns"));
+
+        Mockito.verify(campaignService).createCampaign(Mockito.any(Campaign.class), Mockito.eq("user-123"));
     }
 
     @Test
