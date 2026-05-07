@@ -16,7 +16,6 @@ import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 public class PageController {
@@ -81,7 +80,7 @@ public class PageController {
         List<AppUser> flaggedUsers = ((List<AppUser>) userRepository.findAll())
                 .stream()
                 .filter(u -> u.isFlaggedForReview() || u.isSuspended())
-                .collect(Collectors.toList());
+                .toList();
         model.addAttribute("flaggedUsers", flaggedUsers);
         return "admin-dashboard";
     }

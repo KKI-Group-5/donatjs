@@ -16,6 +16,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final String LOGIN_URL = "/login";
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -29,7 +31,7 @@ public class SecurityConfig {
                         // Static assets and public API endpoints
                         .requestMatchers("/", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/h2-console/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/auth/**", "/login", "/register").permitAll()
+                        .requestMatchers("/api/auth/**", LOGIN_URL, "/register").permitAll()
                         // Guests can browse campaigns (M2: allowed only GET for listing and detail)
                         .requestMatchers(HttpMethod.GET, "/campaigns", "/campaigns/").permitAll()
                         .requestMatchers(HttpMethod.GET, "/campaigns/{id:[0-9]+}").permitAll()
@@ -38,7 +40,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login")
+                        .loginPage(LOGIN_URL)
                         .permitAll()
                         .defaultSuccessUrl("/", false)
                 )

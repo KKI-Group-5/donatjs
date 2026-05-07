@@ -15,6 +15,9 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+
 @SpringBootTest
 @SuppressWarnings("null")
 public class EndToEndModerationTest {
@@ -53,11 +56,11 @@ public class EndToEndModerationTest {
             campaignService.moderateCampaign(c.getId(), false);
             
             // Sleep to avoid concurrent lost updates in async listener
-            Thread.sleep(50);
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(50));
         }
 
         // Wait a short moment for async event listener to finish
-        Thread.sleep(100);
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(100));
 
         // Fetch user from DB and verify
         AppUser updatedUser = userRepository.findById(testUser.getId()).orElseThrow();

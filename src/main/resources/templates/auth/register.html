@@ -4,106 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Sign Up | DonatJS</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}"/>
-    <style>
-        .auth-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: calc(100vh - 200px);
-            padding: var(--spacing-2xl) 24px;
-            background: var(--bg-light);
-        }
-        .auth-card {
-            background: var(--white);
-            padding: var(--spacing-2xl);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            width: 100%;
-            max-width: 500px;
-        }
-        .auth-header {
-            text-align: center;
-            margin-bottom: var(--spacing-xl);
-        }
-        .auth-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: var(--spacing-xs);
-        }
-        .auth-subtitle {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-md);
-        }
-        .form-group {
-            margin-bottom: var(--spacing-md);
-        }
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: var(--spacing-xs);
-        }
-        .form-input, .form-textarea {
-            width: 100%;
-            padding: 12px var(--spacing-md);
-            border: 1px solid var(--soft-gray);
-            border-radius: var(--radius-md);
-            font-family: 'Montserrat', sans-serif;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .form-textarea {
-            height: 80px;
-            resize: vertical;
-        }
-        .form-input:focus, .form-textarea:focus {
-            border-color: var(--kelly-green);
-        }
-        .btn-auth {
-            width: 100%;
-            height: 48px;
-            background: var(--kelly-green);
-            color: var(--white);
-            border: none;
-            border-radius: var(--radius-md);
-            font-family: 'Montserrat', sans-serif;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: var(--spacing-sm);
-        }
-        .btn-auth:hover {
-            background: var(--kelly-green-hover);
-        }
-        .auth-footer {
-            margin-top: var(--spacing-xl);
-            text-align: center;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        .auth-link {
-            color: var(--kelly-green);
-            font-weight: 600;
-        }
-        .status-message {
-            padding: var(--spacing-sm);
-            border-radius: var(--radius-md);
-            font-size: 13px;
-            margin-bottom: var(--spacing-lg);
-            text-align: center;
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/auth.css}"/>
 </head>
 <body>
 
@@ -120,28 +21,28 @@
 
         <form id="registerForm">
             <div class="form-group">
-                <label class="form-label">Full Name</label>
+                <label class="form-label" for="name">Full Name</label>
                 <input type="text" id="name" class="form-input" placeholder="John Doe" required/>
             </div>
             
             <div class="form-group">
-                <label class="form-label">Email Address</label>
+                <label class="form-label" for="email">Email Address</label>
                 <input type="email" id="email" class="form-input" placeholder="john@example.com" required/>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Password</label>
+                    <label class="form-label" for="password">Password</label>
                     <input type="password" id="password" class="form-input" placeholder="••••••••" required/>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Date of Birth</label>
+                    <label class="form-label" for="dateOfBirth">Date of Birth</label>
                     <input type="date" id="dateOfBirth" class="form-input" required/>
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Bio (Brief description about yourself)</label>
+                <label class="form-label" for="bio">Bio (Brief description about yourself)</label>
                 <textarea id="bio" class="form-textarea" placeholder="Tell us about yourself..." required></textarea>
             </div>
 
