@@ -16,7 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CustomOAuth2UserServiceTest {
+public @SuppressWarnings("null")
+class CustomOAuth2UserServiceTest {
 
     @Mock
     private UserRepository userRepository;

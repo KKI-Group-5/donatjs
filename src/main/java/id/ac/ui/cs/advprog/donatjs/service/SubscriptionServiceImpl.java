@@ -26,6 +26,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public SubscriptionResponse createSubscription(CreateSubscriptionRequest request) {
         if (subscriptionRepository.existsByUserIdAndCampaignIdAndStatus(
                 request.getUserId(), request.getCampaignId(), SubscriptionStatus.ACTIVE)) {
@@ -62,6 +63,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public SubscriptionResponse cancelSubscription(Long subscriptionId, String userId) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new EntityNotFoundException("Subscription not found: " + subscriptionId));
@@ -76,6 +78,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public SubscriptionResponse updateFrequency(Long subscriptionId, String userId, SubscriptionFrequency frequency) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new EntityNotFoundException("Subscription not found: " + subscriptionId));

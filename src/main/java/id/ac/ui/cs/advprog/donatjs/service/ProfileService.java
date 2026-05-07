@@ -32,9 +32,15 @@ public class ProfileService {
         dto.setSubscriptions(subscriptionService.getSubscriptionsByUser(userId));
         dto.setActivityUpdates(userActivityService.getUserActivities(userId));
         
+        dto.setSuspended(user.isSuspended());
+        dto.setFlaggedForReview(user.isFlaggedForReview());
+        dto.setRejectedDonationCount(user.getRejectedDonationCount());
+        dto.setRejectedCampaignCount(user.getRejectedCampaignCount());
+        
         return dto;
     }
 
+    @SuppressWarnings("null")
     public UserProfileDTO updateUserProfile(String email, UpdateProfileRequest request) {
         AppUser user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));

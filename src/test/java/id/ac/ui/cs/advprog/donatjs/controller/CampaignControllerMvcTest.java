@@ -3,12 +3,12 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(CampaignController.class)
 @Import(SecurityConfig.class)
+@SuppressWarnings("null")
 class CampaignControllerMvcTest {
 
     @Autowired
@@ -43,6 +44,9 @@ class CampaignControllerMvcTest {
 
     @MockitoBean
     private CurrentUserService currentUserService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @Test
     @WithMockUser
@@ -63,6 +67,7 @@ class CampaignControllerMvcTest {
 
         mockMvc.perform(post("/campaigns/create")
                         .with(csrf())
+                        .header("X-User-Id", "user-123")
                         .param("title", "Build Library")
                         .param("description", "Support our village library")
                         .param("deadline", LocalDate.now().plusDays(7).toString())
@@ -114,4 +119,3 @@ class CampaignControllerMvcTest {
                 .andExpect(status().isNotFound());
     }
 }
-
