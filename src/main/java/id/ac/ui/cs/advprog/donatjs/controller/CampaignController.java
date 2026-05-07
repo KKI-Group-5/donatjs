@@ -152,5 +152,26 @@ public class CampaignController {
                                                    @Valid @RequestBody DonationUpdateRequest request) {
         return ResponseEntity.ok(campaignService.recordSuccessfulDonation(id, request.getAmount()));
     }
+
+    @PostMapping("/{id}/fraud")
+    @ResponseBody
+    public ResponseEntity<Campaign> markFraud(@PathVariable("id") Long id,
+                                              @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin) {
+        if (!isAdmin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin only endpoint");
+        }
+        return ResponseEntity.ok(campaignService.markAsFraud(id));
+    }
+
+    @PostMapping("/deadline-automation/run")
+    @ResponseBody
+    public ResponseEntity<String> runDeadlineAutomation(
+            @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin) {
+        if (!isAdmin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin only endpoint");
+        }
+        int processed = campaignService.processExpiredCampaigns(LocalDate.now());
+        return ResponseEntity.ok("Processed expired campaigns: " + processed);
+    }
 }
 

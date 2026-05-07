@@ -36,6 +36,20 @@
     <span th:text="${campaign.status}">OPEN</span>
 </p>
 
+<!-- Admin Panel (75% Milestone: Fraud & Deadline Automation) -->
+<div th:if="${#request.getAttribute('X-Admin') == 'true' or false}" style="border: 2px solid red; padding: 10px; margin: 20px 0;">
+    <h3>Admin Actions (75% Milestone)</h3>
+    
+    <form th:action="@{|/campaigns/${campaign.id}/fraud|}" method="post" style="display:inline;">
+        <button type="submit" onclick="return confirm('Mark this campaign as FRAUD? This will trigger refunds.')">Mark as Fraud</button>
+    </form>
+    
+    <p style="font-size: 0.9em; color: #666;">
+        <em>Note: Fraud marking will change status to FRAUD and trigger refunds for all donations.
+        Event notifications will be published for external systems to process payouts/refunds.</em>
+    </p>
+</div>
+
 <p>
     <a th:href="@{|/campaigns/${campaign.id}/edit|}">Edit description</a>
 </p>

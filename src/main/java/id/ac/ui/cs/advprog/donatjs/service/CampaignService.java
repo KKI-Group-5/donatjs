@@ -27,5 +27,9 @@ public interface CampaignService {
     Campaign adminUpdateCampaign(Long id, String title, LocalDate deadline, BigDecimal targetAmount);
 
     Campaign recordSuccessfulDonation(Long id, BigDecimal amount);
+
+    Campaign markAsFraud(Long id);
+
+    int processExpiredCampaigns(LocalDate today);
 }
 

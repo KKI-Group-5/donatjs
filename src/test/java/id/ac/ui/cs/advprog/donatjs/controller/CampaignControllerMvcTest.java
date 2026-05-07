@@ -86,5 +86,11 @@ class CampaignControllerMvcTest {
         mockMvc.perform(get("/campaigns/" + missingId))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void postFraud_withoutAdminHeader_returnsForbidden() throws Exception {
+        mockMvc.perform(post("/campaigns/1/fraud"))
+                .andExpect(status().isForbidden());
+    }
 }
 
