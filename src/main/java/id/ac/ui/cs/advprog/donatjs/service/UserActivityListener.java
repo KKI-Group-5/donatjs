@@ -18,6 +18,7 @@ import java.util.UUID;
 public class UserActivityListener {
 
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Async
     @EventListener
@@ -30,10 +31,15 @@ public class UserActivityListener {
         userRepository.findById(UUID.fromString(userIdStr)).ifPresent(user -> {
             user.setRejectedDonationCount(user.getRejectedDonationCount() + 1);
             
-            // Milestone 4: Add suspension logic here when threshold matches
-            if (user.getRejectedDonationCount() + user.getRejectedCampaignCount() >= 3) {
-                user.setSuspended(true);
-                log.warn("User {} has been SUSPENDED due to high rejection count.", userIdStr);
+            if (!user.isFlaggedForReview() && user.getRejectedDonationCount() + user.getRejectedCampaignCount() >= 3) {
+                user.setFlaggedForReview(true);
+                log.warn("User {} has been FLAGGED FOR REVIEW due to high rejection count.", userIdStr);
+                
+                // Send emails
+                emailService.sendEmail(user.getEmail(), "Account Warning: High Rejection Rate", 
+                    "Your account has been flagged for review due to multiple rejected donations or campaigns.");
+                emailService.sendEmail("admin@donatjs.com", "Action Required: Account Flagged", 
+                    "User " + user.getEmail() + " (" + userIdStr + ") has been flagged for review after reaching 3 rejections.");
             }
             
             userRepository.save(user);
@@ -53,10 +59,15 @@ public class UserActivityListener {
         userRepository.findById(UUID.fromString(userIdStr)).ifPresent(user -> {
             user.setRejectedCampaignCount(user.getRejectedCampaignCount() + 1);
             
-            // Milestone 4: Add suspension logic here when threshold matches
-            if (user.getRejectedDonationCount() + user.getRejectedCampaignCount() >= 3) {
-                user.setSuspended(true);
-                log.warn("User {} has been SUSPENDED due to high rejection count.", userIdStr);
+            if (!user.isFlaggedForReview() && user.getRejectedDonationCount() + user.getRejectedCampaignCount() >= 3) {
+                user.setFlaggedForReview(true);
+                log.warn("User {} has been FLAGGED FOR REVIEW due to high rejection count.", userIdStr);
+                
+                // Send emails
+                emailService.sendEmail(user.getEmail(), "Account Warning: High Rejection Rate", 
+                    "Your account has been flagged for review due to multiple rejected donations or campaigns.");
+                emailService.sendEmail("admin@donatjs.com", "Action Required: Account Flagged", 
+                    "User " + user.getEmail() + " (" + userIdStr + ") has been flagged for review after reaching 3 rejections.");
             }
             
             userRepository.save(user);

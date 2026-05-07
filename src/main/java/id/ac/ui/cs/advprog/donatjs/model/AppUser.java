@@ -25,6 +25,7 @@ public class AppUser {
     private int rejectedDonationCount = 0;
     private int rejectedCampaignCount = 0;
     private boolean isSuspended = false;
+    private boolean flaggedForReview = false;
 
     // JPA requires a default, empty constructor
     public AppUser() {
@@ -59,4 +60,7 @@ public class AppUser {
 
     public boolean isSuspended() { return isSuspended; }
     public void setSuspended(boolean suspended) { isSuspended = suspended; }
+
+    public boolean isFlaggedForReview() { return flaggedForReview; }
+    public void setFlaggedForReview(boolean flaggedForReview) { this.flaggedForReview = flaggedForReview; }
 }

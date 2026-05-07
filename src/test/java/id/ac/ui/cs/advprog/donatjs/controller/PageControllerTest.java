@@ -1,6 +1,10 @@
 package id.ac.ui.cs.advprog.donatjs.controller;
 
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
+import id.ac.ui.cs.advprog.donatjs.service.ProfileService;
 import id.ac.ui.cs.advprog.donatjs.service.SavedCampaignService;
+import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
+import id.ac.ui.cs.advprog.donatjs.dto.UserProfileDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -21,6 +25,15 @@ class PageControllerTest {
 
     @Mock
     private SavedCampaignService savedCampaignService;
+
+    @Mock
+    private SubscriptionService subscriptionService;
+
+    @Mock
+    private CurrentUserService currentUserService;
+
+    @Mock
+    private ProfileService profileService;
 
     @Mock
     private Model model;
@@ -46,4 +59,18 @@ class PageControllerTest {
         verify(model).addAttribute("userId", userId);
     }
 
+    @Test
+    void testProfileDashboard() {
+        String email = "test@example.com";
+        UserProfileDTO mockProfile = new UserProfileDTO("Test", email, "Bio", null);
+
+        when(currentUserService.getCurrentUserEmail(org.mockito.ArgumentMatchers.any())).thenReturn(email);
+        when(profileService.getUserProfile(email)).thenReturn(mockProfile);
+
+        String viewName = pageController.profileDashboard(model);
+
+        assertEquals("profile", viewName);
+        verify(profileService).getUserProfile(email);
+        verify(model).addAttribute("profile", mockProfile);
+    }
 }

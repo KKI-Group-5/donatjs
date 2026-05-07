@@ -64,6 +64,20 @@
                     <p style="color: var(--text-light); font-size: 14px;">Loading subscriptions...</p>
                 </div>
             </div>
+
+            <div class="activity-section">
+                <h3>Saved Campaigns</h3>
+                <div id="savedCampaignsList" class="activity-list">
+                    <p style="color: var(--text-light); font-size: 14px;">Loading saved campaigns...</p>
+                </div>
+            </div>
+
+            <div class="activity-section" style="grid-column: 1 / -1;">
+                <h3>Recent Activities</h3>
+                <div id="activitiesList" class="activity-list">
+                    <p style="color: var(--text-light); font-size: 14px;">Loading recent activities...</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -100,13 +114,19 @@
                  document.getElementById('inputBio').value = data.bio || '';
                  document.getElementById('inputDob').value = data.dateOfBirth || '';
 
-                 // Suspended check
+                 // Suspended / Flagged check
+                 const banner = document.getElementById('suspendedBanner');
                  if (data.suspended) {
-                     const banner = document.getElementById('suspendedBanner');
                      banner.style.display = 'block';
+                     banner.style.backgroundColor = 'var(--error)';
                      banner.textContent = 'Account Suspended: You have ' + (data.rejectedDonationCount + data.rejectedCampaignCount) + ' violations (Campaign/Donation rejections). Contact admin.';
                      document.getElementById('btnSave').disabled = true;
                      document.getElementById('btnSave').style.background = 'var(--text-light)';
+                 } else if (data.flaggedForReview) {
+                     banner.style.display = 'block';
+                     banner.style.backgroundColor = 'var(--warning)';
+                     banner.style.color = '#fff';
+                     banner.textContent = 'Account Flagged: Your account is under review due to ' + (data.rejectedDonationCount + data.rejectedCampaignCount) + ' violations. Please be careful.';
                  }
 
                  // Render Campaigns
@@ -155,6 +175,37 @@
                      `).join('');
                  } else {
                      subList.innerHTML = '<p style="color: var(--text-light); font-size: 14px;">No active subscriptions.</p>';
+                 }
+
+                 // Render Saved Campaigns
+                 const savedList = document.getElementById('savedCampaignsList');
+                 if (data.savedCampaigns && data.savedCampaigns.length > 0) {
+                     savedList.innerHTML = data.savedCampaigns.map(s => `
+                         <div class="activity-item">
+                             <div class="activity-details">
+                                 <span class="activity-title">${s.campaignTitle}</span>
+                                 <span class="activity-meta">Organizer: ${s.campaignOrganizer}</span>
+                             </div>
+                         </div>
+                     `).join('');
+                 } else {
+                     savedList.innerHTML = '<p style="color: var(--text-light); font-size: 14px;">No saved campaigns.</p>';
+                 }
+
+                 // Render Recent Activities
+                 const actList = document.getElementById('activitiesList');
+                 if (data.activityUpdates && data.activityUpdates.length > 0) {
+                     actList.innerHTML = data.activityUpdates.map(a => `
+                         <div class="activity-item">
+                             <div class="activity-details">
+                                 <span class="activity-title">${a.type}</span>
+                                 <span class="activity-meta">${a.description}</span>
+                             </div>
+                             <div class="activity-amount" style="font-size: 12px; font-weight: normal; color: var(--text-light);">${new Date(a.timestamp).toLocaleString()}</div>
+                         </div>
+                     `).join('');
+                 } else {
+                     actList.innerHTML = '<p style="color: var(--text-light); font-size: 14px;">No recent activities.</p>';
                  }
             })
             .catch(err => {

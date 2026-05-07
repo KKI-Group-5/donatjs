@@ -26,6 +26,9 @@ class UserActivityListenerTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private EmailService emailService;
+
     @InjectMocks
     private UserActivityListener userActivityListener;
 
@@ -37,8 +40,9 @@ class UserActivityListenerTest {
         userId = UUID.randomUUID();
         sampleUser = new AppUser();
         sampleUser.setId(userId);
+        sampleUser.setEmail("test@example.com");
         sampleUser.setRejectedDonationCount(0);
-        sampleUser.setSuspended(false);
+        sampleUser.setFlaggedForReview(false);
     }
 
     @Test
@@ -56,7 +60,7 @@ class UserActivityListenerTest {
 
         // Assert
         assertEquals(1, sampleUser.getRejectedDonationCount());
-        assertFalse(sampleUser.isSuspended());
+        assertFalse(sampleUser.isFlaggedForReview());
         verify(userRepository).save(sampleUser);
     }
 
@@ -76,7 +80,8 @@ class UserActivityListenerTest {
 
         // Assert
         assertEquals(3, sampleUser.getRejectedDonationCount());
-        assertTrue(sampleUser.isSuspended());
+        assertTrue(sampleUser.isFlaggedForReview());
+        verify(emailService, times(2)).sendEmail(anyString(), anyString(), anyString());
         verify(userRepository).save(sampleUser);
     }
 
@@ -91,7 +96,7 @@ class UserActivityListenerTest {
         userActivityListener.handleRejectedCampaign(event);
 
         assertEquals(1, sampleUser.getRejectedCampaignCount());
-        assertFalse(sampleUser.isSuspended());
+        assertFalse(sampleUser.isFlaggedForReview());
         verify(userRepository).save(sampleUser);
     }
 
@@ -108,7 +113,8 @@ class UserActivityListenerTest {
         userActivityListener.handleRejectedCampaign(event);
 
         assertEquals(2, sampleUser.getRejectedCampaignCount());
-        assertTrue(sampleUser.isSuspended()); // 2 + 1 = 3 -> Should suspend
+        assertTrue(sampleUser.isFlaggedForReview()); // 2 + 1 = 3 -> Should flag
+        verify(emailService, times(2)).sendEmail(anyString(), anyString(), anyString());
         verify(userRepository).save(sampleUser);
     }
 }

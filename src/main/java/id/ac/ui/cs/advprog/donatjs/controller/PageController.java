@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.dto.SubscriptionResponse;
 import id.ac.ui.cs.advprog.donatjs.model.SavedCampaign;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
+import id.ac.ui.cs.advprog.donatjs.service.ProfileService;
 import id.ac.ui.cs.advprog.donatjs.service.SavedCampaignService;
 import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
 import org.springframework.stereotype.Controller;
@@ -18,13 +19,16 @@ public class PageController {
     private final SavedCampaignService savedCampaignService;
     private final SubscriptionService subscriptionService;
     private final CurrentUserService currentUserService;
+    private final ProfileService profileService;
 
     public PageController(SavedCampaignService savedCampaignService,
                           SubscriptionService subscriptionService,
-                          CurrentUserService currentUserService) {
+                          CurrentUserService currentUserService,
+                          ProfileService profileService) {
         this.savedCampaignService = savedCampaignService;
         this.subscriptionService = subscriptionService;
         this.currentUserService = currentUserService;
+        this.profileService = profileService;
     }
 
     @GetMapping("/saved-campaigns/{userId}")
@@ -53,5 +57,14 @@ public class PageController {
     public String mySubscriptionsPage(Model model) {
         String userId = currentUserService.requireCurrentUserId();
         return subscriptionsPage(userId, model);
+    }
+
+    @GetMapping("/profile")
+    public String profileDashboard(Model model) {
+        String email = currentUserService.getCurrentUserEmail(
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+        );
+        model.addAttribute("profile", profileService.getUserProfile(email));
+        return "profile";
     }
 }
