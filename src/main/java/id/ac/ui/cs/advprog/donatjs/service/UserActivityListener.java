@@ -51,7 +51,7 @@ public class UserActivityListener {
     @Transactional
     @SuppressWarnings("null")
     public void handleRejectedCampaign(RejectedCampaignEvent event) {
-        String userIdStr = event.getCampaign().getCreatorId();
+        String userIdStr = event.getCreatorId();
         if (userIdStr == null || userIdStr.isBlank()) return;
         
         log.info("Handling rejected campaign for user: {}", userIdStr);

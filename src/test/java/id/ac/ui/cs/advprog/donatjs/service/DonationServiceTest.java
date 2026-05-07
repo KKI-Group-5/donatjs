@@ -71,7 +71,7 @@ class DonationServiceTest {
     }
 
     private Donation buildSavedDonation(long id, long amount, PaymentMethod method,
-                                        long fee, DonationStatus status, DonationType type) {
+            long fee, DonationStatus status, DonationType type) {
         return Donation.builder()
                 .id(id)
                 .userId("user-abc-123")
@@ -93,13 +93,14 @@ class DonationServiceTest {
     @Test
     @DisplayName("GOPAY donation gets Rp 2,000 fee and correct total")
     void createDonation_gopay_correctFeeAndTotal() {
-        Donation saved = buildSavedDonation(1L, 150_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        Donation saved = buildSavedDonation(1L, 150_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS,
+                DonationType.ONE_TIME);
         when(donationRepository.save(any())).thenReturn(saved);
 
         DonationResponse response = donationService.createDonation(
                 buildRequest(150_000L, PaymentMethod.GOPAY, DonationType.ONE_TIME));
 
-        assertEquals(2_000L,   response.getFee());
+        assertEquals(2_000L, response.getFee());
         assertEquals(152_000L, response.getTotalAmount());
         verify(campaignService).recordSuccessfulDonation(1L, BigDecimal.valueOf(150_000L));
     }
@@ -107,26 +108,28 @@ class DonationServiceTest {
     @Test
     @DisplayName("BANK_BCA donation gets Rp 1,500 fee and correct total")
     void createDonation_bankBca_correctFeeAndTotal() {
-        Donation saved = buildSavedDonation(2L, 150_000L, PaymentMethod.BANK_BCA, 1_500L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        Donation saved = buildSavedDonation(2L, 150_000L, PaymentMethod.BANK_BCA, 1_500L, DonationStatus.SUCCESS,
+                DonationType.ONE_TIME);
         when(donationRepository.save(any())).thenReturn(saved);
 
         DonationResponse response = donationService.createDonation(
                 buildRequest(150_000L, PaymentMethod.BANK_BCA, DonationType.ONE_TIME));
 
-        assertEquals(1_500L,   response.getFee());
+        assertEquals(1_500L, response.getFee());
         assertEquals(151_500L, response.getTotalAmount());
     }
 
     @Test
     @DisplayName("WALLET donation gets zero fee")
     void createDonation_wallet_zeroFee() {
-        Donation saved = buildSavedDonation(3L, 100_000L, PaymentMethod.WALLET, 0L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        Donation saved = buildSavedDonation(3L, 100_000L, PaymentMethod.WALLET, 0L, DonationStatus.SUCCESS,
+                DonationType.ONE_TIME);
         when(donationRepository.save(any())).thenReturn(saved);
 
         DonationResponse response = donationService.createDonation(
                 buildRequest(100_000L, PaymentMethod.WALLET, DonationType.ONE_TIME));
 
-        assertEquals(0L,       response.getFee());
+        assertEquals(0L, response.getFee());
         assertEquals(100_000L, response.getTotalAmount());
     }
 
@@ -135,7 +138,8 @@ class DonationServiceTest {
     @Test
     @DisplayName("Donation of exactly Rp 5,000,000 is SUCCESS")
     void createDonation_exactlyMaxAmount_isSuccess() {
-        Donation saved = buildSavedDonation(4L, 5_000_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        Donation saved = buildSavedDonation(4L, 5_000_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS,
+                DonationType.ONE_TIME);
         when(donationRepository.save(any())).thenReturn(saved);
 
         DonationResponse response = donationService.createDonation(
@@ -147,7 +151,8 @@ class DonationServiceTest {
     @Test
     @DisplayName("Donation of Rp 5,000,001 is REJECTED")
     void createDonation_oneAboveMax_isRejected() {
-        Donation saved = buildSavedDonation(5L, 5_000_001L, PaymentMethod.GOPAY, 2_000L, DonationStatus.REJECTED, DonationType.ONE_TIME);
+        Donation saved = buildSavedDonation(5L, 5_000_001L, PaymentMethod.GOPAY, 2_000L, DonationStatus.REJECTED,
+                DonationType.ONE_TIME);
         when(donationRepository.save(any())).thenReturn(saved);
 
         DonationResponse response = donationService.createDonation(
@@ -157,25 +162,29 @@ class DonationServiceTest {
         verify(campaignService, never()).recordSuccessfulDonation(anyLong(), any());
     }
 
-    // @Test
-    // @DisplayName("REJECTED donation is still persisted to the database")
-    // void createDonation_rejected_stillSavedToDb() {
-    //     Donation saved = buildSavedDonation(6L, 9_000_000L, PaymentMethod.BANK_BCA, 1_500L, DonationStatus.REJECTED, DonationType.ONE_TIME);
-    //     when(donationRepository.save(any())).thenReturn(saved);
+    @Test
+    @DisplayName("REJECTED donation is still persisted to the database and fires event")
+    void createDonation_rejected_stillSavedToDb() {
+        Donation saved = buildSavedDonation(6L, 9_000_000L, PaymentMethod.BANK_BCA, 1_500L, DonationStatus.REJECTED, DonationType.ONE_TIME);
+        when(donationRepository.save(any())).thenReturn(saved);
 
-    //     donationService.createDonation(
-    //             buildRequest(9_000_000L, PaymentMethod.BANK_BCA, DonationType.ONE_TIME));
+        donationService.createDonation(
+                buildRequest(9_000_000L, PaymentMethod.BANK_BCA, DonationType.ONE_TIME));
 
-    //     ArgumentCaptor<Donation> captor = ArgumentCaptor.forClass(Donation.class);
-    //     verify(donationRepository).save(captor.capture());
-    //     assertEquals(DonationStatus.REJECTED, captor.getValue().getStatus());
-    //     verify(eventPublisher).publishEvent(any(RejectedDonationEvent.class));
-    // }
+        org.mockito.ArgumentCaptor<Donation> captor = org.mockito.ArgumentCaptor.forClass(Donation.class);
+        verify(donationRepository).save(captor.capture());
+        assertEquals(DonationStatus.REJECTED, captor.getValue().getStatus());
+        
+        org.mockito.ArgumentCaptor<id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent> eventCaptor = org.mockito.ArgumentCaptor.forClass(id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertEquals("user-abc-123", eventCaptor.getValue().getDonation().getUserId());
+    }
 
     @Test
     @DisplayName("REJECTED donation still has correct fee applied")
     void createDonation_rejected_feeStillApplied() {
-        Donation saved = buildSavedDonation(7L, 9_000_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.REJECTED, DonationType.ONE_TIME);
+        Donation saved = buildSavedDonation(7L, 9_000_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.REJECTED,
+                DonationType.ONE_TIME);
         when(donationRepository.save(any())).thenReturn(saved);
 
         DonationResponse response = donationService.createDonation(
@@ -189,7 +198,8 @@ class DonationServiceTest {
     @Test
     @DisplayName("SUBSCRIPTION with WALLET is allowed")
     void createDonation_subscriptionWithWallet_isAllowed() {
-        Donation saved = buildSavedDonation(8L, 50_000L, PaymentMethod.WALLET, 0L, DonationStatus.SUCCESS, DonationType.SUBSCRIPTION);
+        Donation saved = buildSavedDonation(8L, 50_000L, PaymentMethod.WALLET, 0L, DonationStatus.SUCCESS,
+                DonationType.SUBSCRIPTION);
         when(donationRepository.save(any())).thenReturn(saved);
 
         assertDoesNotThrow(() -> donationService.createDonation(
@@ -229,7 +239,8 @@ class DonationServiceTest {
     @Test
     @DisplayName("getDonationById returns donation when found")
     void getDonationById_found_returnsResponse() {
-        Donation donation = buildSavedDonation(1L, 100_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        Donation donation = buildSavedDonation(1L, 100_000L, PaymentMethod.GOPAY, 2_000L, DonationStatus.SUCCESS,
+                DonationType.ONE_TIME);
         when(donationRepository.findById(1L)).thenReturn(Optional.of(donation));
 
         DonationResponse response = donationService.getDonationById(1L);

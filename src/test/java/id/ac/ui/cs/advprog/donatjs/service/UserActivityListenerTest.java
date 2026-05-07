@@ -89,7 +89,7 @@ class UserActivityListenerTest {
     void testHandleRejectedCampaign_IncrementsCount() {
         Campaign campaign = new Campaign();
         campaign.setCreatorId(userId.toString());
-        RejectedCampaignEvent event = new RejectedCampaignEvent(this, campaign);
+        RejectedCampaignEvent event = new RejectedCampaignEvent(this, campaign, userId.toString());
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
 
@@ -106,7 +106,7 @@ class UserActivityListenerTest {
         sampleUser.setRejectedDonationCount(1); // Total 2
         Campaign campaign = new Campaign();
         campaign.setCreatorId(userId.toString());
-        RejectedCampaignEvent event = new RejectedCampaignEvent(this, campaign);
+        RejectedCampaignEvent event = new RejectedCampaignEvent(this, campaign, userId.toString());
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
 

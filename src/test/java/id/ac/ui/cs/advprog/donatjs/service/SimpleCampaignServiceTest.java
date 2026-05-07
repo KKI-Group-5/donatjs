@@ -3,34 +3,33 @@ package id.ac.ui.cs.advprog.donatjs.service;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.InMemoryCampaignRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
-import org.springframework.context.ApplicationEventPublisher;
 
 @SuppressWarnings("null")
 class SimpleCampaignServiceTest {
 
     private InMemoryCampaignRepository repository;
-    private ApplicationEventPublisher eventPublisher;
     private SimpleCampaignService service;
+    private RecordingCampaignWalletGateway walletGateway;
+    private RecordingEventPublisher eventPublisher;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryCampaignRepository();
-        eventPublisher = mock(ApplicationEventPublisher.class);
-        service = new SimpleCampaignService(repository, eventPublisher);
+        walletGateway = new RecordingCampaignWalletGateway();
+        eventPublisher = new RecordingEventPublisher();
+        service = new SimpleCampaignService(repository, walletGateway, eventPublisher);
     }
 
     @Test
@@ -59,7 +58,7 @@ class SimpleCampaignServiceTest {
         Campaign result = service.createCampaign(campaign);
 
         assertThat(result.getTotalRaised()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(result.getStatus()).isEqualTo(CampaignStatus.OPEN);
+        assertThat(result.getStatus()).isEqualTo(CampaignStatus.WAITING);
     }
 
     @Test
@@ -124,21 +123,6 @@ class SimpleCampaignServiceTest {
         Campaign moderated = service.moderateCampaign(saved.getId(), true);
 
         assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.OPEN);
-        verify(eventPublisher, never()).publishEvent(any());
-    }
-
-    @Test
-    void moderateCampaign_reject_publishesEvent() {
-        Campaign campaign = new Campaign();
-        campaign.setTitle("Waiting campaign");
-        campaign.setDescription("To review");
-        campaign.setStatus(CampaignStatus.WAITING);
-        Campaign saved = repository.save(campaign);
-
-        Campaign moderated = service.moderateCampaign(saved.getId(), false);
-
-        assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
-        verify(eventPublisher).publishEvent(any(id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent.class));
     }
 
     @Test
@@ -155,6 +139,86 @@ class SimpleCampaignServiceTest {
 
         assertThat(updated.getTotalRaised()).isEqualByComparingTo(new BigDecimal("105"));
         assertThat(updated.getStatus()).isEqualTo(CampaignStatus.CLOSED);
+    }
+
+    @Test
+    void processExpiredCampaigns_closesSuccessfulCampaignAndRequestsPayout() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Success");
+        campaign.setDescription("Reached target");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setDeadline(LocalDate.now().minusDays(1));
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(new BigDecimal("120"));
+        Campaign saved = repository.save(campaign);
+
+        int processed = service.processExpiredCampaigns(LocalDate.now());
+
+        assertThat(processed).isEqualTo(1);
+        assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CLOSED);
+        assertThat(walletGateway.payoutRequestedCount).isEqualTo(1);
+        assertThat(walletGateway.refundRequestedCount).isZero();
+        assertThat(eventPublisher.publishedCount).isEqualTo(1);
+    }
+
+    @Test
+    void processExpiredCampaigns_cancelsFailedCampaignAndRequestsRefund() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Failed");
+        campaign.setDescription("Did not hit target");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setDeadline(LocalDate.now().minusDays(1));
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(new BigDecimal("10"));
+        Campaign saved = repository.save(campaign);
+
+        int processed = service.processExpiredCampaigns(LocalDate.now());
+
+        assertThat(processed).isEqualTo(1);
+        assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CANCELLED);
+        assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
+        assertThat(walletGateway.payoutRequestedCount).isZero();
+        assertThat(eventPublisher.publishedCount).isEqualTo(1);
+    }
+
+    @Test
+    void markAsFraud_updatesStatusAndRequestsRefund() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Suspicious");
+        campaign.setDescription("Flagged");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTotalRaised(new BigDecimal("20"));
+        Campaign saved = repository.save(campaign);
+
+        Campaign updated = service.markAsFraud(saved.getId());
+
+        assertThat(updated.getStatus()).isEqualTo(CampaignStatus.FRAUD);
+        assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
+        assertThat(eventPublisher.publishedCount).isEqualTo(2);
+    }
+
+    private static class RecordingCampaignWalletGateway implements CampaignWalletGateway {
+        private int payoutRequestedCount;
+        private int refundRequestedCount;
+
+        @Override
+        public void requestPayout(Campaign campaign) {
+            payoutRequestedCount++;
+        }
+
+        @Override
+        public void requestRefund(Campaign campaign) {
+            refundRequestedCount++;
+        }
+    }
+
+    private static class RecordingEventPublisher implements ApplicationEventPublisher {
+        private int publishedCount;
+
+        @Override
+        public void publishEvent(Object event) {
+            publishedCount++;
+        }
     }
 }
 

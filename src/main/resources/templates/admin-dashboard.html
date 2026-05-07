@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | DonatJS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="brand">
+                <h2>DonatJS Admin</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="/admin/dashboard" class="active">Flagged Users</a>
+                <a href="/">Back to Site</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Flagged Accounts Review</h1>
+                <p>Review users who have exceeded the allowed number of campaign or donation rejections.</p>
+            </header>
+
+            <section class="panel-section">
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Violations</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${flaggedUsers == null || flaggedUsers.isEmpty()}">
+                                <td colspan="5" class="empty-state">No flagged users at this time.</td>
+                            </tr>
+                            <tr th:each="user : ${flaggedUsers}">
+                                <td th:text="${user.name}">User Name</td>
+                                <td th:text="${user.email}">user@example.com</td>
+                                <td>
+                                    <span class="violation-count" th:text="${user.rejectedDonationCount + user.rejectedCampaignCount}">0</span>
+                                </td>
+                                <td>
+                                    <span th:if="${user.suspended}" class="badge danger">Suspended</span>
+                                    <span th:unless="${user.suspended}" class="badge warning">Flagged</span>
+                                </td>
+                                <td class="actions">
+                                    <button th:unless="${user.suspended}" class="btn-suspend" th:onclick="'suspendUser(\'' + ${user.id} + '\')'">Suspend</button>
+                                    <button class="btn-unsuspend" th:onclick="'unsuspendUser(\'' + ${user.id} + '\')'">Restore</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => { toast.className = 'toast'; }, 3000);
+        }
+
+        async function suspendUser(id) {
+            if(!confirm("Are you sure you want to suspend this user?")) return;
+            try {
+                const res = await fetch(`/api/admin/users/${id}/suspend`, { method: 'POST' });
+                if(res.ok) {
+                    showToast('User suspended successfully', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast('Failed to suspend user', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function unsuspendUser(id) {
+            if(!confirm("Are you sure you want to restore this user? This will clear their violations.")) return;
+            try {
+                const res = await fetch(`/api/admin/users/${id}/unsuspend`, { method: 'POST' });
+                if(res.ok) {
+                    showToast('User restored successfully', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast('Failed to restore user', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

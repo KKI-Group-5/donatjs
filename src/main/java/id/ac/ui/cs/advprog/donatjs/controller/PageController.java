@@ -11,7 +11,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
+import id.ac.ui.cs.advprog.donatjs.model.AppUser;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class PageController {
@@ -20,15 +25,18 @@ public class PageController {
     private final SubscriptionService subscriptionService;
     private final CurrentUserService currentUserService;
     private final ProfileService profileService;
+    private final UserRepository userRepository;
 
     public PageController(SavedCampaignService savedCampaignService,
-                          SubscriptionService subscriptionService,
-                          CurrentUserService currentUserService,
-                          ProfileService profileService) {
+            SubscriptionService subscriptionService,
+            CurrentUserService currentUserService,
+            ProfileService profileService,
+            UserRepository userRepository) {
         this.savedCampaignService = savedCampaignService;
         this.subscriptionService = subscriptionService;
         this.currentUserService = currentUserService;
         this.profileService = profileService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/saved-campaigns/{userId}")
@@ -62,9 +70,19 @@ public class PageController {
     @GetMapping("/profile")
     public String profileDashboard(Model model) {
         String email = currentUserService.getCurrentUserEmail(
-            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
-        );
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication());
         model.addAttribute("profile", profileService.getUserProfile(email));
         return "profile";
+    }
+
+    @GetMapping("/admin/dashboard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminDashboard(Model model) {
+        List<AppUser> flaggedUsers = ((List<AppUser>) userRepository.findAll())
+                .stream()
+                .filter(u -> u.isFlaggedForReview() || u.isSuspended())
+                .collect(Collectors.toList());
+        model.addAttribute("flaggedUsers", flaggedUsers);
+        return "admin-dashboard";
     }
 }

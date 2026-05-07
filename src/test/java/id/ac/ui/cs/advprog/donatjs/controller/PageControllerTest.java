@@ -1,10 +1,8 @@
 package id.ac.ui.cs.advprog.donatjs.controller;
 
-import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
-import id.ac.ui.cs.advprog.donatjs.service.ProfileService;
 import id.ac.ui.cs.advprog.donatjs.service.SavedCampaignService;
-import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
-import id.ac.ui.cs.advprog.donatjs.dto.UserProfileDTO;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
+import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,8 +11,10 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.ui.Model;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -27,13 +27,7 @@ class PageControllerTest {
     private SavedCampaignService savedCampaignService;
 
     @Mock
-    private SubscriptionService subscriptionService;
-
-    @Mock
-    private CurrentUserService currentUserService;
-
-    @Mock
-    private ProfileService profileService;
+    private UserRepository userRepository;
 
     @Mock
     private Model model;
@@ -60,17 +54,18 @@ class PageControllerTest {
     }
 
     @Test
-    void testProfileDashboard() {
-        String email = "test@example.com";
-        UserProfileDTO mockProfile = new UserProfileDTO("Test", email, "Bio", null);
+    void testAdminDashboard() {
+        AppUser flaggedUser = new AppUser();
+        flaggedUser.setFlaggedForReview(true);
+        AppUser normalUser = new AppUser();
+        
+        when(userRepository.findAll()).thenReturn(List.of(flaggedUser, normalUser));
 
-        when(currentUserService.getCurrentUserEmail(org.mockito.ArgumentMatchers.any())).thenReturn(email);
-        when(profileService.getUserProfile(email)).thenReturn(mockProfile);
+        String viewName = pageController.adminDashboard(model);
 
-        String viewName = pageController.profileDashboard(model);
-
-        assertEquals("profile", viewName);
-        verify(profileService).getUserProfile(email);
-        verify(model).addAttribute("profile", mockProfile);
+        assertEquals("admin-dashboard", viewName);
+        verify(userRepository).findAll();
+        verify(model).addAttribute(eq("flaggedUsers"), anyList());
     }
+
 }

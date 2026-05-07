@@ -547,18 +547,23 @@ a {
     .header {
         padding: 16px 24px;
     }
+
     .hero {
         padding: var(--spacing-xl) 24px;
     }
+
     .campaigns-section {
         padding: var(--spacing-xl) 24px;
     }
+
     .campaigns-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+
     .footer {
         padding: var(--spacing-xl) 24px;
     }
+
     .saved-campaigns-page {
         padding: var(--spacing-xl) 24px;
     }
@@ -569,20 +574,26 @@ a {
         flex-wrap: wrap;
         gap: 12px;
     }
+
     .search-box {
         width: 100%;
         order: 3;
     }
+
     .hero-headline {
         font-size: 32px;
     }
+
     .campaigns-grid {
         grid-template-columns: 1fr;
     }
+
     .footer-top {
         flex-direction: column;
     }
-    .section-title, .saved-campaigns-header h1 {
+
+    .section-title,
+    .saved-campaigns-header h1 {
         font-size: 28px;
     }
 }
@@ -718,7 +729,7 @@ textarea.form-control {
     gap: var(--spacing-xl);
 }
 
-.activity-section > h3 {
+.activity-section>h3 {
     font-size: 20px;
     font-weight: 700;
     color: var(--text-primary);
@@ -790,6 +801,7 @@ textarea.form-control {
     .profile-container {
         grid-template-columns: 1fr;
     }
+
     .profile-page {
         padding: var(--spacing-xl) 24px;
     }

@@ -67,6 +67,7 @@ class CampaignControllerMvcTest {
 
         mockMvc.perform(post("/campaigns/create")
                         .with(csrf())
+                        .header("X-User-Id", "user-123")
                         .param("title", "Build Library")
                         .param("description", "Support our village library")
                         .param("deadline", LocalDate.now().plusDays(7).toString())

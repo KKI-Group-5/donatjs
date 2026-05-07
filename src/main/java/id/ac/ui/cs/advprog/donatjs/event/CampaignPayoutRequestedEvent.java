@@ -3,21 +3,23 @@ package id.ac.ui.cs.advprog.donatjs.event;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import org.springframework.context.ApplicationEvent;
 
-public class RejectedCampaignEvent extends ApplicationEvent {
-    private final Campaign campaign;
-    private final String creatorId;
+import java.math.BigDecimal;
 
-    public RejectedCampaignEvent(Object source, Campaign campaign, String creatorId) {
+public class CampaignPayoutRequestedEvent extends ApplicationEvent {
+    private final Campaign campaign;
+    private final BigDecimal amount;
+
+    public CampaignPayoutRequestedEvent(Object source, Campaign campaign, BigDecimal amount) {
         super(source);
         this.campaign = campaign;
-        this.creatorId = creatorId;
+        this.amount = amount;
     }
 
     public Campaign getCampaign() {
         return campaign;
     }
 
-    public String getCreatorId() {
-        return creatorId;
+    public BigDecimal getAmount() {
+        return amount;
     }
 }
