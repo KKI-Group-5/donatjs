@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
+import id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent;
 import id.ac.ui.cs.advprog.donatjs.repository.InMemoryCampaignRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,6 +126,27 @@ class SimpleCampaignServiceTest {
     }
 
     @Test
+    void moderateCampaign_reject_waitingCampaignPublishesRejectedCampaignEventWithCreatorId() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Waiting campaign");
+        campaign.setDescription("To review");
+        campaign.setStatus(CampaignStatus.WAITING);
+        campaign.setCreatorId("creator-123");
+        Campaign saved = repository.save(campaign);
+
+        Campaign moderated = service.moderateCampaign(saved.getId(), false);
+
+        assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
+        assertThat(eventPublisher.publishedEvents)
+                .hasSize(1)
+                .first()
+                .isInstanceOfSatisfying(RejectedCampaignEvent.class, event -> {
+                    assertThat(event.getCreatorId()).isEqualTo("creator-123");
+                    assertThat(event.getCampaign().getId()).isEqualTo(saved.getId());
+                });
+    }
+
+    @Test
     void recordSuccessfulDonation_closesCampaignWhenTargetReached() {
         Campaign campaign = new Campaign();
         campaign.setTitle("Donation target");
@@ -213,10 +235,12 @@ class SimpleCampaignServiceTest {
 
     private static class RecordingEventPublisher implements ApplicationEventPublisher {
         private int publishedCount;
+        private final java.util.List<Object> publishedEvents = new java.util.ArrayList<>();
 
         @Override
         public void publishEvent(Object event) {
             publishedCount++;
+            publishedEvents.add(event);
         }
     }
 }
