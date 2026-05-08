@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Local AI assistant config — never commit ###
+CLAUDE.md
+.claude/
+src/main/resources/application-local.properties
