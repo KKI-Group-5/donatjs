@@ -46,4 +46,9 @@ public class StubSubscriptionService implements SubscriptionService {
         
         return subs;
     }
+
+    @Override
+    public int terminateActiveSubscriptionsForCampaign(Long campaignId, String reason) {
+        return 0;
+    }
 }

@@ -9,10 +9,14 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendEmail(String to, String subject, String body) {
-        // In a real application, this would integrate with JavaMailSender or a third-party service like SendGrid
         log.info("Sending email to: {}", to);
         log.info("Subject: {}", subject);
         log.info("Body: {}", body);
         log.info("Email sent successfully.");
+    }
+
+    @Override
+    public void sendPlainText(String to, String subject, String body) {
+        sendEmail(to, subject, body);
     }
 }

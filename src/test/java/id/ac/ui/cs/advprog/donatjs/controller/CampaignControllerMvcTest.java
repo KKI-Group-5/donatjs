@@ -118,4 +118,11 @@ class CampaignControllerMvcTest {
         mockMvc.perform(get("/campaigns/" + missingId))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void postFraud_withoutAdminHeader_returnsForbidden() throws Exception {
+        mockMvc.perform(post("/campaigns/1/fraud").with(csrf()))
+                .andExpect(status().isForbidden());
+    }
 }

@@ -15,4 +15,11 @@ public interface SubscriptionService {
     SubscriptionResponse updateFrequency(Long subscriptionId, String userId, SubscriptionFrequency frequency);
 
     List<SubscriptionResponse> getSubscriptionsByUser(String userId);
+
+    /**
+     * Mark every ACTIVE subscription tied to the given campaign as TERMINATED.
+     * Called when a campaign moves to DELETED, CANCELLED, FRAUD, or REJECTED.
+     * Returns the number of subscriptions terminated.
+     */
+    int terminateActiveSubscriptionsForCampaign(Long campaignId, String reason);
 }
