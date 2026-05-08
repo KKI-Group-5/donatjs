@@ -51,7 +51,7 @@ public class UserModerationServiceImpl implements UserModerationService {
     @Override
     @Transactional
     public void suspendUser(UUID userId) {
-        AppUser user = userRepository.findById(userId)
+        AppUser user = userRepository.findById(java.util.Objects.requireNonNull(userId))
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
         user.setSuspended(true);
         userRepository.save(user);
@@ -60,7 +60,7 @@ public class UserModerationServiceImpl implements UserModerationService {
     @Override
     @Transactional
     public void unsuspendUser(UUID userId) {
-        AppUser user = userRepository.findById(userId)
+        AppUser user = userRepository.findById(java.util.Objects.requireNonNull(userId))
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
         user.setSuspended(false);
         userRepository.save(user);
@@ -93,7 +93,7 @@ public class UserModerationServiceImpl implements UserModerationService {
     @Override
     @Transactional
     public void markNotificationRead(Long notificationId) {
-        AdminNotification notification = notificationRepository.findById(notificationId)
+        AdminNotification notification = notificationRepository.findById(java.util.Objects.requireNonNull(notificationId))
                 .orElseThrow(() -> new EntityNotFoundException("Notification not found: " + notificationId));
         notification.setRead(true);
         notificationRepository.save(notification);
