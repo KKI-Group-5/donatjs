@@ -321,7 +321,6 @@ class SimpleCampaignServiceTest {
     }
 
     private static class RecordingEventPublisher implements ApplicationEventPublisher {
-        private int publishedCount;
         private final List<Object> publishedEvents = new ArrayList<>();
         private final ApplicationEventPublisher delegate;
 
@@ -331,7 +330,6 @@ class SimpleCampaignServiceTest {
 
         @Override
         public void publishEvent(org.springframework.context.ApplicationEvent event) {
-            publishedCount++;
             publishedEvents.add(event);
             delegate.publishEvent(event);
         }
@@ -341,7 +339,6 @@ class SimpleCampaignServiceTest {
             if (event instanceof org.springframework.context.ApplicationEvent ae) {
                 publishEvent(ae);
             } else {
-                publishedCount++;
                 publishedEvents.add(event);
                 delegate.publishEvent(event);
             }
