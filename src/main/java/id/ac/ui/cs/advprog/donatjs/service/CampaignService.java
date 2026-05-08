@@ -13,7 +13,6 @@ public interface CampaignService {
     Campaign createCampaign(Campaign campaign, String creatorId);
 
     List<Campaign> findOpenCampaigns();
-
     List<Campaign> findByCreatorId(String creatorId);
 
     Optional<Campaign> findById(Long id);
@@ -29,5 +28,9 @@ public interface CampaignService {
     Campaign adminUpdateCampaign(Long id, String title, LocalDate deadline, BigDecimal targetAmount);
 
     Campaign recordSuccessfulDonation(Long id, BigDecimal amount);
+
+    Campaign markAsFraud(Long id);
+
+    int processExpiredCampaigns(LocalDate today);
 }
 

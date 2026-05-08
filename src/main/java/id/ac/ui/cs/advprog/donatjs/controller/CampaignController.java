@@ -6,13 +6,11 @@ import id.ac.ui.cs.advprog.donatjs.dto.CampaignModerationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationUpdateRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateCampaignDescriptionRequest;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
-import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,11 +30,9 @@ import java.time.LocalDate;
 public class CampaignController {
 
     private final CampaignService campaignService;
-    private final CurrentUserService currentUserService;
 
-    public CampaignController(CampaignService campaignService, CurrentUserService currentUserService) {
+    public CampaignController(CampaignService campaignService) {
         this.campaignService = campaignService;
-        this.currentUserService = currentUserService;
     }
 
     @GetMapping
@@ -54,7 +50,7 @@ public class CampaignController {
     @PostMapping("/create")
     public String createCampaign(@Valid @ModelAttribute("campaign") Campaign campaign,
                                  BindingResult bindingResult,
-                                 Authentication authentication) {
+                                 @RequestHeader(value = "X-User-Id", required = false) String userId) {
         if (campaign.getDeadline() != null && !campaign.getDeadline().isAfter(LocalDate.now())) {
             bindingResult.rejectValue("deadline", "deadline.notFuture", "Deadline must be in the future");
         }
@@ -63,7 +59,6 @@ public class CampaignController {
             return "campaigns/create";
         }
 
-        String userId = currentUserService.getCurrentUserId(authentication);
         campaignService.createCampaign(campaign, userId);
         return "redirect:/campaigns";
     }
@@ -94,7 +89,7 @@ public class CampaignController {
     public String updateDescription(@PathVariable("id") Long id,
                                     @Valid @ModelAttribute("req") UpdateCampaignDescriptionRequest req,
                                     BindingResult bindingResult,
-                                    Authentication authentication,
+                                    @RequestHeader(value = "X-User-Id", required = false) String userId,
                                     @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
                                     Model model) {
         if (bindingResult.hasErrors()) {
@@ -104,18 +99,16 @@ public class CampaignController {
             return "campaigns/edit";
         }
 
-        String userId = currentUserService.getCurrentUserId(authentication);
         Campaign updated = campaignService.updateDescription(id, userId, isAdmin, req.getDescription());
         return "redirect:/campaigns/" + updated.getId();
     }
 
     @PostMapping("/{id}/delete")
     public String deleteCampaign(@PathVariable("id") Long id,
-                                 Authentication authentication,
+                                 @RequestHeader(value = "X-User-Id", required = false) String userId,
                                  @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
                                  RedirectAttributes redirectAttributes) {
         try {
-            String userId = currentUserService.getCurrentUserId(authentication);
             campaignService.deleteIfNoDonations(id, userId, isAdmin);
             return "redirect:/campaigns";
         } catch (ResponseStatusException ex) {
@@ -159,4 +152,26 @@ public class CampaignController {
                                                    @Valid @RequestBody DonationUpdateRequest request) {
         return ResponseEntity.ok(campaignService.recordSuccessfulDonation(id, request.getAmount()));
     }
+
+    @PostMapping("/{id}/fraud")
+    @ResponseBody
+    public ResponseEntity<Campaign> markFraud(@PathVariable("id") Long id,
+                                              @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin) {
+        if (!isAdmin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin only endpoint");
+        }
+        return ResponseEntity.ok(campaignService.markAsFraud(id));
+    }
+
+    @PostMapping("/deadline-automation/run")
+    @ResponseBody
+    public ResponseEntity<String> runDeadlineAutomation(
+            @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin) {
+        if (!isAdmin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin only endpoint");
+        }
+        int processed = campaignService.processExpiredCampaigns(LocalDate.now());
+        return ResponseEntity.ok("Processed expired campaigns: " + processed);
+    }
 }
+

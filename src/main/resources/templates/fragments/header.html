@@ -14,16 +14,17 @@
 
     <div style="display:flex; align-items:center; gap:16px;">
         <a href="/campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Campaigns</a>
+        <a th:if="${isLoggedIn}" href="/donations" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">My Donations</a>
         <a th:if="${isLoggedIn}" href="/saved-campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Saved</a>
         <a th:if="${isLoggedIn}" href="/subscriptions" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Subscriptions</a>
         <a th:if="${isLoggedIn}" href="/wallet" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">My Wallet</a>
 
         <div class="auth-buttons" th:if="${isLoggedIn != true}">
             <a href="/login" class="btn-login">Log In</a>
-            <a href="/login" class="btn-signup">Sign Up</a>
+            <a href="/register" class="btn-signup">Sign Up</a>
         </div>
         <div class="auth-buttons" th:if="${isLoggedIn}" style="align-items:center;">
-            <span style="font-size:14px; font-weight:500; color:var(--text-secondary);" th:text="${currentUserName}">User</span>
+            <a href="/profile" class="profile-link" th:text="${currentUserName}">User</a>
             <form action="/logout" method="post" style="display:inline; margin:0;">
                 <button type="submit" class="btn-login" style="cursor:pointer; background:none; font-family:'Montserrat',sans-serif; font-size:14px;">Log Out</button>
             </form>

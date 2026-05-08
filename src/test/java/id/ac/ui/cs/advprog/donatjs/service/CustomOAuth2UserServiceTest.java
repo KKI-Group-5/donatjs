@@ -35,11 +35,10 @@ public class CustomOAuth2UserServiceTest {
         when(oAuth2User.getAttribute("email")).thenReturn(email);
         when(oAuth2User.getAttribute("name")).thenReturn(name);
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(userRepository.save(any(AppUser.class))).thenReturn(new AppUser());
 
-        // Act
         customOAuth2UserService.processOAuth2User(oAuth2User);
 
-        // Assert
         verify(userRepository, times(1)).save(any(AppUser.class));
         verify(userRepository, times(1)).findByEmail(email);
     }
@@ -50,10 +49,8 @@ public class CustomOAuth2UserServiceTest {
         when(oAuth2User.getAttribute("email")).thenReturn(email);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(new AppUser()));
 
-        // Act
         customOAuth2UserService.processOAuth2User(oAuth2User);
 
-        // Assert
         verify(userRepository, never()).save(any(AppUser.class));
     }
 
@@ -61,7 +58,6 @@ public class CustomOAuth2UserServiceTest {
     void testProcessOAuth2User_MissingEmailThrowsException() {
         when(oAuth2User.getAttribute("email")).thenReturn(null);
 
-        // Act & Assert
         assertThrows(OAuth2AuthenticationException.class, () -> {
             customOAuth2UserService.processOAuth2User(oAuth2User);
         });

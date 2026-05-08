@@ -21,12 +21,26 @@ public class AppUser {
     private String bio;
     private LocalDate dateOfBirth;
 
-    // JPA requires a default, empty constructor
+    // Milestone 3: Tracking for FRAUD/REJECTED activity
+    private int rejectedDonationCount = 0;
+    private int rejectedCampaignCount = 0;
+    private boolean isSuspended = false;
+    private boolean flaggedForReview = false;
+
+    @Column(nullable = false)
+    private int fraudActivityCount = 0;
+
+    @Column(nullable = false)
+    private boolean flagged = false;
+
+    @Column(nullable = false)
+    private boolean suspended = false;
+
+    @Column(nullable = false)
+    private boolean admin = false;
+
     public AppUser() {
     }
-
-    // --- Generate Getters and Setters below this line ---
-    // (In IntelliJ, you can press Alt+Insert -> Getter and Setter -> Select all fields)
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -45,4 +59,28 @@ public class AppUser {
 
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
+    public int getRejectedDonationCount() { return rejectedDonationCount; }
+    public void setRejectedDonationCount(int rejectedDonationCount) { this.rejectedDonationCount = rejectedDonationCount; }
+
+    public int getRejectedCampaignCount() { return rejectedCampaignCount; }
+    public void setRejectedCampaignCount(int rejectedCampaignCount) { this.rejectedCampaignCount = rejectedCampaignCount; }
+
+    public boolean isSuspendedLegacy() { return isSuspended; }
+    public void setSuspendedLegacy(boolean suspended) { isSuspended = suspended; }
+
+    public boolean isFlaggedForReview() { return flaggedForReview; }
+    public void setFlaggedForReview(boolean flaggedForReview) { this.flaggedForReview = flaggedForReview; }
+
+    public int getFraudActivityCount() { return fraudActivityCount; }
+    public void setFraudActivityCount(int fraudActivityCount) { this.fraudActivityCount = fraudActivityCount; }
+
+    public boolean isFlagged() { return flagged; }
+    public void setFlagged(boolean flagged) { this.flagged = flagged; }
+
+    public boolean isSuspended() { return suspended; }
+    public void setSuspended(boolean suspended) { this.suspended = suspended; }
+
+    public boolean isAdmin() { return admin; }
+    public void setAdmin(boolean admin) { this.admin = admin; }
 }

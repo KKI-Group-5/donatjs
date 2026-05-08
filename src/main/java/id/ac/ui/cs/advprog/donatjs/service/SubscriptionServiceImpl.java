@@ -10,12 +10,14 @@ import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.SubscriptionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
@@ -26,6 +28,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public SubscriptionResponse createSubscription(CreateSubscriptionRequest request) {
         if (subscriptionRepository.existsByUserIdAndCampaignIdAndStatus(
                 request.getUserId(), request.getCampaignId(), SubscriptionStatus.ACTIVE)) {
@@ -62,6 +65,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public SubscriptionResponse cancelSubscription(Long subscriptionId, String userId) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new EntityNotFoundException("Subscription not found: " + subscriptionId));
@@ -76,6 +80,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public SubscriptionResponse updateFrequency(Long subscriptionId, String userId, SubscriptionFrequency frequency) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new EntityNotFoundException("Subscription not found: " + subscriptionId));
@@ -96,6 +101,23 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .stream()
                 .map(SubscriptionResponse::from)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public int terminateActiveSubscriptionsForCampaign(Long campaignId, String reason) {
+        List<Subscription> active = subscriptionRepository
+                .findByCampaignIdAndStatus(campaignId, SubscriptionStatus.ACTIVE);
+        if (active.isEmpty()) {
+            return 0;
+        }
+        for (Subscription sub : active) {
+            sub.setStatus(SubscriptionStatus.TERMINATED);
+        }
+        subscriptionRepository.saveAll(active);
+        log.info("Terminated {} active subscription(s) for campaign {} ({})",
+                active.size(), campaignId, reason);
+        return active.size();
     }
 
     private LocalDate calculateNextDebitDate(SubscriptionFrequency frequency) {

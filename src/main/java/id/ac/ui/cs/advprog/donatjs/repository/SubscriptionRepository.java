@@ -19,4 +19,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     boolean existsByUserIdAndCampaignIdAndStatus(String userId, Long campaignId, SubscriptionStatus status);
 
     List<Subscription> findByStatusAndNextDebitDateLessThanEqual(SubscriptionStatus status, LocalDate date);
+
+    List<Subscription> findByCampaignIdAndStatus(Long campaignId, SubscriptionStatus status);
 }
