@@ -27,12 +27,20 @@ public class AppUser {
     private boolean isSuspended = false;
     private boolean flaggedForReview = false;
 
-    // JPA requires a default, empty constructor
+    @Column(nullable = false)
+    private int fraudActivityCount = 0;
+
+    @Column(nullable = false)
+    private boolean flagged = false;
+
+    @Column(nullable = false)
+    private boolean suspended = false;
+
+    @Column(nullable = false)
+    private boolean admin = false;
+
     public AppUser() {
     }
-
-    // --- Generate Getters and Setters below this line ---
-    // (In IntelliJ, you can press Alt+Insert -> Getter and Setter -> Select all fields)
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -58,9 +66,21 @@ public class AppUser {
     public int getRejectedCampaignCount() { return rejectedCampaignCount; }
     public void setRejectedCampaignCount(int rejectedCampaignCount) { this.rejectedCampaignCount = rejectedCampaignCount; }
 
-    public boolean isSuspended() { return isSuspended; }
-    public void setSuspended(boolean suspended) { isSuspended = suspended; }
+    public boolean isSuspendedLegacy() { return isSuspended; }
+    public void setSuspendedLegacy(boolean suspended) { isSuspended = suspended; }
 
     public boolean isFlaggedForReview() { return flaggedForReview; }
     public void setFlaggedForReview(boolean flaggedForReview) { this.flaggedForReview = flaggedForReview; }
+
+    public int getFraudActivityCount() { return fraudActivityCount; }
+    public void setFraudActivityCount(int fraudActivityCount) { this.fraudActivityCount = fraudActivityCount; }
+
+    public boolean isFlagged() { return flagged; }
+    public void setFlagged(boolean flagged) { this.flagged = flagged; }
+
+    public boolean isSuspended() { return suspended; }
+    public void setSuspended(boolean suspended) { this.suspended = suspended; }
+
+    public boolean isAdmin() { return admin; }
+    public void setAdmin(boolean admin) { this.admin = admin; }
 }
