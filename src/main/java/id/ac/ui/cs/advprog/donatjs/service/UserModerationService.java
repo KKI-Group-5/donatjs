@@ -16,6 +16,8 @@ public interface UserModerationService {
 
     List<AppUser> getFlaggedUsers();
 
+    List<AppUser> getSuspendedUsers();
+
     List<AdminNotification> getAdminNotifications();
 
     List<AdminNotification> getUnreadAdminNotifications();

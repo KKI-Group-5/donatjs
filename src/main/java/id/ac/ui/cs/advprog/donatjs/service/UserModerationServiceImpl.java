@@ -74,6 +74,12 @@ public class UserModerationServiceImpl implements UserModerationService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<AppUser> getSuspendedUsers() {
+        return userRepository.findBySuspendedTrue();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<AdminNotification> getAdminNotifications() {
         return notificationRepository.findAllByOrderByCreatedAtDesc();
     }

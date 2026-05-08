@@ -20,36 +20,15 @@ public class UserModerationController {
         this.moderationService = moderationService;
     }
 
-    /**
-     * Called by Campaign or Donation modules when a user's campaign/donation is rejected or flagged as fraud.
-     * Increments the user's fraud activity count and flags the account if the threshold (≥3) is reached.
-     */
     @PostMapping("/api/users/report-fraud-activity")
     public ResponseEntity<Void> reportFraudActivity(@Valid @RequestBody FraudActivityReportRequest request) {
         moderationService.reportFraudActivity(request.getUserEmail(), request.getReason());
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/api/admin/users/flagged")
-    public ResponseEntity<List<AppUser>> getFlaggedUsers() {
-        return ResponseEntity.ok(moderationService.getFlaggedUsers());
-    }
-
     @GetMapping("/api/admin/users/suspended")
     public ResponseEntity<List<AppUser>> getSuspendedUsers() {
-        return ResponseEntity.ok(moderationService.getFlaggedUsers());
-    }
-
-    @PostMapping("/api/admin/users/{userId}/suspend")
-    public ResponseEntity<Void> suspendUser(@PathVariable UUID userId) {
-        moderationService.suspendUser(userId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/api/admin/users/{userId}/unsuspend")
-    public ResponseEntity<Void> unsuspendUser(@PathVariable UUID userId) {
-        moderationService.unsuspendUser(userId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(moderationService.getSuspendedUsers());
     }
 
     @GetMapping("/api/admin/notifications")

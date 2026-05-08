@@ -330,10 +330,21 @@ class SimpleCampaignServiceTest {
         }
 
         @Override
-        public void publishEvent(Object event) {
+        public void publishEvent(org.springframework.context.ApplicationEvent event) {
             publishedCount++;
             publishedEvents.add(event);
             delegate.publishEvent(event);
+        }
+
+        @Override
+        public void publishEvent(Object event) {
+            if (event instanceof org.springframework.context.ApplicationEvent ae) {
+                publishEvent(ae);
+            } else {
+                publishedCount++;
+                publishedEvents.add(event);
+                delegate.publishEvent(event);
+            }
         }
     }
 }
