@@ -138,24 +138,64 @@
     </div>
 </div>
 
-<!-- Subscribe modal -->
+<!-- Subscribe modal — two-step: details → confirm warning -->
 <div id="subscribeModal" class="modal-backdrop" onclick="if(event.target===this)closeSubscribe()">
     <div class="modal">
-        <h2>Start a recurring donation</h2>
-        <p style="font-size:13px; color:var(--text-secondary); margin-top:-8px; margin-bottom:12px;">
-            Recurring donations are automatically debited from your wallet each cycle. You can pause or cancel anytime.
-        </p>
-        <label>Amount (Rp)</label>
-        <input id="subAmount" type="number" min="1000" step="1000" value="25000"/>
-        <label>Frequency</label>
-        <select id="subInterval">
-            <option value="DAILY">Daily</option>
-            <option value="WEEKLY">Weekly</option>
-            <option value="MONTHLY" selected>Monthly</option>
-        </select>
-        <div class="modal-actions">
-            <button class="btn-secondary" onclick="closeSubscribe()">Cancel</button>
-            <button class="btn-cta" style="height:40px;padding:0 18px;" onclick="submitSubscribe()">Subscribe</button>
+        <!-- Step 1: enter details -->
+        <div id="subStepDetails">
+            <h2>Start a recurring donation</h2>
+            <p style="font-size:13px; color:var(--text-secondary); margin-top:-8px; margin-bottom:12px;">
+                Recurring donations are debited automatically from your wallet each cycle. You can change frequency or cancel anytime.
+            </p>
+            <label>Amount (Rp)</label>
+            <input id="subAmount" type="number" min="1000" step="1000" value="25000"/>
+            <label>Frequency</label>
+            <select id="subFrequency">
+                <option value="DAILY">Daily</option>
+                <option value="WEEKLY">Weekly</option>
+                <option value="MONTHLY" selected>Monthly</option>
+            </select>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeSubscribe()">Cancel</button>
+                <button class="btn-cta" style="height:40px;padding:0 18px;" onclick="reviewSubscribe()">Review</button>
+            </div>
+        </div>
+
+        <!-- Step 2: confirmation warning -->
+        <div id="subStepConfirm" style="display:none;">
+            <h2>Confirm your subscription</h2>
+            <div style="background:#FFF7E6; border:1px solid #F1C46B; border-radius:8px; padding:12px 14px; margin:8px 0 16px; font-size:13px; color:#6B4A00;">
+                <strong>Heads up.</strong> By confirming you authorise DonatJS to debit your wallet on this schedule. Please review the details below.
+            </div>
+            <ul style="list-style:none; padding:0; margin:0 0 14px; font-size:14px;">
+                <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
+                    <span style="color:var(--text-secondary);">Campaign</span>
+                    <strong id="subReviewCampaign"></strong>
+                </li>
+                <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
+                    <span style="color:var(--text-secondary);">Amount per cycle</span>
+                    <strong id="subReviewAmount"></strong>
+                </li>
+                <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
+                    <span style="color:var(--text-secondary);">Frequency</span>
+                    <strong id="subReviewFrequency"></strong>
+                </li>
+                <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
+                    <span style="color:var(--text-secondary);">Payment method</span>
+                    <strong>Wallet (only)</strong>
+                </li>
+                <li style="display:flex; justify-content:space-between; padding:6px 0;">
+                    <span style="color:var(--text-secondary);">First debit</span>
+                    <strong>Immediately</strong>
+                </li>
+            </ul>
+            <p style="font-size:12px; color:var(--text-secondary); margin:0 0 12px;">
+                Subscriptions automatically terminate if the campaign is deleted, cancelled, or marked fraudulent.
+            </p>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="backToSubDetails()">Back</button>
+                <button id="subConfirmBtn" class="btn-cta" style="height:40px;padding:0 18px;" onclick="submitSubscribe()">Confirm &amp; subscribe</button>
+            </div>
         </div>
     </div>
 </div>
@@ -230,18 +270,47 @@
     }
 
     // ── Subscribe ─────────────────────────────────────────────────
-    function openSubscribe()  { if (!requireLogin()) return; document.getElementById('subscribeModal').classList.add('open'); }
-    function closeSubscribe() { document.getElementById('subscribeModal').classList.remove('open'); }
+    function openSubscribe()  {
+        if (!requireLogin()) return;
+        backToSubDetails();
+        document.getElementById('subscribeModal').classList.add('open');
+    }
+    function closeSubscribe() {
+        document.getElementById('subscribeModal').classList.remove('open');
+        backToSubDetails();
+    }
+    function backToSubDetails() {
+        document.getElementById('subStepDetails').style.display = '';
+        document.getElementById('subStepConfirm').style.display = 'none';
+        var btn = document.getElementById('subConfirmBtn');
+        if (btn) { btn.disabled = false; btn.textContent = 'Confirm & subscribe'; }
+    }
+    function reviewSubscribe() {
+        var amount = parseInt(document.getElementById('subAmount').value, 10);
+        var frequency = document.getElementById('subFrequency').value;
+        if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+
+        document.getElementById('subReviewCampaign').textContent = CAMPAIGN_TITLE || ('Campaign #' + CAMPAIGN_ID);
+        document.getElementById('subReviewAmount').textContent = 'Rp ' + amount.toLocaleString('en-US');
+        document.getElementById('subReviewFrequency').textContent =
+            frequency.charAt(0) + frequency.slice(1).toLowerCase();
+
+        document.getElementById('subStepDetails').style.display = 'none';
+        document.getElementById('subStepConfirm').style.display = '';
+    }
     function submitSubscribe() {
         if (!requireLogin()) return;
         var amount = parseInt(document.getElementById('subAmount').value, 10);
-        var interval = document.getElementById('subInterval').value;
+        var frequency = document.getElementById('subFrequency').value;
         if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+
+        var btn = document.getElementById('subConfirmBtn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Processing…'; }
 
         fetch('/api/subscriptions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ campaignId: CAMPAIGN_ID, amount: amount, interval: interval })
+            body: JSON.stringify({ campaignId: CAMPAIGN_ID, amount: amount, frequency: frequency })
         })
         .then(function (r) {
             return r.json().then(function (body) { return { ok: r.ok, status: r.status, body: body }; });
@@ -251,11 +320,21 @@
                 showToast('Subscription started!', 'success');
                 closeSubscribe();
                 setTimeout(function () { window.location.href = '/subscriptions'; }, 700);
+            } else if (res.status === 422) {
+                showToast(res.body.error || 'Insufficient balance', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Confirm & subscribe'; }
+            } else if (res.status === 409) {
+                showToast(res.body.error || 'Already subscribed to this campaign', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Confirm & subscribe'; }
             } else {
                 showToast(res.body.error || res.body.message || 'Could not subscribe', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Confirm & subscribe'; }
             }
         })
-        .catch(function () { showToast('Subscription failed', 'error'); });
+        .catch(function () {
+            showToast('Subscription failed', 'error');
+            if (btn) { btn.disabled = false; btn.textContent = 'Confirm & subscribe'; }
+        });
     }
 
     // ── Save toggle ───────────────────────────────────────────────

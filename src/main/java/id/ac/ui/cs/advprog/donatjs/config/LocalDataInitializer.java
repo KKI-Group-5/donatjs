@@ -105,12 +105,27 @@ public class LocalDataInitializer {
                     CampaignStatus.WAITING,
                     testUser.getId().toString());
 
+            // Pre-loaded at 97% so a single small donation crosses the 98%
+            // notification threshold and fires CampaignNearTargetEvent. The
+            // test user has it saved, so the listener has a recipient.
+            Campaign almostFundedCampaign = ensureCampaign(campaignRepository,
+                    "Almost There: Animal Shelter Renovation",
+                    "We're 97% funded — just a final push to renovate the kennel block "
+                            + "before the rainy season. A small donation here will trigger "
+                            + "the 98% near-target email to everyone who saved this campaign.",
+                    LocalDate.now().plusDays(7),
+                    new BigDecimal("1000000"),
+                    new BigDecimal("970000"),
+                    CampaignStatus.OPEN,
+                    adminUser.getId().toString());
+
             ensureDonation(donationRepository, testUser.getId().toString(), schoolCampaign.getId(),
                     250_000L, Donation.PaymentMethod.WALLET);
             ensureDonation(donationRepository, testUser.getId().toString(), medicalCampaign.getId(),
                     100_000L, Donation.PaymentMethod.BANK_BCA);
 
             ensureSavedCampaign(savedCampaignRepository, testUser.getId().toString(), foodCampaign);
+            ensureSavedCampaign(savedCampaignRepository, testUser.getId().toString(), almostFundedCampaign);
 
             log.info("Local seed complete — login with {} / {} or {} / {}",
                     TEST_EMAIL, testUserPassword, ADMIN_EMAIL, adminUserPassword);
