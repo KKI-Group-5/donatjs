@@ -4,7 +4,6 @@ import id.ac.ui.cs.advprog.donatjs.dto.FraudActivityReportRequest;
 import id.ac.ui.cs.advprog.donatjs.model.AdminNotification;
 import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 import id.ac.ui.cs.advprog.donatjs.service.UserModerationService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +12,6 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@Tag(name = "User Moderation", description = "Endpoints for fraud reporting and admin account management")
 public class UserModerationController {
 
     private final UserModerationService moderationService;
