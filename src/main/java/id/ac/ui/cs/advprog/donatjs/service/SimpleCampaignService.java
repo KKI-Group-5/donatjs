@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
+import id.ac.ui.cs.advprog.donatjs.event.CampaignNearTargetEvent;
+import id.ac.ui.cs.advprog.donatjs.event.CampaignStatusChangedEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignFraudDetectedEvent;
@@ -8,12 +10,14 @@ import id.ac.ui.cs.advprog.donatjs.event.CampaignRefundRequestedEvent;
 import id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent;
 import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,20 +29,24 @@ public class SimpleCampaignService implements CampaignService {
     private final CampaignRepository campaignRepository;
     private final CampaignWalletGateway campaignWalletGateway;
     private final ApplicationEventPublisher eventPublisher;
+    private final BigDecimal nearTargetThreshold;
 
     public SimpleCampaignService(CampaignRepository campaignRepository) {
         this(campaignRepository, new NoopCampaignWalletGateway(), event -> {
             // No-op for tests or local setup without listeners.
-        });
+        }, new BigDecimal("0.98"));
     }
 
     @Autowired
-    public SimpleCampaignService(CampaignRepository campaignRepository,
-                                 CampaignWalletGateway campaignWalletGateway,
-                                 ApplicationEventPublisher eventPublisher) {
+    public SimpleCampaignService(
+            CampaignRepository campaignRepository,
+            CampaignWalletGateway campaignWalletGateway,
+            ApplicationEventPublisher eventPublisher,
+            @Value("${donatjs.email.near-target-threshold:0.98}") BigDecimal nearTargetThreshold) {
         this.campaignRepository = campaignRepository;
         this.campaignWalletGateway = campaignWalletGateway;
         this.eventPublisher = eventPublisher;
+        this.nearTargetThreshold = nearTargetThreshold;
     }
 
     @Override
@@ -109,8 +117,11 @@ public class SimpleCampaignService implements CampaignService {
                     "Cannot delete campaign with donations"
             );
         }
+        CampaignStatus previous = campaign.getStatus();
         campaign.setStatus(CampaignStatus.DELETED);
         campaignRepository.save(campaign);
+        eventPublisher.publishEvent(new CampaignStatusChangedEvent(
+                this, campaign.getId(), previous, CampaignStatus.DELETED));
     }
 
     @Override
@@ -120,14 +131,16 @@ public class SimpleCampaignService implements CampaignService {
         if (campaign.getStatus() != CampaignStatus.WAITING) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only WAITING campaign can be moderated");
         }
-        campaign.setStatus(approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED);
+        CampaignStatus previous = campaign.getStatus();
+        CampaignStatus next = approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED;
+        campaign.setStatus(next);
         Campaign saved = campaignRepository.save(campaign);
-        
-        // Publish rejection event for authentication branch to track rejected campaigns by creator
+        if (previous != next) {
+            eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, saved.getId(), previous, next));
+        }
         if (!approve) {
             eventPublisher.publishEvent(new RejectedCampaignEvent(this, saved, campaign.getCreatorId()));
         }
-        
         return saved;
     }
 
@@ -168,12 +181,48 @@ public class SimpleCampaignService implements CampaignService {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Donation amount must be positive");
         }
-        BigDecimal current = campaign.getTotalRaised() == null ? BigDecimal.ZERO : campaign.getTotalRaised();
-        campaign.setTotalRaised(current.add(amount));
-        if (campaign.getTargetAmount() != null && campaign.getTotalRaised().compareTo(campaign.getTargetAmount()) >= 0) {
+        BigDecimal previous = campaign.getTotalRaised() == null ? BigDecimal.ZERO : campaign.getTotalRaised();
+        BigDecimal updated  = previous.add(amount);
+        campaign.setTotalRaised(updated);
+
+        boolean justCrossedThreshold =
+                campaign.getTargetAmount() != null
+                && !campaign.isNearTargetNotified()
+                && previous.compareTo(thresholdAmount(campaign)) < 0
+                && updated.compareTo(thresholdAmount(campaign)) >= 0;
+
+        if (justCrossedThreshold) {
+            campaign.setNearTargetNotified(true);
+        }
+
+        boolean justClosed = campaign.getTargetAmount() != null
+                && updated.compareTo(campaign.getTargetAmount()) >= 0
+                && campaign.getStatus() == CampaignStatus.OPEN;
+        if (justClosed) {
             campaign.setStatus(CampaignStatus.CLOSED);
         }
-        return campaignRepository.save(campaign);
+
+        Campaign saved = campaignRepository.save(campaign);
+
+        if (justCrossedThreshold) {
+            eventPublisher.publishEvent(new CampaignNearTargetEvent(
+                    this,
+                    saved.getId(),
+                    saved.getTitle(),
+                    saved.getTotalRaised(),
+                    saved.getTargetAmount()));
+        }
+        if (justClosed) {
+            eventPublisher.publishEvent(new CampaignStatusChangedEvent(
+                    this, saved.getId(), CampaignStatus.OPEN, CampaignStatus.CLOSED));
+        }
+        return saved;
+    }
+
+    private BigDecimal thresholdAmount(Campaign campaign) {
+        return campaign.getTargetAmount()
+                .multiply(nearTargetThreshold)
+                .setScale(0, RoundingMode.UP);
     }
 
     @Override

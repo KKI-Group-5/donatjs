@@ -15,4 +15,9 @@ public class EmailServiceImpl implements EmailService {
         log.info("Body: {}", body);
         log.info("Email sent successfully.");
     }
+
+    @Override
+    public void sendPlainText(String to, String subject, String body) {
+        sendEmail(to, subject, body);
+    }
 }
