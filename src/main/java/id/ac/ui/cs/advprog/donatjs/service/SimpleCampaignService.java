@@ -287,6 +287,68 @@ public class SimpleCampaignService implements CampaignService {
         return isExpired && canBeFinalized;
     }
 
+    @Override
+    public Campaign markAsFraud(Long id) {
+        Campaign campaign = campaignRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (campaign.getStatus() == CampaignStatus.DELETED || campaign.getStatus() == CampaignStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign cannot be marked as fraud");
+        }
+
+        campaign.setStatus(CampaignStatus.FRAUD);
+        Campaign saved = campaignRepository.save(campaign);
+        eventPublisher.publishEvent(new CampaignFraudDetectedEvent(this, saved));
+
+        BigDecimal refundAmount = saved.getTotalRaised() == null ? BigDecimal.ZERO : saved.getTotalRaised();
+        if (refundAmount.compareTo(BigDecimal.ZERO) > 0) {
+            campaignWalletGateway.requestRefund(saved);
+            eventPublisher.publishEvent(new CampaignRefundRequestedEvent(this, saved, refundAmount));
+        }
+
+        return saved;
+    }
+
+    @Override
+    public int processExpiredCampaigns(LocalDate today) {
+        List<Campaign> allCampaigns = campaignRepository.findAll();
+        int processed = 0;
+
+        for (Campaign campaign : allCampaigns) {
+            if (!isExpiredProcessable(campaign, today)) {
+                continue;
+            }
+
+            BigDecimal raised = campaign.getTotalRaised() == null ? BigDecimal.ZERO : campaign.getTotalRaised();
+            boolean isSuccess = campaign.getTargetAmount() != null
+                    && raised.compareTo(campaign.getTargetAmount()) >= 0;
+
+            campaign.setStatus(isSuccess ? CampaignStatus.CLOSED : CampaignStatus.CANCELLED);
+            Campaign saved = campaignRepository.save(campaign);
+
+            if (isSuccess) {
+                campaignWalletGateway.requestPayout(saved);
+                eventPublisher.publishEvent(new CampaignPayoutRequestedEvent(this, saved, raised));
+            } else if (raised.compareTo(BigDecimal.ZERO) > 0) {
+                campaignWalletGateway.requestRefund(saved);
+                eventPublisher.publishEvent(new CampaignRefundRequestedEvent(this, saved, raised));
+            }
+            processed++;
+        }
+
+        return processed;
+    }
+
+    private boolean isExpiredProcessable(Campaign campaign, LocalDate today) {
+        if (campaign.getDeadline() == null || today == null) {
+            return false;
+        }
+
+        boolean isExpired = !campaign.getDeadline().isAfter(today);
+        boolean canBeFinalized = campaign.getStatus() == CampaignStatus.OPEN || campaign.getStatus() == CampaignStatus.WAITING;
+        return isExpired && canBeFinalized;
+    }
+
     private void validateActorPermission(Campaign campaign, String actorId, boolean isAdmin) {
         if (isAdmin) {
             return;

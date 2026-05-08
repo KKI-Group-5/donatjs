@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.event.CampaignNearTargetEvent;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignStatusChangedEvent;
+import id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.InMemoryCampaignRepository;
@@ -14,12 +15,12 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -32,13 +33,15 @@ class SimpleCampaignServiceTest {
     private ApplicationEventPublisher publisher;
     private SimpleCampaignService service;
     private RecordingCampaignWalletGateway walletGateway;
+    private RecordingEventPublisher eventPublisher;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryCampaignRepository();
         walletGateway = new RecordingCampaignWalletGateway();
         publisher = mock(ApplicationEventPublisher.class);
-        service = new SimpleCampaignService(repository, walletGateway, publisher, new BigDecimal("0.98"));
+        eventPublisher = new RecordingEventPublisher(publisher);
+        service = new SimpleCampaignService(repository, walletGateway, eventPublisher, new BigDecimal("0.98"));
     }
 
     @Test
@@ -153,6 +156,28 @@ class SimpleCampaignServiceTest {
         verify(publisher).publishEvent(captor.capture());
         assertThat(captor.getValue().getNewStatus()).isEqualTo(CampaignStatus.REJECTED);
         assertThat(captor.getValue().shouldTerminateSubscriptions()).isTrue();
+    }
+
+    @Test
+    void moderateCampaign_reject_waitingCampaignPublishesRejectedCampaignEventWithCreatorId() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Waiting campaign");
+        campaign.setDescription("To review");
+        campaign.setStatus(CampaignStatus.WAITING);
+        campaign.setCreatorId("creator-123");
+        Campaign saved = repository.save(campaign);
+
+        Campaign moderated = service.moderateCampaign(saved.getId(), false);
+
+        assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
+        assertThat(eventPublisher.publishedEvents)
+                .filteredOn(e -> e instanceof RejectedCampaignEvent)
+                .hasSize(1)
+                .first()
+                .isInstanceOfSatisfying(RejectedCampaignEvent.class, event -> {
+                    assertThat(event.getCreatorId()).isEqualTo("creator-123");
+                    assertThat(event.getCampaign().getId()).isEqualTo(saved.getId());
+                });
     }
 
     @Test
@@ -292,6 +317,23 @@ class SimpleCampaignServiceTest {
         @Override
         public void requestRefund(Campaign campaign) {
             refundRequestedCount++;
+        }
+    }
+
+    private static class RecordingEventPublisher implements ApplicationEventPublisher {
+        private int publishedCount;
+        private final List<Object> publishedEvents = new ArrayList<>();
+        private final ApplicationEventPublisher delegate;
+
+        RecordingEventPublisher(ApplicationEventPublisher delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void publishEvent(Object event) {
+            publishedCount++;
+            publishedEvents.add(event);
+            delegate.publishEvent(event);
         }
     }
 }
