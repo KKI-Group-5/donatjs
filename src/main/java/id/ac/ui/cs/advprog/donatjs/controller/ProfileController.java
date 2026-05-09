@@ -28,9 +28,7 @@ public class ProfileController {
     }
 
     @PutMapping("/update")
-    public UserProfileDTO updateMyProfile(
-            Authentication authentication,
-            @RequestBody UpdateProfileRequest request) {
+    public UserProfileDTO updateMyProfile(@RequestBody UpdateProfileRequest request, Authentication authentication) {
         String email = currentUserService.getCurrentUserEmail(authentication);
         return profileService.updateUserProfile(email, request);
     }

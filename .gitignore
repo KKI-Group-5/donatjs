@@ -37,14 +37,18 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### macOS / JetBrains clutter ###
+.DS_Store
 **/.DS_Store
+pencil-new.pen
 
 ### Internal Documentation ###
 internal_documentation/
 .env
 .env.local
 
-### macOS / JetBrains clutter ###
-.DS_Store
-**/.DS_Store
-pencil-new.pen
+### Local AI assistant config — never commit ###
+CLAUDE.md
+.claude/
+src/main/resources/application-local.properties

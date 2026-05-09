@@ -2,12 +2,16 @@ package id.ac.ui.cs.advprog.donatjs.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@Primary
+@ConditionalOnBean(JavaMailSender.class)
 public class SmtpEmailService implements EmailService {
 
     private final JavaMailSender mailSender;
@@ -20,6 +24,11 @@ public class SmtpEmailService implements EmailService {
         this.mailSender = mailSender;
         this.fromAddress = fromAddress;
         this.fromName = fromName;
+    }
+
+    @Override
+    public void sendEmail(String to, String subject, String body) {
+        sendPlainText(to, subject, body);
     }
 
     @Override

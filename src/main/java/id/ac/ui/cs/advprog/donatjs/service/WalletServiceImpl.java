@@ -36,6 +36,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public Wallet getWalletByUserId(String userId) {
         return walletRepository.findByUserId(userId).orElseGet(() -> {
             long opening = Math.max(0L, IdrMoney.wholeRupiah(walletInitialBalance));
@@ -62,6 +63,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public Wallet deductBalance(String userId, double amount, String description) {
         long amt = IdrMoney.wholeRupiah(amount);
         if (amt <= 0) {
@@ -89,6 +91,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public Wallet withdraw(String userId, double amount, String description) {
         long amt = IdrMoney.wholeRupiah(amount);
         if (amt <= 0) {
@@ -121,6 +124,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public Wallet deductForDonation(String userId, double amount, String campaignName) {
         long amt = IdrMoney.wholeRupiah(amount);
         if (amt <= 0) {

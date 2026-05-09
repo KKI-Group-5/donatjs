@@ -35,6 +35,7 @@ public class DonationService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
+    @SuppressWarnings("null")
     public DonationResponse createDonation(CreateDonationRequest request) {
 
         Campaign campaign = campaignService.findById(request.getCampaignId())
@@ -106,6 +107,7 @@ public class DonationService {
     }
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("null")
     public DonationResponse getDonationById(Long id) {
         Donation donation = donationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(

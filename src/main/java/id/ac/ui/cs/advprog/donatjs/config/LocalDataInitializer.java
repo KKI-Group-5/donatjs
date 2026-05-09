@@ -146,6 +146,7 @@ public class LocalDataInitializer {
         });
     }
 
+    @SuppressWarnings("null")
     private void ensureWallet(WalletRepository walletRepo,
                               TransactionRepository transactionRepo,
                               String userId, double initialBalance) {
@@ -188,6 +189,7 @@ public class LocalDataInitializer {
         return repo.save(campaign);
     }
 
+    @SuppressWarnings("null")
     private void ensureDonation(DonationRepository repo, String userId, Long campaignId,
                                 long amount, Donation.PaymentMethod method) {
         boolean exists = repo.findByUserIdOrderByCreatedAtDesc(userId).stream()
@@ -209,6 +211,7 @@ public class LocalDataInitializer {
                 .build());
     }
 
+    @SuppressWarnings("null")
     private void ensureSavedCampaign(SavedCampaignRepository repo, String userId, Campaign campaign) {
         String campaignId = String.valueOf(campaign.getId());
         if (repo.existsByUserIdAndCampaignId(userId, campaignId)) {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.donatjs.dto.SaveCampaignRequest;
 import id.ac.ui.cs.advprog.donatjs.model.SavedCampaign;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import id.ac.ui.cs.advprog.donatjs.service.SavedCampaignService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SavedCampaignController.class)
 @WithMockUser
+@SuppressWarnings("null")
 class SavedCampaignControllerTest {
 
     @Autowired
@@ -36,6 +38,9 @@ class SavedCampaignControllerTest {
 
     @MockitoBean
     private CurrentUserService currentUserService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
