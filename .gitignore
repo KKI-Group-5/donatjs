@@ -46,6 +46,8 @@ pencil-new.pen
 internal_documentation/
 .env
 .env.local
+TEMPORARY_FILES/
+TEMP_CI_CD/
 
 ### Local AI assistant config — never commit ###
 CLAUDE.md

@@ -184,4 +184,34 @@ class SubscriptionControllerTest {
         mockMvc.perform(get("/api/subscriptions/user/{userId}", "other-user"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void getMySubscriptions_returnsList() throws Exception {
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
+        when(subscriptionService.getSubscriptionsByUser(USER_ID))
+                .thenReturn(List.of(buildResponse(SubscriptionStatus.ACTIVE)));
+
+        mockMvc.perform(get("/api/subscriptions/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].userId").value(USER_ID));
+    }
+
+    @Test
+    void createSubscription_nullMessage_returnsUnprocessable() throws Exception {
+        CreateSubscriptionRequest request = CreateSubscriptionRequest.builder()
+                .campaignId(CAMPAIGN_ID)
+                .amount(AMOUNT).frequency(SubscriptionFrequency.MONTHLY)
+                .build();
+
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
+        when(subscriptionService.createSubscription(any()))
+                .thenThrow(new IllegalStateException((String) null));
+
+        mockMvc.perform(post("/api/subscriptions")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnprocessableEntity());
+    }
 }

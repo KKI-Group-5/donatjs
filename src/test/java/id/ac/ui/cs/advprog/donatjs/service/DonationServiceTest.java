@@ -256,4 +256,61 @@ class DonationServiceTest {
 
         assertThrows(EntityNotFoundException.class, () -> donationService.getDonationById(999L));
     }
+
+    @Test
+    void testGetDonationsByUser() {
+        Donation donation = buildSavedDonation(1L, 100L, PaymentMethod.GOPAY, 0L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        when(donationRepository.findByUserIdOrderByCreatedAtDesc("user-1")).thenReturn(java.util.Arrays.asList(donation));
+        java.util.List<DonationResponse> res = donationService.getDonationsByUser("user-1");
+        assertEquals(1, res.size());
+    }
+
+    @Test
+    void testGetTotalDonationsByCampaign() {
+        when(donationRepository.sumSuccessfulAmountByCampaignId(1L)).thenReturn(500L);
+        Long total = donationService.getTotalDonationsByCampaign(1L);
+        assertEquals(500L, total);
+    }
+
+    @Test
+    void testGetSuccessfulDonationsByCampaign() {
+        Donation donation = buildSavedDonation(1L, 100L, PaymentMethod.GOPAY, 0L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        when(donationRepository.findByCampaignIdAndStatus(1L, Donation.DonationStatus.SUCCESS)).thenReturn(java.util.Arrays.asList(donation));
+        java.util.List<DonationResponse> res = donationService.getSuccessfulDonationsByCampaign(1L);
+        assertEquals(1, res.size());
+    }
+
+    @Test
+    void testUpdateDonationNotesSuccess() {
+        Donation donation = buildSavedDonation(1L, 100L, PaymentMethod.GOPAY, 0L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        when(donationRepository.findByIdAndUserId(1L, "user-1")).thenReturn(Optional.of(donation));
+        when(donationRepository.save(donation)).thenReturn(donation);
+        
+        DonationResponse res = donationService.updateDonationNotes(1L, "user-1", "New Notes");
+        assertNotNull(res);
+        assertEquals("New Notes", donation.getNotes());
+    }
+
+    @Test
+    void testUpdateDonationNotesNotFound() {
+        when(donationRepository.findByIdAndUserId(10L, "user-1")).thenReturn(Optional.empty());
+        assertThrows(EntityNotFoundException.class, () -> donationService.updateDonationNotes(10L, "user-1", "Notes"));
+    }
+
+    @Test
+    void testCountRejectedDonationsByUser() {
+        when(donationRepository.countByUserIdAndStatus("user-1", Donation.DonationStatus.REJECTED)).thenReturn(3L);
+        assertEquals(3L, donationService.countRejectedDonationsByUser("user-1"));
+    }
+
+    @Test
+    void testProcessRefundForCampaign() {
+        Donation donation = buildSavedDonation(1L, 100L, PaymentMethod.GOPAY, 0L, DonationStatus.SUCCESS, DonationType.ONE_TIME);
+        when(donationRepository.findByCampaignIdAndStatus(1L, Donation.DonationStatus.SUCCESS)).thenReturn(java.util.Arrays.asList(donation));
+        
+        donationService.processRefundForCampaign(1L);
+        
+        assertEquals(Donation.DonationStatus.REFUNDED, donation.getStatus());
+        verify(donationRepository, times(1)).saveAll(anyList());
+    }
 }

@@ -305,6 +305,67 @@ class SimpleCampaignServiceTest {
         return repository.save(c);
     }
 
+    @Test
+    void findOpenCampaigns_returnsList() {
+        openCampaign(new BigDecimal("100"), new BigDecimal("0"));
+        List<Campaign> res = service.findOpenCampaigns();
+        assertThat(res).hasSize(1);
+    }
+
+    @Test
+    void findByCreatorId_returnsList() {
+        Campaign c = new Campaign();
+        c.setCreatorId("user1");
+        repository.save(c);
+        List<Campaign> res = service.findByCreatorId("user1");
+        assertThat(res).hasSize(1);
+    }
+
+    @Test
+    void updateDescription_actorValidationSuccess() {
+        Campaign c = new Campaign();
+        c.setCreatorId("user1");
+        c.setStatus(CampaignStatus.OPEN);
+        Campaign saved = repository.save(c);
+
+        Campaign updated = service.updateDescription(saved.getId(), "user1", false, "desc");
+        assertThat(updated.getDescription()).isEqualTo("desc");
+    }
+
+    @Test
+    void updateDescription_actorValidationForbidden() {
+        Campaign c = new Campaign();
+        c.setCreatorId("user1");
+        c.setStatus(CampaignStatus.OPEN);
+        Campaign saved = repository.save(c);
+
+        assertThatThrownBy(() -> service.updateDescription(saved.getId(), "user2", false, "desc"))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void deleteIfNoDonations_actorValidationForbidden() {
+        Campaign c = new Campaign();
+        c.setCreatorId("user1");
+        Campaign saved = repository.save(c);
+
+        assertThatThrownBy(() -> service.deleteIfNoDonations(saved.getId(), "user2", false))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void adminUpdateCampaign_success() {
+        Campaign c = new Campaign();
+        c.setTitle("Old Title");
+        c.setTargetAmount(new BigDecimal("100"));
+        c.setDeadline(LocalDate.now().plusDays(1));
+        Campaign saved = repository.save(c);
+
+        Campaign updated = service.adminUpdateCampaign(saved.getId(), "New Title", LocalDate.now().plusDays(10), new BigDecimal("200"));
+        assertThat(updated.getTitle()).isEqualTo("New Title");
+        assertThat(updated.getTargetAmount()).isEqualByComparingTo("200");
+    }
+
     private static class RecordingCampaignWalletGateway implements CampaignWalletGateway {
         private int payoutRequestedCount;
         private int refundRequestedCount;
