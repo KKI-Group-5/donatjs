@@ -4,22 +4,12 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>DonatJS | Campaigns</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
 </head>
 <body>
 
 <div th:replace="~{fragments/header :: header}"></div>
 
-<!-- 75% Milestone: Deadline Automation Feature Info -->
-<div style="background-color: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #00aa00;">
-    <strong>✓ 75% Milestone Features Active:</strong>
-    <ul>
-        <li><strong>Deadline Automation:</strong> Campaigns automatically close/cancel at midnight (no manual action needed)</li>
-        <li><strong>Payout/Refund Events:</strong> Successful campaigns trigger creator payouts; failed campaigns trigger donor refunds</li>
-        <li><strong>Fraud Detection:</strong> Admins can mark campaigns as fraudulent, triggering automatic refunds</li>
-        <li><strong>Event Notifications:</strong> All events are logged and can integrate with external notification systems</li>
-    </ul>
-</div>
 
 <section class="campaigns-section">
     <div class="section-header">
