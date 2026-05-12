@@ -272,134 +272,150 @@ C4Component
     Rel(dispute_svc, dispute_repo, "Reads/Writes")
 ```
 
-#### Code Diagrams
+#### Code Diagrams (C4 Level 4)
 
-##### 1. Class Diagram: Core Domain & Services
-This diagram illustrates the relationship between the core entities and services within the module.
+The following diagrams provide a "zoom-in" view of the internal implementation details (classes, interfaces, and their relationships) for the components within the **Authentication & User Profile** module.
+
+##### 1. Code Diagram: Authentication & Registration Implementation
+This diagram zooms into the `AuthService` and its implementation details for handling user identity and credentials.
 
 ```mermaid
 classDiagram
+    class AuthController {
+        -AuthService authService
+        +loginPage()
+        +registerPage()
+        +register(RegisterRequest)
+    }
+    class AuthService {
+        <<interface>>
+        +registerUser(RegisterRequest) AppUser
+    }
+    class AuthServiceImpl {
+        -UserRepository userRepository
+        -PasswordEncoder passwordEncoder
+        +registerUser(RegisterRequest) AppUser
+    }
     class AppUser {
         +UUID id
         +String email
         +String password
         +String name
-        +int fraudActivityCount
-        +boolean isSuspended
-        +boolean flagged
-        +getProfile()
+        +boolean isAdmin
+    }
+    class RegisterRequest {
+        +String email
+        +String password
+        +String name
     }
 
+    AuthController --> AuthService : uses
+    AuthService <|.. AuthServiceImpl : implements
+    AuthServiceImpl --> UserRepository : uses
+    AuthServiceImpl ..> AppUser : creates
+    AuthServiceImpl ..> RegisterRequest : processes
+```
+
+##### 2. Code Diagram: User Profile Management & DTO Mapping
+This diagram shows how the `ProfileService` aggregates data from multiple modules to build the `UserProfileDTO`.
+
+```mermaid
+classDiagram
+    class ProfileController {
+        -ProfileService profileService
+        +viewProfile()
+        +updateProfile(UpdateProfileRequest)
+    }
+    class ProfileService {
+        -UserRepository userRepository
+        -CampaignService campaignService
+        -DonationService donationService
+        -ApplicationEventPublisher eventPublisher
+        +getUserProfile(email) UserProfileDTO
+        +updateUserProfile(email, UpdateProfileRequest) UserProfileDTO
+    }
+    class UserProfileDTO {
+        +String name
+        +String email
+        +List~Campaign~ createdCampaigns
+        +List~Donation~ donations
+        +boolean isSuspended
+    }
+    class ProfileUpdatedEvent {
+        +String userId
+        +String newName
+    }
+
+    ProfileController --> ProfileService : uses
+    ProfileService ..> UserProfileDTO : builds
+    ProfileService ..> ProfileUpdatedEvent : publishes
+    ProfileService --> UserRepository : fetches user
+```
+
+##### 3. Code Diagram: User Moderation & Fraud Detection
+This diagram illustrates the implementation of the fraud threshold logic and account flagging within the `UserModerationService`.
+
+```mermaid
+classDiagram
+    class UserModerationService {
+        <<interface>>
+        +reportFraudActivity(email, reason)
+        +suspendUser(userId)
+        +getFlaggedUsers() List~AppUser~
+    }
+    class UserModerationServiceImpl {
+        -int FRAUD_THRESHOLD = 3
+        -UserRepository userRepository
+        -AdminNotificationRepository notificationRepo
+        +reportFraudActivity(email, reason)
+    }
+    class AdminNotification {
+        +Long id
+        +String userEmail
+        +String message
+        +boolean read
+    }
+
+    UserModerationService <|.. UserModerationServiceImpl : implements
+    UserModerationServiceImpl --> UserRepository : updates AppUser
+    UserModerationServiceImpl --> AdminNotificationRepository : creates
+    AdminNotificationRepository ..> AdminNotification : persists
+```
+
+##### 4. Code Diagram: Dispute & Appeal System
+This diagram shows the domain model and service logic for the dispute resolution process.
+
+```mermaid
+classDiagram
+    class DisputeController {
+        -DisputeService disputeService
+        +submitAppeal(reason)
+        +resolveDispute(disputeId, approve)
+    }
+    class DisputeService {
+        <<interface>>
+        +submitDispute(userId, reason) DisputeDTO
+        +resolveDispute(disputeId, approve) DisputeDTO
+    }
     class Dispute {
         +UUID id
+        +AppUser user
         +String reason
         +String status
         +String adminNotes
-        +AppUser user
+    }
+    class DisputeRepository {
+        <<interface>>
+        +findByUser(AppUser) List~Dispute~
+        +findByStatus(status) List~Dispute~
     }
 
-    class ProfileService {
-        +getUserProfile(email)
-        +updateUserProfile(email, request)
-    }
-
-    class UserModerationService {
-        +flagUser(userId)
-        +suspendUser(userId)
-    }
-
-    class DisputeService {
-        +submitDispute(userId, reason)
-        +resolveDispute(disputeId, status)
-    }
-
-    AppUser "1" *-- "0..*" Dispute : has
-    ProfileService ..> AppUser : manages
-    UserModerationService ..> AppUser : moderates
-    DisputeService ..> Dispute : manages
+    DisputeController --> DisputeService : uses
+    DisputeService --> DisputeRepository : uses
+    DisputeRepository ..> Dispute : manages
+    Dispute "n" -- "1" AppUser : relates to
 ```
 
-##### 2. Sequence Diagram: Profile Update Event Flow
-This demonstrates the asynchronous communication between the User Profile module and other modules when a profile is updated.
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant PC as ProfileController
-    participant PS as ProfileService
-    participant EP as ApplicationEventPublisher
-    participant Listener as ProfileUpdatedEventListener
-    participant CM as CampaignModule
-    participant DM as DonationModule
-
-    User->>PC: Update Profile (Name, Bio)
-    PC->>PS: updateUserProfile(email, request)
-    PS->>PS: Save to Database
-    PS->>EP: publishEvent(ProfileUpdatedEvent)
-    PS-->>PC: UserProfileDTO
-    PC-->>User: 200 OK (Updated Profile)
-
-    Note over EP, Listener: Asynchronous internal event
-    EP->>Listener: handle(ProfileUpdatedEvent)
-    par Notify Modules
-        Listener->>CM: Update creator name in campaigns
-    and
-        Listener->>DM: Update donor name in records
-    end
-```
-
-##### 3. Sequence Diagram: Authentication with Google OAuth2
-This illustrates the flow when a user authenticates via a third-party identity provider.
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant App as DonatJS App
-    participant Google as Google OAuth2
-    participant Repo as UserRepository
-
-    User->>App: Click "Login with Google"
-    App->>Google: Redirect to Google Authorization Server
-    User->>Google: Consent & Authenticate
-    Google->>App: Callback with Authorization Code
-    App->>Google: Exchange Code for Access Token & ID Token
-    Google-->>App: Tokens (email, name, picture)
-    
-    App->>Repo: findByEmail(google_email)
-    alt User exists
-        Repo-->>App: AppUser
-    else User does not exist
-        App->>Repo: save(new AppUser from Google data)
-    end
-    
-    App-->>User: Login Success (Session Created)
-```
-
-##### 4. Sequence Diagram: Dispute Appeal Process
-This shows how a suspended user can appeal their status and how an admin resolves it.
-
-```mermaid
-sequenceDiagram
-    participant SUser as Suspended User
-    participant DC as DisputeController
-    participant DS as DisputeService
-    participant Repo as DisputeRepository
-    participant Admin
-    participant MS as UserModerationService
-
-    SUser->>DC: Submit Dispute Request (Reason)
-    DC->>DS: submitDispute(userId, reason)
-    DS->>Repo: Save Dispute (Status: PENDING)
-    DS-->>DC: Dispute Created
-    DC-->>SUser: Dispute Submitted Successfully
-
-    Admin->>DC: Review Pending Disputes
-    Admin->>DS: resolveDispute(disputeId, APPROVED, notes)
-    DS->>Repo: Update Dispute Status
-    DS->>MS: reactivateUser(userId)
-    MS->>MS: Set isSuspended = false
-    DS-->>Admin: Dispute Resolved
-```
 
 ## Work Plan & Milestones
 This project is divided into 5 main milestones. The tasks below detail the development plan for each module. Please add your specific module tasks and assign a Person In Charge (PIC) for each item.
