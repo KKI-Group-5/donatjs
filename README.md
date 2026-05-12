@@ -106,7 +106,7 @@ C4Container
 
 ```mermaid
 C4Deployment
-    title Deployment Diagram — DonatJS
+    title Deployment Diagram - DonatJS
 
     Deployment_Node(devmachine, "Developer Machine", "Windows / macOS / Linux") {
         Deployment_Node(jvm_local, "JVM 21", "Eclipse Temurin 21") {
@@ -119,25 +119,26 @@ C4Deployment
 
     Deployment_Node(github, "GitHub", "github.com/KKI-Group-5/donatjs") {
         Deployment_Node(actions, "GitHub Actions", "ubuntu-22.04 runners") {
-            Container(pipeline, "CI/CD Pipeline", "ci.yml + cd.yml", "Runs tests → builds Docker image → pushes to Artifact Registry → deploys to Cloud Run on push to main or staging")
+            Container(pipeline, "CI/CD Pipeline", "ci.yml + cd.yml", "Runs tests and builds")
         }
     }
 
     Deployment_Node(gcp, "Google Cloud Platform") {
         Deployment_Node(artifact, "Artifact Registry", "GCP Artifact Registry") {
-            Container(image, "Docker Image", "eclipse-temurin:21-jre", "Multi-stage build: JDK 21 builder → JRE 21 runtime")
+            Container(app_image, "Docker Image", "eclipse-temurin:21-jre", "Multi-stage build runtime")
         }
         Deployment_Node(cloudrun, "Cloud Run", "Managed serverless container runtime") {
-            Container(app_prod, "DonatJS App", "Spring Boot JAR", "Active Spring profile: supabase; auto-scales to zero on idle; PORT injected by Cloud Run")
+            Container(app_prod, "DonatJS App", "Spring Boot JAR", "Active Spring profile: supabase")
         }
     }
 
     Deployment_Node(supabase_node, "Supabase", "Managed cloud service") {
-        ContainerDb(pg, "PostgreSQL + pgBouncer", "PostgreSQL 15", "Production database with connection pooling optimised for Cloud Run's ephemeral connections")
+        ContainerDb(pg, "PostgreSQL + pgBouncer", "PostgreSQL 15", "Production database")
     }
 
-    Rel(pipeline, artifact, "Pushes Docker image", "docker push")
-    Rel(artifact, cloudrun, "Pulls and runs image on deploy", "Cloud Run deploy")
+    %% Relationships updated to point to Containers instead of Deployment_Nodes
+    Rel(pipeline, app_image, "Pushes Docker image", "docker push")
+    Rel(app_image, app_prod, "Deploys image to", "Cloud Run deploy")
     Rel(app_prod, pg, "Queries via pgBouncer", "JDBC / SSL")
 ```
 
