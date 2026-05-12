@@ -209,6 +209,198 @@ These changes preserve the core architectural principle — a single Spring Boot
 
 ---
 
+### Tutorial B (Individual Work)
+
+#### Detailed Container Diagram
+
+This diagram focuses on the **Authentication & User Profile** module's placement within the DonatJS ecosystem and its external dependencies.
+
+```mermaid
+C4Container
+    title Container Diagram — Authentication & User Profile Context
+
+    Person(user, "User", "A person who registers, logs in, and manages their profile.")
+    Person(admin, "Administrator", "Manages user accounts, flags, and resolves disputes.")
+
+    System_Boundary(donatjs_platform, "DonatJS Platform") {
+        Container(webapp, "Spring Boot Web App", "Java, Spring Boot", "Handles identity management, profile aggregation, and moderation logic.")
+        ContainerDb(database, "PostgreSQL (Supabase)", "Managed DB", "Stores user credentials, profile data, suspension status, and dispute records.")
+    }
+
+    System_Ext(google, "Google OAuth2", "Identity Provider for social sign-in.")
+
+    Rel(user, webapp, "Registers, Logs in, Updates Profile", "HTTPS/TLS")
+    Rel(admin, webapp, "Suspends accounts, Resolves disputes", "HTTPS/TLS")
+    Rel(webapp, google, "Authenticates users via", "OAuth2 / OIDC")
+    Rel(webapp, database, "Persists user and dispute data", "JDBC")
+```
+
+#### Component Diagram
+
+The following diagram breaks down the internal components of the **Authentication & User Profile** module within the Spring Boot application.
+
+```mermaid
+C4Component
+    title Component Diagram — Authentication & User Profile Module
+
+    Container_Boundary(auth_profile_module, "Authentication & User Profile Module") {
+        Component(auth_ctrl, "AuthController / PageController", "Spring MVC", "Handles login, registration, and social auth redirects.")
+        Component(profile_ctrl, "ProfileController", "Spring MVC Rest", "Handles profile management and activity aggregation.")
+        Component(dispute_ctrl, "DisputeController", "Spring MVC Rest", "Allows suspended users to submit appeals.")
+        Component(mod_ctrl, "UserModerationController", "Spring MVC Rest", "Admin interface for flagging and suspending users.")
+
+        Component(auth_svc, "AuthService", "Spring Service", "Handles registration logic and password hashing.")
+        Component(profile_svc, "ProfileService", "Spring Service", "Aggregates data from other modules and updates user info.")
+        Component(mod_svc, "UserModerationService", "Spring Service", "Implements suspension logic and threshold monitoring.")
+        Component(dispute_svc, "DisputeService", "Spring Service", "Manages the lifecycle of user disputes.")
+
+        Component(user_repo, "UserRepository", "Spring Data JPA", "Data access for AppUser entity.")
+        Component(dispute_repo, "DisputeRepository", "Spring Data JPA", "Data access for Dispute entity.")
+        
+        Component(event_pub, "ApplicationEventPublisher", "Spring Context", "Publishes ProfileUpdatedEvent for cross-module consistency.")
+    }
+
+    Rel(auth_ctrl, auth_svc, "Uses")
+    Rel(profile_ctrl, profile_svc, "Uses")
+    Rel(dispute_ctrl, dispute_svc, "Uses")
+    Rel(mod_ctrl, mod_svc, "Uses")
+
+    Rel(auth_svc, user_repo, "Reads/Writes")
+    Rel(profile_svc, user_repo, "Reads/Writes")
+    Rel(profile_svc, event_pub, "Publishes ProfileUpdatedEvent")
+    Rel(mod_svc, user_repo, "Updates status")
+    Rel(dispute_svc, dispute_repo, "Reads/Writes")
+```
+
+#### Code Diagrams
+
+##### 1. Class Diagram: Core Domain & Services
+This diagram illustrates the relationship between the core entities and services within the module.
+
+```mermaid
+classDiagram
+    class AppUser {
+        +UUID id
+        +String email
+        +String password
+        +String name
+        +int fraudActivityCount
+        +boolean isSuspended
+        +boolean flagged
+        +getProfile()
+    }
+
+    class Dispute {
+        +UUID id
+        +String reason
+        +String status
+        +String adminNotes
+        +AppUser user
+    }
+
+    class ProfileService {
+        +getUserProfile(email)
+        +updateUserProfile(email, request)
+    }
+
+    class UserModerationService {
+        +flagUser(userId)
+        +suspendUser(userId)
+    }
+
+    class DisputeService {
+        +submitDispute(userId, reason)
+        +resolveDispute(disputeId, status)
+    }
+
+    AppUser "1" *-- "0..*" Dispute : has
+    ProfileService ..> AppUser : manages
+    UserModerationService ..> AppUser : moderates
+    DisputeService ..> Dispute : manages
+```
+
+##### 2. Sequence Diagram: Profile Update Event Flow
+This demonstrates the asynchronous communication between the User Profile module and other modules when a profile is updated.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant PC as ProfileController
+    participant PS as ProfileService
+    participant EP as ApplicationEventPublisher
+    participant Listener as ProfileUpdatedEventListener
+    participant CM as CampaignModule
+    participant DM as DonationModule
+
+    User->>PC: Update Profile (Name, Bio)
+    PC->>PS: updateUserProfile(email, request)
+    PS->>PS: Save to Database
+    PS->>EP: publishEvent(ProfileUpdatedEvent)
+    PS-->>PC: UserProfileDTO
+    PC-->>User: 200 OK (Updated Profile)
+
+    Note over EP, Listener: Asynchronous internal event
+    EP->>Listener: handle(ProfileUpdatedEvent)
+    par Notify Modules
+        Listener->>CM: Update creator name in campaigns
+    and
+        Listener->>DM: Update donor name in records
+    end
+```
+
+##### 3. Sequence Diagram: Authentication with Google OAuth2
+This illustrates the flow when a user authenticates via a third-party identity provider.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as DonatJS App
+    participant Google as Google OAuth2
+    participant Repo as UserRepository
+
+    User->>App: Click "Login with Google"
+    App->>Google: Redirect to Google Authorization Server
+    User->>Google: Consent & Authenticate
+    Google->>App: Callback with Authorization Code
+    App->>Google: Exchange Code for Access Token & ID Token
+    Google-->>App: Tokens (email, name, picture)
+    
+    App->>Repo: findByEmail(google_email)
+    alt User exists
+        Repo-->>App: AppUser
+    else User does not exist
+        App->>Repo: save(new AppUser from Google data)
+    end
+    
+    App-->>User: Login Success (Session Created)
+```
+
+##### 4. Sequence Diagram: Dispute Appeal Process
+This shows how a suspended user can appeal their status and how an admin resolves it.
+
+```mermaid
+sequenceDiagram
+    participant SUser as Suspended User
+    participant DC as DisputeController
+    participant DS as DisputeService
+    participant Repo as DisputeRepository
+    participant Admin
+    participant MS as UserModerationService
+
+    SUser->>DC: Submit Dispute Request (Reason)
+    DC->>DS: submitDispute(userId, reason)
+    DS->>Repo: Save Dispute (Status: PENDING)
+    DS-->>DC: Dispute Created
+    DC-->>SUser: Dispute Submitted Successfully
+
+    Admin->>DC: Review Pending Disputes
+    Admin->>DS: resolveDispute(disputeId, APPROVED, notes)
+    DS->>Repo: Update Dispute Status
+    DS->>MS: reactivateUser(userId)
+    MS->>MS: Set isSuspended = false
+    DS-->>Admin: Dispute Resolved
+```
+
 ## Work Plan & Milestones
 This project is divided into 5 main milestones. The tasks below detail the development plan for each module. Please add your specific module tasks and assign a Person In Charge (PIC) for each item.
 
