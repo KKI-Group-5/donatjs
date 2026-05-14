@@ -1,162 +1,166 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Profile | DonatJS</title>
     <th:block th:replace="~{fragments/head :: head}"></th:block>
 </head>
+
 <body>
 
-<div th:replace="~{fragments/header :: header}"></div>
+    <div th:replace="~{fragments/header :: header}"></div>
 
-<div class="profile-page">
-    <div id="suspendedBanner" class="suspended-banner"></div>
-    
-    <div class="profile-header">
-        <h1>My Profile</h1>
-    </div>
+    <div class="profile-page">
+        <div id="suspendedBanner" class="suspended-banner"></div>
 
-    <div class="profile-container">
-        <!-- Identity Settings -->
-        <div class="glass-card">
-            <h3 style="margin-bottom: 20px; font-size: 20px; color: var(--text-primary);">Personal Information</h3>
-            <form id="profileForm">
-                <div class="form-group">
-                    <label for="inputEmail">Email Address</label>
-                    <input type="email" id="inputEmail" class="form-control" disabled />
-                </div>
-                <div class="form-group">
-                    <label for="inputName">Full Name</label>
-                    <input type="text" id="inputName" class="form-control" required />
-                </div>
-                <div class="form-group">
-                    <label for="inputDob">Date of Birth</label>
-                    <input type="date" id="inputDob" class="form-control" />
-                </div>
-                <div class="form-group">
-                    <label for="inputBio">Biography</label>
-                    <textarea id="inputBio" class="form-control" placeholder="Tell the community about yourself..."></textarea>
-                </div>
-                <button type="submit" id="btnSave" class="btn-primary">Save Changes</button>
-            </form>
+        <div class="profile-header">
+            <h1>My Profile</h1>
         </div>
 
-        <!-- Aggregated Activities -->
-        <div class="profile-activities">
-            <div class="activity-section">
-                <h3>My Campaigns</h3>
-                <div id="campaignsList" class="activity-list">
-                    <p style="color: var(--text-light); font-size: 14px;">Loading campaigns...</p>
-                </div>
+        <div class="profile-container">
+            <!-- Identity Settings -->
+            <div class="glass-card">
+                <h3 style="margin-bottom: 20px; font-size: 20px; color: var(--text-primary);">Personal Information</h3>
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="inputEmail">Email Address</label>
+                        <input type="email" id="inputEmail" class="form-control" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label for="inputName">Full Name</label>
+                        <input type="text" id="inputName" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="inputDob">Date of Birth</label>
+                        <input type="date" id="inputDob" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label for="inputBio">Biography</label>
+                        <textarea id="inputBio" class="form-control"
+                            placeholder="Tell the community about yourself..."></textarea>
+                    </div>
+                    <button type="submit" id="btnSave" class="btn-primary">Save Changes</button>
+                </form>
             </div>
 
-            <div class="activity-section">
-                <h3>My Donations</h3>
-                <div id="donationsList" class="activity-list">
-                    <p style="color: var(--text-light); font-size: 14px;">Loading donations...</p>
+            <!-- Aggregated Activities -->
+            <div class="profile-activities">
+                <div class="activity-section">
+                    <h3>My Campaigns</h3>
+                    <div id="campaignsList" class="activity-list">
+                        <p style="color: var(--text-light); font-size: 14px;">Loading campaigns...</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="activity-section">
-                <h3>My Subscriptions</h3>
-                <div id="subscriptionsList" class="activity-list">
-                    <p style="color: var(--text-light); font-size: 14px;">Loading subscriptions...</p>
+                <div class="activity-section">
+                    <h3>My Donations</h3>
+                    <div id="donationsList" class="activity-list">
+                        <p style="color: var(--text-light); font-size: 14px;">Loading donations...</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="activity-section">
-                <h3>Saved Campaigns</h3>
-                <div id="savedCampaignsList" class="activity-list">
-                    <p style="color: var(--text-light); font-size: 14px;">Loading saved campaigns...</p>
+                <div class="activity-section">
+                    <h3>My Subscriptions</h3>
+                    <div id="subscriptionsList" class="activity-list">
+                        <p style="color: var(--text-light); font-size: 14px;">Loading subscriptions...</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="activity-section" style="grid-column: 1 / -1;">
-                <h3>Recent Activities</h3>
-                <div id="activitiesList" class="activity-list">
-                    <p style="color: var(--text-light); font-size: 14px;">Loading recent activities...</p>
+                <div class="activity-section">
+                    <h3>Saved Campaigns</h3>
+                    <div id="savedCampaignsList" class="activity-list">
+                        <p style="color: var(--text-light); font-size: 14px;">Loading saved campaigns...</p>
+                    </div>
+                </div>
+
+                <div class="activity-section" style="grid-column: 1 / -1;">
+                    <h3>Recent Activities</h3>
+                    <div id="activitiesList" class="activity-list">
+                        <p style="color: var(--text-light); font-size: 14px;">Loading recent activities...</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div th:replace="~{fragments/footer :: footer}"></div>
+    <div th:replace="~{fragments/footer :: footer}"></div>
 
-<div id="toast" class="toast"></div>
+    <div id="toast" class="toast"></div>
 
-<script>
-    function showToast(message, type) {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.className = 'toast ' + type + ' show';
-        setTimeout(function() {
-            toast.className = 'toast';
-        }, 3000);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Fetch Profile Data
-        fetch('/api/profile/me')
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                     globalThis.location.href = '/login';
-                     throw new Error('Not authenticated');
-                }
-                if (!res.ok) throw new Error('Failed to load profile');
-                return res.json();
-            })
-            .then(data => {
-                 populateForm(data);
-                 checkSuspended(data);
-                 renderList(data.createdCampaigns, 'campaignsList', renderCampaign, 'No campaigns created yet.');
-                 renderList(data.donations, 'donationsList', renderDonation, 'No donations made yet.');
-                 renderList(data.subscriptions, 'subscriptionsList', renderSubscription, 'No active subscriptions.');
-                 renderList(data.savedCampaigns, 'savedCampaignsList', renderSavedCampaign, 'No saved campaigns.');
-                 renderList(data.activityUpdates, 'activitiesList', renderActivity, 'No recent activities.');
-            })
-            .catch(err => {
-                 if(err.message !== 'Not authenticated') {
-                     showToast(err.message, 'error');
-                 }
-            });
-    });
-
-    function renderList(list, elementId, renderFn, emptyMsg) {
-        const el = document.getElementById(elementId);
-        if (list && list.length > 0) {
-            el.innerHTML = list.map(renderFn).join('');
-        } else {
-            el.innerHTML = `<p style="color: var(--text-light); font-size: 14px;">${emptyMsg}</p>`;
+    <script>
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(function () {
+                toast.className = 'toast';
+            }, 3000);
         }
-    }
 
-    function populateForm(data) {
-        document.getElementById('inputName').value = data.name || '';
-        document.getElementById('inputEmail').value = data.email || '';
-        document.getElementById('inputBio').value = data.bio || '';
-        document.getElementById('inputDob').value = data.dateOfBirth || '';
-    }
+        document.addEventListener('DOMContentLoaded', function () {
+            // Fetch Profile Data
+            fetch('/api/profile/me')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        globalThis.location.href = '/login';
+                        throw new Error('Not authenticated');
+                    }
+                    if (!res.ok) throw new Error('Failed to load profile');
+                    return res.json();
+                })
+                .then(data => {
+                    populateForm(data);
+                    checkSuspended(data);
+                    renderList(data.createdCampaigns, 'campaignsList', renderCampaign, 'No campaigns created yet.');
+                    renderList(data.donations, 'donationsList', renderDonation, 'No donations made yet.');
+                    renderList(data.subscriptions, 'subscriptionsList', renderSubscription, 'No active subscriptions.');
+                    renderList(data.savedCampaigns, 'savedCampaignsList', renderSavedCampaign, 'No saved campaigns.');
+                    renderList(data.activityUpdates, 'activitiesList', renderActivity, 'No recent activities.');
+                })
+                .catch(err => {
+                    if (err.message !== 'Not authenticated') {
+                        showToast(err.message, 'error');
+                    }
+                });
+        });
 
-    function checkSuspended(data) {
-        const banner = document.getElementById('suspendedBanner');
-        if (data.suspended) {
-            banner.style.display = 'block';
-            banner.style.backgroundColor = 'var(--error)';
-            banner.textContent = `Account Suspended: You have ${data.rejectedDonationCount + data.rejectedCampaignCount} violations (Campaign/Donation rejections). Contact admin.`;
-            document.getElementById('btnSave').disabled = true;
-            document.getElementById('btnSave').style.background = 'var(--text-light)';
-        } else if (data.flaggedForReview) {
-            banner.style.display = 'block';
-            banner.style.backgroundColor = 'var(--warning)';
-            banner.style.color = '#fff';
-            banner.textContent = `Account Flagged: Your account is under review due to ${data.rejectedDonationCount + data.rejectedCampaignCount} violations. Please be careful.`;
+        function renderList(list, elementId, renderFn, emptyMsg) {
+            const el = document.getElementById(elementId);
+            if (list && list.length > 0) {
+                el.innerHTML = list.map(renderFn).join('');
+            } else {
+                el.innerHTML = `<p style="color: var(--text-light); font-size: 14px;">${emptyMsg}</p>`;
+            }
         }
-    }
 
-    function renderCampaign(c) {
-        return `
+        function populateForm(data) {
+            document.getElementById('inputName').value = data.name || '';
+            document.getElementById('inputEmail').value = data.email || '';
+            document.getElementById('inputBio').value = data.bio || '';
+            document.getElementById('inputDob').value = data.dateOfBirth || '';
+        }
+
+        function checkSuspended(data) {
+            const banner = document.getElementById('suspendedBanner');
+            if (data.suspended) {
+                banner.style.display = 'block';
+                banner.style.backgroundColor = 'var(--error)';
+                banner.innerHTML = `Account Suspended: You have ${data.rejectedDonationCount + data.rejectedCampaignCount} violations. 
+                                    <a href="/dispute" style="color: #fff; text-decoration: underline; margin-left: 8px;">Dispute This</a>`;
+                document.getElementById('btnSave').disabled = true;
+                document.getElementById('btnSave').style.background = 'var(--text-light)';
+            } else if (data.flaggedForReview) {
+                banner.style.display = 'block';
+                banner.style.backgroundColor = 'var(--warning)';
+                banner.style.color = '#fff';
+                banner.textContent = `Account Flagged: Your account is under review due to ${data.rejectedDonationCount + data.rejectedCampaignCount} violations. Please be careful.`;
+            }
+        }
+
+        function renderCampaign(c) {
+            return `
             <div class="activity-item">
                 <div class="activity-details">
                     <span class="activity-title">${c.title}</span>
@@ -165,10 +169,10 @@
                 <div class="activity-amount">Raised: Rp ${c.totalRaised}</div>
             </div>
         `;
-    }
+        }
 
-    function renderDonation(d) {
-        return `
+        function renderDonation(d) {
+            return `
             <div class="activity-item">
                 <div class="activity-details">
                     <span class="activity-title">Donation to Campaign #${d.campaignId}</span>
@@ -177,10 +181,10 @@
                 <div class="activity-amount">Rp ${d.amount}</div>
             </div>
         `;
-    }
+        }
 
-    function renderSubscription(s) {
-        return `
+        function renderSubscription(s) {
+            return `
             <div class="activity-item">
                 <div class="activity-details">
                     <span class="activity-title">Subscription id: ${s.id}</span>
@@ -189,10 +193,10 @@
                 <div class="activity-amount">---</div>
             </div>
         `;
-    }
+        }
 
-    function renderSavedCampaign(s) {
-        return `
+        function renderSavedCampaign(s) {
+            return `
             <div class="activity-item">
                 <div class="activity-details">
                     <span class="activity-title">${s.campaignTitle}</span>
@@ -200,10 +204,10 @@
                 </div>
             </div>
         `;
-    }
+        }
 
-    function renderActivity(a) {
-        return `
+        function renderActivity(a) {
+            return `
             <div class="activity-item">
                 <div class="activity-details">
                     <span class="activity-title">${a.type}</span>
@@ -212,10 +216,10 @@
                 <div class="activity-amount" style="font-size: 12px; font-weight: normal; color: var(--text-light);">${new Date(a.timestamp).toLocaleString()}</div>
             </div>
         `;
-    }
+        }
 
-    // Handle Profile Update Submission
-        document.getElementById('profileForm').addEventListener('submit', function(e) {
+        // Handle Profile Update Submission
+        document.getElementById('profileForm').addEventListener('submit', function (e) {
             e.preventDefault();
             const btn = document.getElementById('btnSave');
             btn.textContent = 'Saving...';
@@ -237,30 +241,31 @@
                 },
                 body: JSON.stringify(payload)
             })
-            .then(res => {
-                if (res.ok) {
-                    showToast('Profile updated successfully!', 'success');
-                    // Update header if name changed
-                    if (payload.name) {
-                        const headerLinks = document.querySelectorAll('.profile-link');
-                        headerLinks.forEach(link => link.textContent = payload.name);
+                .then(res => {
+                    if (res.ok) {
+                        showToast('Profile updated successfully!', 'success');
+                        // Update header if name changed
+                        if (payload.name) {
+                            const headerLinks = document.querySelectorAll('.profile-link');
+                            headerLinks.forEach(link => link.textContent = payload.name);
+                        }
+                    } else {
+                        return res.json().then(errData => {
+                            throw new Error(errData.message || 'Error updating profile');
+                        }).catch(() => {
+                            throw new Error('Server error updating profile');
+                        });
                     }
-                } else {
-                    return res.json().then(errData => { 
-                        throw new Error(errData.message || 'Error updating profile'); 
-                    }).catch(() => {
-                        throw new Error('Server error updating profile');
-                    });
-                }
-            })
-            .catch(err => {
-                showToast(err.message, 'error');
-            })
-            .finally(() => {
-                btn.textContent = 'Save Changes';
-                btn.disabled = false;
-            });
+                })
+                .catch(err => {
+                    showToast(err.message, 'error');
+                })
+                .finally(() => {
+                    btn.textContent = 'Save Changes';
+                    btn.disabled = false;
+                });
         });
-</script>
+    </script>
 </body>
+
 </html>
