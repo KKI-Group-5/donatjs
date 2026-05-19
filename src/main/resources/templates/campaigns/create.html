@@ -4,7 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>DonatJS | Create Campaign</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
     <style>
         .form-page { padding: var(--spacing-2xl) 80px; background: var(--bg-light); min-height: 70vh; display: flex; justify-content: center; align-items: flex-start; }
         .form-card { background: var(--white); border: 1px solid var(--soft-gray); border-radius: var(--radius-lg); padding: var(--spacing-2xl); width: 100%; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }

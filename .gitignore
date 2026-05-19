@@ -1,4 +1,5 @@
 HELP.md
+.claude.json
 .commit-msg.tmp
 .gradle
 build/

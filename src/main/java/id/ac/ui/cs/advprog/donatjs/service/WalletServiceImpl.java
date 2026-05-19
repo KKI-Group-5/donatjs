@@ -69,7 +69,8 @@ public class WalletServiceImpl implements WalletService {
         if (amt <= 0) {
             throw new IllegalArgumentException("Deduction amount must be a positive whole rupiah amount.");
         }
-        Wallet wallet = getWalletByUserId(userId);
+        Wallet wallet = walletRepository.findByUserIdForWrite(userId)
+                .orElseThrow(() -> new IllegalStateException("Insufficient balance"));
         long bal = IdrMoney.wholeRupiah(wallet.getBalance());
         if (bal < amt) {
             throw new IllegalStateException("Insufficient balance");
@@ -97,7 +98,8 @@ public class WalletServiceImpl implements WalletService {
         if (amt <= 0) {
             throw new IllegalArgumentException("Withdrawal amount must be a positive whole rupiah amount.");
         }
-        Wallet wallet = getWalletByUserId(userId);
+        Wallet wallet = walletRepository.findByUserIdForWrite(userId)
+                .orElseThrow(() -> new InsufficientBalanceException("No wallet found for user."));
         long bal = IdrMoney.wholeRupiah(wallet.getBalance());
         if (bal < amt) {
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
@@ -130,7 +132,8 @@ public class WalletServiceImpl implements WalletService {
         if (amt <= 0) {
             throw new IllegalArgumentException("Donation amount must be a positive whole rupiah amount.");
         }
-        Wallet wallet = getWalletByUserId(userId);
+        Wallet wallet = walletRepository.findByUserIdForWrite(userId)
+                .orElseThrow(() -> new InsufficientBalanceException("No wallet found for user."));
         long bal = IdrMoney.wholeRupiah(wallet.getBalance());
         if (bal < amt) {
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
