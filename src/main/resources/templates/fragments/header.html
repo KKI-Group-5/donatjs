@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<header th:fragment="header" class="header">
+    <a href="/" class="header-logo">DonatJS</a>
+
+    <div class="search-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" placeholder="Search campaigns..."/>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:16px;">
+        <a href="/campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Campaigns</a>
+        <a th:if="${isLoggedIn}" href="/donations" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">My Donations</a>
+        <a th:if="${isLoggedIn}" href="/saved-campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Saved</a>
+        <a th:if="${isLoggedIn}" href="/subscriptions" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Subscriptions</a>
+        <a th:if="${isLoggedIn}" href="/wallet" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">My Wallet</a>
+
+        <div class="auth-buttons" th:if="${isLoggedIn != true}">
+            <a href="/login" class="btn-login">Log In</a>
+            <a href="/register" class="btn-signup">Sign Up</a>
+        </div>
+        <div class="auth-buttons" th:if="${isLoggedIn}" style="align-items:center;">
+            <a href="/profile" class="profile-link" th:text="${currentUserName}">User</a>
+            <form action="/logout" method="post" style="display:inline; margin:0;">
+                <button type="submit" class="btn-login" style="cursor:pointer; background:none; font-family:'Montserrat',sans-serif; font-size:14px;">Log Out</button>
+            </form>
+        </div>
+    </div>
+</header>
+</html>

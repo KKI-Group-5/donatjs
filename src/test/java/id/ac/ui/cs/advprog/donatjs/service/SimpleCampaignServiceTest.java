@@ -22,10 +22,17 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
+@SuppressWarnings("null")
 class SimpleCampaignServiceTest {
 
     private InMemoryCampaignRepository repository;
+    private ApplicationEventPublisher publisher;
     private SimpleCampaignService service;
     private RecordingCampaignWalletGateway walletGateway;
     private RecordingEventPublisher eventPublisher;
@@ -34,8 +41,9 @@ class SimpleCampaignServiceTest {
     void setUp() {
         repository = new InMemoryCampaignRepository();
         walletGateway = new RecordingCampaignWalletGateway();
-        eventPublisher = new RecordingEventPublisher();
-        service = new SimpleCampaignService(repository, walletGateway, eventPublisher);
+        publisher = mock(ApplicationEventPublisher.class);
+        eventPublisher = new RecordingEventPublisher(publisher);
+        service = new SimpleCampaignService(repository, walletGateway, eventPublisher, new BigDecimal("0.98"));
     }
 
     // ── createCampaign ───────────────────────────────────────────────────────────
@@ -234,6 +242,7 @@ class SimpleCampaignServiceTest {
 
         assertThat(repository.findById(id)).isPresent();
         assertThat(repository.findById(id).orElseThrow().getStatus()).isEqualTo(CampaignStatus.DELETED);
+        verify(publisher).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     @Test
@@ -294,6 +303,26 @@ class SimpleCampaignServiceTest {
         Campaign moderated = service.moderateCampaign(saved.getId(), true);
 
         assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.OPEN);
+        verify(publisher).publishEvent(any(CampaignStatusChangedEvent.class));
+    }
+
+    @Test
+    void moderateCampaign_reject_publishesRejectionStatusEvent() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Waiting campaign");
+        campaign.setDescription("To review");
+        campaign.setStatus(CampaignStatus.WAITING);
+        Campaign saved = repository.save(campaign);
+
+        Campaign moderated = service.moderateCampaign(saved.getId(), false);
+
+        assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
+
+        org.mockito.ArgumentCaptor<CampaignStatusChangedEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(CampaignStatusChangedEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().getNewStatus()).isEqualTo(CampaignStatus.REJECTED);
+        assertThat(captor.getValue().shouldTerminateSubscriptions()).isTrue();
     }
 
     @Test
@@ -309,6 +338,7 @@ class SimpleCampaignServiceTest {
 
         assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
         assertThat(eventPublisher.publishedEvents)
+                .filteredOn(e -> e instanceof RejectedCampaignEvent)
                 .hasSize(1)
                 .first()
                 .isInstanceOfSatisfying(RejectedCampaignEvent.class, event -> {
@@ -419,15 +449,9 @@ class SimpleCampaignServiceTest {
 
     @Test
     void recordSuccessfulDonation_closesCampaignWhenTargetReached() {
-        Campaign campaign = new Campaign();
-        campaign.setTitle("Donation target");
-        campaign.setDescription("Desc");
-        campaign.setStatus(CampaignStatus.OPEN);
-        campaign.setTargetAmount(new BigDecimal("100"));
-        campaign.setTotalRaised(new BigDecimal("90"));
-        Campaign saved = repository.save(campaign);
+        Campaign campaign = openCampaign(new BigDecimal("100"), new BigDecimal("90"));
 
-        Campaign updated = service.recordSuccessfulDonation(saved.getId(), new BigDecimal("15"));
+        Campaign updated = service.recordSuccessfulDonation(campaign.getId(), new BigDecimal("15"));
 
         assertThat(updated.getTotalRaised()).isEqualByComparingTo(new BigDecimal("105"));
         assertThat(updated.getStatus()).isEqualTo(CampaignStatus.CLOSED);
@@ -709,9 +733,21 @@ class SimpleCampaignServiceTest {
         private final List<Object> publishedEvents = new ArrayList<>();
 
         @Override
-        public void publishEvent(Object event) {
+        public void publishEvent(org.springframework.context.ApplicationEvent event) {
             publishedCount++;
             publishedEvents.add(event);
+            delegate.publishEvent(event);
+        }
+
+        @Override
+        public void publishEvent(Object event) {
+            if (event instanceof org.springframework.context.ApplicationEvent ae) {
+                publishEvent(ae);
+            } else {
+                publishedCount++;
+                publishedEvents.add(event);
+                delegate.publishEvent(event);
+            }
         }
     }
 }
