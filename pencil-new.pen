@@ -1,0 +1,1447 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "Frame",
+      "clip": true,
+      "width": 800,
+      "height": 600,
+      "fill": "#FFFFFF",
+      "layout": "none"
+    },
+    {
+      "type": "prompt",
+      "id": "F2W6N",
+      "x": -270,
+      "y": 0,
+      "model": "claude-4.5-sonnet",
+      "width": 250,
+      "height": 219,
+      "content": "Generate a responsive web landing page in \"Frame\" for the DonatJS fundraising platform using a clean, story-driven design heavily inspired by GoFundMe. Use a crisp white background with soft gray borders and a vibrant Kelly Green for primary call-to-action buttons and progress bars to build trust and encourage giving. The layout should start with a minimalist navigation bar containing the DonatJS logo, a search input, and clear \"Log In\" and \"Sign Up\" buttons. Below the nav, create a welcoming hero section featuring a large, inspiring community photo, a headline about transparent solidarity, and a prominent \"Start a Campaign\" button. The main content area must feature a responsive grid displaying active fundraising campaigns as large, image-heavy cards. Each campaign card should prioritize a high-quality cover photo, followed by the campaign title, the organizer's name, a thick and highly visible green progress bar showing total funds raised versus the target, and a small text indicator for the deadline. Ensure the typography uses a friendly, highly legible sans-serif font like Montserrat or Proxima Nova to maximize readability and emotional connection."
+    },
+    {
+      "type": "frame",
+      "id": "74v3O",
+      "x": 0,
+      "y": 0,
+      "name": "DonatJS Landing Page",
+      "width": 1440,
+      "fill": "$white",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "U366s",
+          "name": "Header",
+          "width": "fill_container",
+          "fill": "$white",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "bottom": 1
+            },
+            "fill": "$soft-gray"
+          },
+          "gap": "$spacing-xl",
+          "padding": [
+            20,
+            80
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "IMW9Q",
+              "name": "logoArea",
+              "gap": "$spacing-sm",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "yrftl",
+                  "name": "logo",
+                  "fill": "$kelly-green",
+                  "content": "DonatJS",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 24,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "HJwvt",
+              "name": "midNav",
+              "gap": "$spacing-md",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "c9LWo",
+                  "name": "searchBox",
+                  "width": 320,
+                  "height": 44,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": "$radius-md",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$soft-gray"
+                  },
+                  "gap": "$spacing-xs",
+                  "padding": [
+                    0,
+                    "$spacing-md"
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "wxAyP",
+                      "name": "searchIcon",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "search",
+                      "iconFontFamily": "lucide",
+                      "fill": "$text-light"
+                    },
+                    {
+                      "type": "text",
+                      "id": "5AZ43",
+                      "name": "searchInput",
+                      "fill": "$text-light",
+                      "content": "Search campaigns...",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "sq0kZ",
+              "name": "authButtons",
+              "gap": "$spacing-sm",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "xRYeY",
+                  "name": "loginBtn",
+                  "height": 44,
+                  "cornerRadius": "$radius-md",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$soft-gray"
+                  },
+                  "padding": [
+                    0,
+                    "$spacing-lg"
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Wx28w",
+                      "name": "loginText",
+                      "fill": "$text-primary",
+                      "content": "Log In",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Rmm7k",
+                  "name": "signupBtn",
+                  "height": 44,
+                  "fill": "$kelly-green",
+                  "cornerRadius": "$radius-md",
+                  "padding": [
+                    0,
+                    "$spacing-xl"
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SR4zN",
+                      "name": "signupText",
+                      "fill": "$white",
+                      "content": "Sign Up",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "1kOWv",
+          "name": "Hero Section",
+          "metadata": {
+            "type": "unsplash",
+            "username": "silverkblack",
+            "link": "https://unsplash.com/@silverkblack",
+            "author": "Vitaly Gariev"
+          },
+          "width": "fill_container",
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "https://images.unsplash.com/photo-1758599668299-beebedfabf7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzI1MTIwODJ8&ixlib=rb-4.1.0&q=80&w=1080",
+            "mode": "fill"
+          },
+          "layout": "vertical",
+          "gap": "$spacing-xl",
+          "padding": [
+            "$spacing-2xl",
+            80
+          ],
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "lpSAO",
+              "name": "heroOverlay",
+              "width": 800,
+              "fill": "#FFFFFFDD",
+              "cornerRadius": "$radius-lg",
+              "layout": "vertical",
+              "gap": "$spacing-lg",
+              "padding": "$spacing-2xl",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "pcSxn",
+                  "name": "heroHeadline",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Transparent Solidarity for Every Cause",
+                  "lineHeight": 1.2,
+                  "textAlign": "center",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 48,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "KN5Kk",
+                  "name": "heroSubheadline",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Join thousands making a real difference. Start your fundraising campaign today with complete transparency and zero hidden fees.",
+                  "lineHeight": 1.5,
+                  "textAlign": "center",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "DrCUL",
+                  "name": "heroCTA",
+                  "height": 56,
+                  "fill": "$kelly-green",
+                  "cornerRadius": "$radius-md",
+                  "padding": [
+                    0,
+                    "$spacing-2xl"
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "IQlpt",
+                      "name": "heroCTAText",
+                      "fill": "$white",
+                      "content": "Start a Campaign",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 18,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "AadYt",
+          "name": "Campaigns Section",
+          "width": "fill_container",
+          "fill": "$white",
+          "layout": "vertical",
+          "gap": "$spacing-2xl",
+          "padding": [
+            "$spacing-2xl",
+            80
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "AtKlb",
+              "name": "sectionHeader",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$spacing-sm",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "zkgoG",
+                  "name": "sectionTitle",
+                  "fill": "$text-primary",
+                  "content": "Active Campaigns",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 36,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "pbijB",
+                  "name": "sectionSubtitle",
+                  "fill": "$text-secondary",
+                  "content": "Support causes that matter to you",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xBMdg",
+              "name": "campaignsGrid",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$spacing-lg",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "x2PjN",
+                  "name": "Campaign Card 1",
+                  "width": "fill_container",
+                  "fill": "$white",
+                  "cornerRadius": "$radius-lg",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$soft-gray"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gpa5v",
+                      "name": "card1Image",
+                      "metadata": {
+                        "type": "unsplash",
+                        "username": "husniatisalma",
+                        "link": "https://unsplash.com/@husniatisalma",
+                        "author": "Husniati Salma"
+                      },
+                      "width": "fill_container",
+                      "height": 280,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1584792323914-329ce9bf59db?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzI1MTIwOTR8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "fill"
+                      },
+                      "cornerRadius": "$radius-lg"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FDrLA",
+                      "name": "card1Content",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-md",
+                      "padding": "$spacing-lg",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "H1Hfn",
+                          "name": "card1Title",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Help Build a School in Rural Indonesia",
+                          "lineHeight": 1.3,
+                          "fontFamily": "Montserrat",
+                          "fontSize": 20,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "dbC90",
+                          "name": "card1Organizer",
+                          "fill": "$text-light",
+                          "content": "by Sarah Johnson",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "MXtRv",
+                          "name": "card1Progress",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": "$spacing-xs",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "gEetV",
+                              "name": "card1ProgressBar",
+                              "width": "fill_container",
+                              "height": 12,
+                              "fill": "#E5E7EB",
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Ey4e5",
+                                  "name": "card1ProgressFill",
+                                  "width": 280,
+                                  "height": "fill_container",
+                                  "fill": "$kelly-green",
+                                  "cornerRadius": 6
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "8fYRB",
+                              "name": "card1Stats",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "FJjuM",
+                                  "name": "card1Raised",
+                                  "fill": "$text-primary",
+                                  "content": "$28,450 raised of $40,000",
+                                  "fontFamily": "Montserrat",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "0JvCg",
+                                  "name": "card1Deadline",
+                                  "fill": "$text-secondary",
+                                  "content": "15 days left",
+                                  "fontFamily": "Montserrat",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "uwQ7y",
+                  "name": "Campaign Card 2",
+                  "width": "fill_container",
+                  "fill": "$white",
+                  "cornerRadius": "$radius-lg",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$soft-gray"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fhm2v",
+                      "name": "card2Image",
+                      "metadata": {
+                        "type": "unsplash",
+                        "username": "silverkblack",
+                        "link": "https://unsplash.com/@silverkblack",
+                        "author": "Vitaly Gariev"
+                      },
+                      "width": "fill_container",
+                      "height": 280,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1758691463569-66de91d76452?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzI1MTIxMDd8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "fill"
+                      },
+                      "cornerRadius": "$radius-lg"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qhAke",
+                      "name": "card2Content",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-md",
+                      "padding": "$spacing-lg",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "0BTtM",
+                          "name": "card2Title",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Emergency Medical Fund for Maria",
+                          "lineHeight": 1.3,
+                          "fontFamily": "Montserrat",
+                          "fontSize": 20,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "6RDp3",
+                          "name": "card2Organizer",
+                          "fill": "$text-light",
+                          "content": "by Michael Chen",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "7Fgll",
+                          "name": "card2Progress",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": "$spacing-xs",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "7sECR",
+                              "name": "card2ProgressBar",
+                              "width": "fill_container",
+                              "height": 12,
+                              "fill": "#E5E7EB",
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "JbGZz",
+                                  "name": "card2ProgressFill",
+                                  "width": 350,
+                                  "height": "fill_container",
+                                  "fill": "$kelly-green",
+                                  "cornerRadius": 6
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "godAU",
+                              "name": "card2Stats",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "hyN7H",
+                                  "name": "card2Raised",
+                                  "fill": "$text-primary",
+                                  "content": "$87,200 raised of $100,000",
+                                  "fontFamily": "Montserrat",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "P9STC",
+                                  "name": "card2Deadline",
+                                  "fill": "$text-secondary",
+                                  "content": "8 days left",
+                                  "fontFamily": "Montserrat",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "oQEsG",
+                  "name": "Campaign Card 3",
+                  "width": "fill_container",
+                  "fill": "$white",
+                  "cornerRadius": "$radius-lg",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$soft-gray"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "d0E8C",
+                      "name": "card3Image",
+                      "metadata": {
+                        "type": "unsplash",
+                        "username": "silverkblack",
+                        "link": "https://unsplash.com/@silverkblack",
+                        "author": "Vitaly Gariev"
+                      },
+                      "width": "fill_container",
+                      "height": 280,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1758599669008-fb6f8eda6f53?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzI1MTIxMDh8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "fill"
+                      },
+                      "cornerRadius": "$radius-lg"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UqRgi",
+                      "name": "card3Content",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-md",
+                      "padding": "$spacing-lg",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kGaxf",
+                          "name": "card3Title",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Save the Amazon Rainforest Initiative",
+                          "lineHeight": 1.3,
+                          "fontFamily": "Montserrat",
+                          "fontSize": 20,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "33sJH",
+                          "name": "card3Organizer",
+                          "fill": "$text-light",
+                          "content": "by Green Earth Foundation",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qqYro",
+                          "name": "card3Progress",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": "$spacing-xs",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "75695",
+                              "name": "card3ProgressBar",
+                              "width": "fill_container",
+                              "height": 12,
+                              "fill": "#E5E7EB",
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "5leAQ",
+                                  "name": "card3ProgressFill",
+                                  "width": 200,
+                                  "height": "fill_container",
+                                  "fill": "$kelly-green",
+                                  "cornerRadius": 6
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "AVTiz",
+                              "name": "card3Stats",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "aOpWl",
+                                  "name": "card3Raised",
+                                  "fill": "$text-primary",
+                                  "content": "$45,000 raised of $150,000",
+                                  "fontFamily": "Montserrat",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "zt2wm",
+                                  "name": "card3Deadline",
+                                  "fill": "$text-secondary",
+                                  "content": "22 days left",
+                                  "fontFamily": "Montserrat",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "I8WWF",
+                  "name": "Campaign Row 2",
+                  "width": "fill_container",
+                  "gap": "$spacing-lg",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "a1zZ4",
+                      "name": "Campaign Card 4",
+                      "width": "fill_container",
+                      "fill": "$white",
+                      "cornerRadius": "$radius-lg",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$soft-gray"
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "J8cly",
+                          "name": "card4Image",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "ck_tk",
+                            "link": "https://unsplash.com/@ck_tk",
+                            "author": "c k"
+                          },
+                          "width": "fill_container",
+                          "height": 280,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1739115048712-9ec5da5150ac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzI1MTIxMjF8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          },
+                          "cornerRadius": "$radius-lg"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "udP4i",
+                          "name": "card4Content",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": "$spacing-md",
+                          "padding": "$spacing-lg",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "JeTcI",
+                              "name": "card4Title",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Local Animal Shelter Expansion",
+                              "lineHeight": 1.3,
+                              "fontFamily": "Montserrat",
+                              "fontSize": 20,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "xM2T8",
+                              "name": "card4Organizer",
+                              "fill": "$text-light",
+                              "content": "by Paws & Hearts Rescue",
+                              "fontFamily": "Montserrat",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "my1lV",
+                              "name": "card4Progress",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": "$spacing-xs",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Ga2z3",
+                                  "name": "card4ProgressBar",
+                                  "width": "fill_container",
+                                  "height": 12,
+                                  "fill": "#E5E7EB",
+                                  "cornerRadius": 6,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "4nkVq",
+                                      "name": "card4ProgressFill",
+                                      "width": 300,
+                                      "height": "fill_container",
+                                      "fill": "$kelly-green",
+                                      "cornerRadius": 6
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "w4cz9",
+                                  "name": "card4Stats",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "d7FOC",
+                                      "name": "card4Raised",
+                                      "fill": "$text-primary",
+                                      "content": "$62,500 raised of $75,000",
+                                      "fontFamily": "Montserrat",
+                                      "fontSize": 14,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "2NeLW",
+                                      "name": "card4Deadline",
+                                      "fill": "$text-secondary",
+                                      "content": "30 days left",
+                                      "fontFamily": "Montserrat",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "0zwEj",
+                      "name": "Campaign Card 5",
+                      "width": "fill_container",
+                      "fill": "$white",
+                      "cornerRadius": "$radius-lg",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$soft-gray"
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "JYi5f",
+                          "name": "card5Image",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "zyteng",
+                            "link": "https://unsplash.com/@zyteng",
+                            "author": "Kelvin Zyteng"
+                          },
+                          "width": "fill_container",
+                          "height": 280,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1661153803575-c20fc331e980?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzI1MTIxMjJ8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          },
+                          "cornerRadius": "$radius-lg"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ic3R7",
+                          "name": "card5Content",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": "$spacing-md",
+                          "padding": "$spacing-lg",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "pkVQY",
+                              "name": "card5Title",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Community Food Bank Supply Drive",
+                              "lineHeight": 1.3,
+                              "fontFamily": "Montserrat",
+                              "fontSize": 20,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "jO6Ke",
+                              "name": "card5Organizer",
+                              "fill": "$text-light",
+                              "content": "by Downtown Community Center",
+                              "fontFamily": "Montserrat",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "A3vlp",
+                              "name": "card5Progress",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": "$spacing-xs",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "PsgsZ",
+                                  "name": "card5ProgressBar",
+                                  "width": "fill_container",
+                                  "height": 12,
+                                  "fill": "#E5E7EB",
+                                  "cornerRadius": 6,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "dUgM6",
+                                      "name": "card5ProgressFill",
+                                      "width": 150,
+                                      "height": "fill_container",
+                                      "fill": "$kelly-green",
+                                      "cornerRadius": 6
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "K0nng",
+                                  "name": "card5Stats",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "5YXvy",
+                                      "name": "card5Raised",
+                                      "fill": "$text-primary",
+                                      "content": "$12,800 raised of $25,000",
+                                      "fontFamily": "Montserrat",
+                                      "fontSize": 14,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Tl8x7",
+                                      "name": "card5Deadline",
+                                      "fill": "$text-secondary",
+                                      "content": "45 days left",
+                                      "fontFamily": "Montserrat",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PxEy4",
+                      "name": "Campaign Card 6",
+                      "width": "fill_container",
+                      "fill": "$white",
+                      "cornerRadius": "$radius-lg",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$soft-gray"
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "7nIXk",
+                          "name": "card6Image",
+                          "metadata": {
+                            "type": "unsplash",
+                            "username": "quangpraha",
+                            "link": "https://unsplash.com/@quangpraha",
+                            "author": "Quang Nguyen Vinh"
+                          },
+                          "width": "fill_container",
+                          "height": 280,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "https://images.unsplash.com/photo-1677131923796-0357b68fc7a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzI1MTIxMzB8&ixlib=rb-4.1.0&q=80&w=1080",
+                            "mode": "fill"
+                          },
+                          "cornerRadius": "$radius-lg"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "k7qMq",
+                          "name": "card6Content",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": "$spacing-md",
+                          "padding": "$spacing-lg",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jrSzW",
+                              "name": "card6Title",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Youth Sports Equipment Fund",
+                              "lineHeight": 1.3,
+                              "fontFamily": "Montserrat",
+                              "fontSize": 20,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "4BRpY",
+                              "name": "card6Organizer",
+                              "fill": "$text-light",
+                              "content": "by City Youth League",
+                              "fontFamily": "Montserrat",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "uysEG",
+                              "name": "card6Progress",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": "$spacing-xs",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "OBc3B",
+                                  "name": "card6ProgressBar",
+                                  "width": "fill_container",
+                                  "height": 12,
+                                  "fill": "#E5E7EB",
+                                  "cornerRadius": 6,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "Rrz8s",
+                                      "name": "card6ProgressFill",
+                                      "width": 380,
+                                      "height": "fill_container",
+                                      "fill": "$kelly-green",
+                                      "cornerRadius": 6
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "WvnQE",
+                                  "name": "card6Stats",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "fEKkx",
+                                      "name": "card6Raised",
+                                      "fill": "$text-primary",
+                                      "content": "$19,000 raised of $20,000",
+                                      "fontFamily": "Montserrat",
+                                      "fontSize": 14,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "ABfRi",
+                                      "name": "card6Deadline",
+                                      "fill": "$text-secondary",
+                                      "content": "5 days left",
+                                      "fontFamily": "Montserrat",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "2EZsE",
+          "name": "Footer",
+          "width": "fill_container",
+          "fill": "#F9FAFB",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "top": 1
+            },
+            "fill": "$soft-gray"
+          },
+          "layout": "vertical",
+          "gap": "$spacing-2xl",
+          "padding": [
+            "$spacing-2xl",
+            80
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "2cQxd",
+              "name": "footerTop",
+              "width": "fill_container",
+              "gap": "$spacing-2xl",
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "aJXh8",
+                  "name": "footerBrand",
+                  "width": 300,
+                  "layout": "vertical",
+                  "gap": "$spacing-md",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zr4dA",
+                      "name": "footerLogo",
+                      "fill": "$kelly-green",
+                      "content": "DonatJS",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 24,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "FhkTJ",
+                      "name": "footerTagline",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Empowering communities through transparent fundraising and solidarity.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Montserrat",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bwNUT",
+                  "name": "footerLinks",
+                  "gap": "$spacing-2xl",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "stflj",
+                      "name": "footerCol1",
+                      "width": 150,
+                      "layout": "vertical",
+                      "gap": "$spacing-md",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "w3xVm",
+                          "name": "footerCol1Title",
+                          "fill": "$text-primary",
+                          "content": "Platform",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "5cWan",
+                          "name": "footerCol1Link1",
+                          "fill": "$text-secondary",
+                          "content": "Start a Campaign",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "MLeBr",
+                          "name": "footerCol1Link2",
+                          "fill": "$text-secondary",
+                          "content": "Browse Campaigns",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "JgoM4",
+                          "name": "footerCol1Link3",
+                          "fill": "$text-secondary",
+                          "content": "How It Works",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Iixip",
+                      "name": "footerCol2",
+                      "width": 150,
+                      "layout": "vertical",
+                      "gap": "$spacing-md",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "cjwHu",
+                          "name": "footerCol2Title",
+                          "fill": "$text-primary",
+                          "content": "Company",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "OtVBe",
+                          "name": "footerCol2Link1",
+                          "fill": "$text-secondary",
+                          "content": "About Us",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "IjvXO",
+                          "name": "footerCol2Link2",
+                          "fill": "$text-secondary",
+                          "content": "Our Mission",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "zJ1P4",
+                          "name": "footerCol2Link3",
+                          "fill": "$text-secondary",
+                          "content": "Contact",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "5O6Vz",
+                      "name": "footerCol3",
+                      "width": 150,
+                      "layout": "vertical",
+                      "gap": "$spacing-md",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "1zxsY",
+                          "name": "footerCol3Title",
+                          "fill": "$text-primary",
+                          "content": "Resources",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "LnrpC",
+                          "name": "footerCol3Link1",
+                          "fill": "$text-secondary",
+                          "content": "Help Center",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "rI7nF",
+                          "name": "footerCol3Link2",
+                          "fill": "$text-secondary",
+                          "content": "Privacy Policy",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "QyORw",
+                          "name": "footerCol3Link3",
+                          "fill": "$text-secondary",
+                          "content": "Terms of Service",
+                          "fontFamily": "Montserrat",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gnfTu",
+              "name": "footerBottom",
+              "width": "fill_container",
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "top": 1
+                },
+                "fill": "$soft-gray"
+              },
+              "padding": [
+                "$spacing-lg",
+                0,
+                0,
+                0
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "wg0QE",
+                  "name": "copyright",
+                  "fill": "$text-light",
+                  "content": "© 2026 DonatJS. All rights reserved.",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "kelly-green": {
+      "type": "color",
+      "value": "#22C55E"
+    },
+    "radius-lg": {
+      "type": "number",
+      "value": 12
+    },
+    "radius-md": {
+      "type": "number",
+      "value": 8
+    },
+    "radius-sm": {
+      "type": "number",
+      "value": 6
+    },
+    "soft-gray": {
+      "type": "color",
+      "value": "#E5E7EB"
+    },
+    "spacing-2xl": {
+      "type": "number",
+      "value": 48
+    },
+    "spacing-lg": {
+      "type": "number",
+      "value": 24
+    },
+    "spacing-md": {
+      "type": "number",
+      "value": 16
+    },
+    "spacing-sm": {
+      "type": "number",
+      "value": 12
+    },
+    "spacing-xl": {
+      "type": "number",
+      "value": 32
+    },
+    "spacing-xs": {
+      "type": "number",
+      "value": 8
+    },
+    "text-light": {
+      "type": "color",
+      "value": "#9CA3AF"
+    },
+    "text-primary": {
+      "type": "color",
+      "value": "#111827"
+    },
+    "text-secondary": {
+      "type": "color",
+      "value": "#6B7280"
+    },
+    "white": {
+      "type": "color",
+      "value": "#FFFFFF"
+    }
+  }
+}

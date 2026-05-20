@@ -34,6 +34,8 @@ public class Campaign {
 
     private LocalDateTime createdAt;
 
+    private boolean nearTargetNotified = false;
+
     public Long getId() {
         return id;
     }
@@ -104,6 +106,14 @@ public class Campaign {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isNearTargetNotified() {
+        return nearTargetNotified;
+    }
+
+    public void setNearTargetNotified(boolean nearTargetNotified) {
+        this.nearTargetNotified = nearTargetNotified;
     }
 }
 

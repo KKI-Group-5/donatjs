@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Donation Module</title>
+</head>
+<body>
+
+<h1>Donation Module</h1>
+<p>Make sure the server is running on <code>http://localhost:8080</code></p>
+<hr/>
+
+<!-- ── POST /api/donations ── -->
+<h2>POST /api/donations — Create Donation</h2>
+
+<label>User ID: <input id="userId" type="text" value="user-abc-123"/></label><br/><br/>
+<label>Campaign ID: <input id="campaignId" type="number" value="1"/></label><br/><br/>
+<label>Amount (Rp): <input id="amount" type="number" value="150000" oninput="updateFee()"/></label><br/><br/>
+
+<label>Payment Method:
+    <select id="paymentMethod" onchange="updateFee()">
+        <option value="WALLET">WALLET (no fee)</option>
+        <option value="BANK_TRANSFER">BANK_TRANSFER (Rp 1,500)</option>
+        <option value="BANK_BCA">BANK_BCA (Rp 1,500)</option>
+        <option value="BANK_MANDIRI">BANK_MANDIRI (Rp 1,500)</option>
+        <option value="BANK_BNI">BANK_BNI (Rp 1,500)</option>
+        <option value="BANK_BRI">BANK_BRI (Rp 1,500)</option>
+        <option value="GOPAY" selected>GOPAY (Rp 2,000)</option>
+        <option value="OVO">OVO (Rp 2,000)</option>
+        <option value="DANA">DANA (Rp 2,000)</option>
+        <option value="SHOPEEPAY">SHOPEEPAY (Rp 2,000)</option>
+        <option value="LINKAJA">LINKAJA (Rp 2,000)</option>
+    </select>
+</label><br/><br/>
+
+<label>Type:
+    <select id="type">
+        <option value="ONE_TIME" selected>ONE_TIME</option>
+        <option value="SUBSCRIPTION">SUBSCRIPTION</option>
+    </select>
+</label><br/><br/>
+
+<label>Notes: <input id="notes" type="text" size="40" placeholder="optional"/></label><br/><br/>
+
+<p>
+    Fee: <strong id="feeDisplay">Rp 2,000</strong> |
+    Total: <strong id="totalDisplay">Rp 152,000</strong>
+</p>
+
+<button onclick="createDonation()">Submit Donation</button>
+<hr/>
+
+<!-- ── GET /api/donations/{id} ── -->
+<h2>GET /api/donations/{id} — Get by ID</h2>
+<label>Donation ID: <input id="fetchId" type="number" placeholder="e.g. 1"/></label>
+<button onclick="fetchById()">Fetch</button>
+<hr/>
+
+<!-- ── GET /api/donations/user/{userId} ── -->
+<h2>GET /api/donations/user/{userId} — User Donation History</h2>
+<label>User ID: <input id="fetchUserId" type="text" value="user-abc-123"/></label>
+<button onclick="fetchByUser()">Fetch</button>
+<hr/>
+
+<!-- ── GET /api/donations/campaign/{campaignId}/total ── -->
+<h2>GET /api/donations/campaign/{campaignId}/total — Total Raised</h2>
+<label>Campaign ID: <input id="fetchCampaignId" type="number" value="1"/></label>
+<button onclick="fetchCampaignTotal()">Fetch</button>
+<hr/>
+
+<!-- ── PATCH /api/donations/{id}/notes ── -->
+<h2>PATCH /api/donations/{id}/notes — Update Notes</h2>
+<label>Donation ID: <input id="updateId" type="number" placeholder="e.g. 1"/></label><br/><br/>
+<label>User ID: <input id="updateUserId" type="text" value="user-abc-123"/></label><br/><br/>
+<label>New Notes: <input id="updateNotes" type="text" size="40"/></label><br/><br/>
+<button onclick="updateNotes()">Update Notes</button>
+<hr/>
+
+<!-- ── Response ── -->
+<h2>Response</h2>
+<pre id="response">Waiting for a request...</pre>
+
+<script>
+    const BASE = 'http://localhost:8080';
+
+    const FEES = {
+        WALLET: 0,
+        BANK_TRANSFER: 1500, BANK_BCA: 1500, BANK_MANDIRI: 1500, BANK_BNI: 1500, BANK_BRI: 1500,
+        GOPAY: 2000, OVO: 2000, DANA: 2000, SHOPEEPAY: 2000, LINKAJA: 2000
+    };
+
+    function updateFee() {
+        const amount = parseInt(document.getElementById('amount').value) || 0;
+        const fee    = FEES[document.getElementById('paymentMethod').value] || 0;
+        document.getElementById('feeDisplay').textContent  = 'Rp ' + fee.toLocaleString('id-ID');
+        document.getElementById('totalDisplay').textContent = 'Rp ' + (amount + fee).toLocaleString('id-ID');
+    }
+
+    function show(data) {
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function createDonation() {
+        const body = {
+            userId:        document.getElementById('userId').value.trim(),
+            campaignId:    parseInt(document.getElementById('campaignId').value),
+            amount:        parseInt(document.getElementById('amount').value),
+            notes:         document.getElementById('notes').value.trim() || null,
+            paymentMethod: document.getElementById('paymentMethod').value,
+            type:          document.getElementById('type').value
+        };
+        try {
+            const res  = await fetch(`${BASE}/api/donations`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify(body)
+            });
+            show(await res.json());
+        } catch (e) {
+            show({ error: e.message });
+        }
+    }
+
+    async function fetchById() {
+        const id = document.getElementById('fetchId').value;
+        try {
+            const res = await fetch(`${BASE}/api/donations/${id}`);
+            show(await res.json());
+        } catch (e) {
+            show({ error: e.message });
+        }
+    }
+
+    async function fetchByUser() {
+        const userId = document.getElementById('fetchUserId').value.trim();
+        try {
+            const res = await fetch(`${BASE}/api/donations/user/${encodeURIComponent(userId)}`);
+            show(await res.json());
+        } catch (e) {
+            show({ error: e.message });
+        }
+    }
+
+    async function fetchCampaignTotal() {
+        const id = document.getElementById('fetchCampaignId').value;
+        try {
+            const res = await fetch(`${BASE}/api/donations/campaign/${id}/total`);
+            show(await res.json());
+        } catch (e) {
+            show({ error: e.message });
+        }
+    }
+
+    async function updateNotes() {
+        const id     = document.getElementById('updateId').value;
+        const userId = document.getElementById('updateUserId').value.trim();
+        const notes  = document.getElementById('updateNotes').value.trim();
+        try {
+            const res = await fetch(
+                `${BASE}/api/donations/${id}/notes?userId=${encodeURIComponent(userId)}&notes=${encodeURIComponent(notes)}`,
+                { method: 'PATCH' }
+            );
+            show(await res.json());
+        } catch (e) {
+            show({ error: e.message });
+        }
+    }
+
+    updateFee();
+</script>
+</body>
+</html>

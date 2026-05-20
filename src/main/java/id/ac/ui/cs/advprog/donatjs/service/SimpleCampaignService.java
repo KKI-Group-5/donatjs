@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
+import id.ac.ui.cs.advprog.donatjs.event.CampaignNearTargetEvent;
+import id.ac.ui.cs.advprog.donatjs.event.CampaignStatusChangedEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignFraudDetectedEvent;
@@ -11,12 +13,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+<<<<<<< HEAD
+=======
+import org.springframework.context.ApplicationEventPublisher;
+>>>>>>> c7292b449301dfa4634a99643cc21218d3466c00
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,10 +43,18 @@ public class SimpleCampaignService implements CampaignService {
     }
 
     @Autowired
+<<<<<<< HEAD
     public SimpleCampaignService(CampaignRepository campaignRepository,
                                  CampaignWalletGateway campaignWalletGateway,
                                  ApplicationEventPublisher eventPublisher,
                                  @Value("${donatjs.email.near-target-threshold:0.98}") BigDecimal nearTargetThreshold) {
+=======
+    public SimpleCampaignService(
+            CampaignRepository campaignRepository,
+            CampaignWalletGateway campaignWalletGateway,
+            ApplicationEventPublisher eventPublisher,
+            @Value("${donatjs.email.near-target-threshold:0.98}") BigDecimal nearTargetThreshold) {
+>>>>>>> c7292b449301dfa4634a99643cc21218d3466c00
         this.campaignRepository = campaignRepository;
         this.campaignWalletGateway = campaignWalletGateway;
         this.eventPublisher = eventPublisher;
@@ -123,6 +137,7 @@ public class SimpleCampaignService implements CampaignService {
             log.warn("Delete rejected for campaign {}: totalRaised={}", id, campaign.getTotalRaised());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete campaign with donations");
         }
+        CampaignStatus previous = campaign.getStatus();
         campaign.setStatus(CampaignStatus.DELETED);
         campaignRepository.save(campaign);
         log.info("Campaign {} marked DELETED by actor '{}'", id, actorId != null ? actorId : "admin");
@@ -132,10 +147,12 @@ public class SimpleCampaignService implements CampaignService {
     public Campaign moderateCampaign(Long id, boolean approve) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (campaign.getStatus() != CampaignStatus.WAITING) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only WAITING campaign can be moderated");
+        if (campaign.getStatus() != CampaignStatus.WAITING && campaign.getStatus() != CampaignStatus.OPEN) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only WAITING or OPEN campaign can be moderated");
         }
-        campaign.setStatus(approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED);
+        CampaignStatus previous = campaign.getStatus();
+        CampaignStatus next = approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED;
+        campaign.setStatus(next);
         Campaign saved = campaignRepository.save(campaign);
 
         if (!approve) {
@@ -305,7 +322,7 @@ public class SimpleCampaignService implements CampaignService {
         }
     }
 
-    private static class NoopCampaignWalletGateway implements CampaignWalletGateway {
+    public static class NoopCampaignWalletGateway implements CampaignWalletGateway {
         @Override
         public void requestPayout(Campaign campaign) {}
 

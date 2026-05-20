@@ -3,10 +3,12 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
+import id.ac.ui.cs.advprog.donatjs.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -32,13 +34,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(CampaignController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@Import(SecurityConfig.class)
+@SuppressWarnings("null")
 class CampaignControllerMvcTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private CampaignService campaignService;
 
     // ── GET /campaigns ───────────────────────────────────────────────────────────
@@ -70,8 +73,10 @@ class CampaignControllerMvcTest {
     // ── POST /campaigns/create ───────────────────────────────────────────────────
 
     @Test
+    @WithMockUser
     void postCreate_withBlankRequiredFields_returnsCreateViewWithErrors() throws Exception {
         mockMvc.perform(post("/campaigns/create")
+                        .with(csrf())
                         .param("title", "")
                         .param("description", ""))
                 .andExpect(status().isOk())
@@ -240,8 +245,9 @@ class CampaignControllerMvcTest {
     // ── POST /campaigns/{id}/fraud ────────────────────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "USER")
     void postFraud_withoutAdminHeader_returnsForbidden() throws Exception {
-        mockMvc.perform(post("/campaigns/1/fraud"))
+        mockMvc.perform(post("/campaigns/1/fraud").with(csrf()))
                 .andExpect(status().isForbidden());
     }
 

@@ -52,7 +52,11 @@ public class InMemoryCampaignRepository implements CampaignRepository {
     public List<Campaign> findByCreatorId(String creatorId) {
         List<Campaign> result = new ArrayList<>();
         for (Campaign campaign : storage.values()) {
+<<<<<<< HEAD
             if (creatorId != null && creatorId.equals(campaign.getCreatorId())) {
+=======
+            if (creatorId.equals(campaign.getCreatorId())) {
+>>>>>>> c7292b449301dfa4634a99643cc21218d3466c00
                 result.add(campaign);
             }
         }
