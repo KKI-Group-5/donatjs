@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -23,6 +24,7 @@ public class WithdrawalRequestService {
     private final WithdrawalRequestRepository withdrawalRequestRepository;
     private final DonationRepository donationRepository;
 
+    @SuppressWarnings("null")
     @Transactional
     public WithdrawalRequestResponse requestWithdrawal(Long donationId, String userId, String reason) {
         Donation donation = donationRepository.findByIdAndUserId(donationId, userId)
@@ -45,7 +47,8 @@ public class WithdrawalRequestService {
                 .build();
 
         log.info("Withdrawal request created for donationId={}, userId={}", donationId, userId);
-        return WithdrawalRequestResponse.from(withdrawalRequestRepository.save(request));
+        return WithdrawalRequestResponse.from(java.util.Objects.requireNonNull(
+                withdrawalRequestRepository.save(request), "WithdrawalRequest save returned null"));
     }
 
     @Transactional(readOnly = true)
@@ -70,7 +73,7 @@ public class WithdrawalRequestService {
     public WithdrawalRequestResponse approveWithdrawal(Long requestId) {
         WithdrawalRequest request = findPendingOrThrow(requestId);
 
-        Donation donation = donationRepository.findById(request.getDonationId())
+        Donation donation = donationRepository.findById(Objects.requireNonNull(request.getDonationId()))
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Donation not found: " + request.getDonationId()));
         donation.setStatus(Donation.DonationStatus.REFUNDED);
@@ -95,7 +98,7 @@ public class WithdrawalRequestService {
     }
 
     private WithdrawalRequest findPendingOrThrow(Long requestId) {
-        WithdrawalRequest request = withdrawalRequestRepository.findById(requestId)
+        WithdrawalRequest request = withdrawalRequestRepository.findById(Objects.requireNonNull(requestId))
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Withdrawal request not found: " + requestId));
         if (request.getStatus() != WithdrawalRequestStatus.PENDING) {
