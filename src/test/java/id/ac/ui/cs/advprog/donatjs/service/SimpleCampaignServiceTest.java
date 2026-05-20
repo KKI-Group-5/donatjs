@@ -207,7 +207,9 @@ class SimpleCampaignServiceTest {
         assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CLOSED);
         assertThat(walletGateway.payoutRequestedCount).isEqualTo(1);
         assertThat(walletGateway.refundRequestedCount).isZero();
-        verify(publisher, times(1)).publishEvent(any());
+        // CampaignStatusChangedEvent + CampaignPayoutRequestedEvent
+        verify(publisher, times(2)).publishEvent(any());
+        verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     @Test
@@ -227,7 +229,29 @@ class SimpleCampaignServiceTest {
         assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CANCELLED);
         assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
         assertThat(walletGateway.payoutRequestedCount).isZero();
+        // CampaignStatusChangedEvent + CampaignRefundRequestedEvent
+        verify(publisher, times(2)).publishEvent(any());
+        verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
+    }
+
+    @Test
+    void processExpiredCampaigns_cancelsWithZeroRaisedStillPublishesStatusEvent() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Failed (no donations)");
+        campaign.setDescription("No donations received");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setDeadline(LocalDate.now().minusDays(1));
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        service.processExpiredCampaigns(LocalDate.now());
+
+        assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CANCELLED);
+        assertThat(walletGateway.refundRequestedCount).isZero();
+        // CampaignStatusChangedEvent only — no refund because no donations
         verify(publisher, times(1)).publishEvent(any());
+        verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     @Test
@@ -243,7 +267,9 @@ class SimpleCampaignServiceTest {
 
         assertThat(updated.getStatus()).isEqualTo(CampaignStatus.FRAUD);
         assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
-        verify(publisher, times(2)).publishEvent(any());
+        // CampaignFraudDetectedEvent + CampaignStatusChangedEvent + CampaignRefundRequestedEvent
+        verify(publisher, times(3)).publishEvent(any());
+        verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     // ── 98%-threshold trigger ────────────────────────────────────────────

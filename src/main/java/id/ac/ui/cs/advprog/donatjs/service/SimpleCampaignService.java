@@ -234,9 +234,12 @@ public class SimpleCampaignService implements CampaignService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign cannot be marked as fraud");
         }
 
+        CampaignStatus previous = campaign.getStatus();
         campaign.setStatus(CampaignStatus.FRAUD);
         Campaign saved = campaignRepository.save(campaign);
         eventPublisher.publishEvent(new CampaignFraudDetectedEvent(this, saved));
+        eventPublisher.publishEvent(new CampaignStatusChangedEvent(
+                this, saved.getId(), previous, CampaignStatus.FRAUD));
 
         BigDecimal refundAmount = saved.getTotalRaised() == null ? BigDecimal.ZERO : saved.getTotalRaised();
         if (refundAmount.compareTo(BigDecimal.ZERO) > 0) {
@@ -261,8 +264,11 @@ public class SimpleCampaignService implements CampaignService {
             boolean isSuccess = campaign.getTargetAmount() != null
                     && raised.compareTo(campaign.getTargetAmount()) >= 0;
 
-            campaign.setStatus(isSuccess ? CampaignStatus.CLOSED : CampaignStatus.CANCELLED);
+            CampaignStatus previous = campaign.getStatus();
+            CampaignStatus next = isSuccess ? CampaignStatus.CLOSED : CampaignStatus.CANCELLED;
+            campaign.setStatus(next);
             Campaign saved = campaignRepository.save(campaign);
+            eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, saved.getId(), previous, next));
 
             if (isSuccess) {
                 campaignWalletGateway.requestPayout(saved);
