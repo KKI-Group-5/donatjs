@@ -56,10 +56,8 @@
                                     <span th:unless="${user.suspended}" class="badge warning">Flagged</span>
                                 </td>
                                 <td class="actions">
-                                    <button th:unless="${user.suspended}" class="btn-suspend"
-                                        th:onclick="'suspendUser(\'' + ${user.id} + '\')'">Suspend</button>
-                                    <button class="btn-unsuspend"
-                                        th:onclick="'unsuspendUser(\'' + ${user.id} + '\')'">Restore</button>
+                                    <button th:unless="${user.suspended}" class="btn-suspend" th:data-id="${user.id}" onclick="suspendUser(this.getAttribute('data-id'))">Suspend</button>
+                                    <button class="btn-unsuspend" th:data-id="${user.id}" onclick="unsuspendUser(this.getAttribute('data-id'))">Restore</button>
                                 </td>
                             </tr>
                         </tbody>

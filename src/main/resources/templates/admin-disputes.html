@@ -46,8 +46,8 @@
                                 <td th:text="${d.reason}">Reason text</td>
                                 <td th:text="${#temporals.format(d.createdAt, 'dd MMM yyyy HH:mm')}">Date</td>
                                 <td class="actions">
-                                    <button class="btn-unsuspend" th:onclick="'resolveDispute(\'' + ${d.id} + '\', true)'">Approve</button>
-                                    <button class="btn-suspend" th:onclick="'resolveDispute(\'' + ${d.id} + '\', false)'">Reject</button>
+                                    <button class="btn-unsuspend" th:data-id="${d.id}" onclick="resolveDispute(this.getAttribute('data-id'), true)">Approve</button>
+                                    <button class="btn-suspend" th:data-id="${d.id}" onclick="resolveDispute(this.getAttribute('data-id'), false)">Reject</button>
                                 </td>
                             </tr>
                         </tbody>

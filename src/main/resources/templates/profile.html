@@ -147,8 +147,14 @@
             if (data.suspended) {
                 banner.style.display = 'block';
                 banner.style.backgroundColor = 'var(--error)';
-                banner.innerHTML = `Account Suspended: You have ${data.rejectedDonationCount + data.rejectedCampaignCount} violations. 
-                                    <a href="/dispute" style="color: #fff; text-decoration: underline; margin-left: 8px;">Dispute This</a>`;
+                banner.textContent = `Account Suspended: You have ${data.rejectedDonationCount + data.rejectedCampaignCount} violations. `;
+                const disputeLink = document.createElement('a');
+                disputeLink.href = '/dispute';
+                disputeLink.style.color = '#fff';
+                disputeLink.style.textDecoration = 'underline';
+                disputeLink.style.marginLeft = '8px';
+                disputeLink.textContent = 'Dispute This';
+                banner.appendChild(disputeLink);
                 document.getElementById('btnSave').disabled = true;
                 document.getElementById('btnSave').style.background = 'var(--text-light)';
             } else if (data.flaggedForReview) {
