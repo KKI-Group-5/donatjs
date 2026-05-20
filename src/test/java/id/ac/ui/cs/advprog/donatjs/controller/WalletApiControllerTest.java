@@ -143,4 +143,45 @@ class WalletApiControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false));
     }
+
+    // ── POST /api/internal/wallet/bulk-refund ─────────────────────────────────
+
+    @Test
+    void bulkRefund_success_returns200WithRefundCount() throws Exception {
+        when(walletService.bulkRefundForCampaign(42L, "Help Build a School")).thenReturn(3);
+
+        mockMvc.perform(post("/api/internal/wallet/bulk-refund")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"campaignId":42,"campaignName":"Help Build a School"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.refunded").value(3));
+    }
+
+    @Test
+    void bulkRefund_missingCampaignId_returns400() throws Exception {
+        mockMvc.perform(post("/api/internal/wallet/bulk-refund")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"campaignName":"Help Build a School"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void bulkRefund_serviceThrows_returns500() throws Exception {
+        when(walletService.bulkRefundForCampaign(anyLong(), anyString()))
+                .thenThrow(new RuntimeException("DB error"));
+
+        mockMvc.perform(post("/api/internal/wallet/bulk-refund")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"campaignId":99,"campaignName":"Bad Campaign"}
+                                """))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false));
+    }
 }

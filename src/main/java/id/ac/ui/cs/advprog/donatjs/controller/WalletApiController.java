@@ -84,4 +84,37 @@ public class WalletApiController {
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
+    /**
+     * Refunds all wallet donations for a cancelled/closed campaign.
+     * Called internally by the Campaign Module when a campaign is cancelled.
+     *
+     * Request body:
+     * {
+     *   "campaignId": 42,
+     *   "campaignName": "Help Build a School"
+     * }
+     */
+    @PostMapping("/bulk-refund")
+    public ResponseEntity<Map<String, Object>> bulkRefund(@RequestBody Map<String, Object> request) {
+        Number campaignIdRaw = (Number) request.get("campaignId");
+        String campaignName = (String) request.get("campaignName");
+
+        if (campaignIdRaw == null || campaignName == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "campaignId and campaignName are required."));
+        }
+
+        try {
+            int refunded = walletService.bulkRefundForCampaign(campaignIdRaw.longValue(), campaignName);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "refunded", refunded,
+                    "message", refunded + " wallet donation(s) refunded for campaign " + campaignIdRaw.longValue() + "."
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
 }
