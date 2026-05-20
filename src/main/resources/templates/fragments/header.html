@@ -14,6 +14,7 @@
 
     <div style="display:flex; align-items:center; gap:16px;">
         <a href="/campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Campaigns</a>
+        <a href="/leaderboard" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Leaderboard</a>
         <a th:if="${isLoggedIn}" href="/donations" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">My Donations</a>
         <a th:if="${isLoggedIn}" href="/saved-campaigns" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Saved</a>
         <a th:if="${isLoggedIn}" href="/subscriptions" style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Subscriptions</a>

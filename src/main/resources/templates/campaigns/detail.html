@@ -99,6 +99,16 @@
             </span>
         </div>
 
+        <!-- Per-campaign leaderboard -->
+        <div id="leaderboard-section" style="margin-top: var(--spacing-xl);">
+            <h3 style="font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:var(--spacing-md);">
+                Top Donors
+            </h3>
+            <div id="leaderboard-list">
+                <p style="font-size:14px; color:var(--text-secondary);">Loading...</p>
+            </div>
+        </div>
+
         <!-- Admin / owner actions -->
         <div class="detail-actions">
             <a th:href="@{|/campaigns/${campaign.id}/edit|}">
@@ -304,11 +314,41 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        if (!IS_LOGGED_IN || !CURRENT_USER_ID) return;
-        fetch('/api/saved-campaigns/' + CURRENT_USER_ID + '/check/' + CAMPAIGN_ID)
+        if (IS_LOGGED_IN && CURRENT_USER_ID) {
+            fetch('/api/saved-campaigns/' + CURRENT_USER_ID + '/check/' + CAMPAIGN_ID)
+                .then(function (r) { return r.json(); })
+                .then(function (data) { if (data && data.saved) updateSaveLabel(true); })
+                .catch(function () {});
+        }
+
+        // ── Campaign leaderboard ───────────────────────────────────
+        fetch('/api/donations/campaign/' + CAMPAIGN_ID + '/leaderboard?limit=5')
             .then(function (r) { return r.json(); })
-            .then(function (data) { if (data && data.saved) updateSaveLabel(true); })
-            .catch(function () {});
+            .then(function (entries) {
+                var container = document.getElementById('leaderboard-list');
+                if (!entries || entries.length === 0) {
+                    container.innerHTML = '<p style="font-size:14px;color:var(--text-secondary);">No donations yet. Be the first!</p>';
+                    return;
+                }
+                var medals = ['🥇', '🥈', '🥉'];
+                var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                entries.forEach(function (e) {
+                    var medal = e.rank <= 3 ? medals[e.rank - 1] : '#' + e.rank;
+                    var amount = 'Rp ' + Number(e.totalAmount).toLocaleString('id-ID');
+                    html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--soft-gray);">'
+                        + '<span style="font-size:18px;width:32px;text-align:center;flex-shrink:0;">' + medal + '</span>'
+                        + '<span style="flex:1;font-size:14px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.userId + '</span>'
+                        + '<span style="font-size:14px;font-weight:700;color:var(--kelly-green);flex-shrink:0;">' + amount + '</span>'
+                        + '</div>';
+                });
+                html += '</div>';
+                html += '<a href="/leaderboard" style="display:inline-block;margin-top:10px;font-size:13px;color:var(--kelly-green);font-weight:600;">View overall leaderboard →</a>';
+                container.innerHTML = html;
+            })
+            .catch(function () {
+                document.getElementById('leaderboard-list').innerHTML =
+                    '<p style="font-size:14px;color:var(--text-secondary);">Could not load leaderboard.</p>';
+            });
     });
 </script>
 </body>
