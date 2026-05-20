@@ -10,6 +10,7 @@ import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,18 +30,21 @@ public class SimpleCampaignService implements CampaignService {
     private final CampaignRepository campaignRepository;
     private final CampaignWalletGateway campaignWalletGateway;
     private final ApplicationEventPublisher eventPublisher;
+    private final BigDecimal nearTargetThreshold;
 
     public SimpleCampaignService(CampaignRepository campaignRepository) {
-        this(campaignRepository, new NoopCampaignWalletGateway(), event -> {});
+        this(campaignRepository, new NoopCampaignWalletGateway(), event -> {}, new BigDecimal("0.98"));
     }
 
     @Autowired
     public SimpleCampaignService(CampaignRepository campaignRepository,
                                  CampaignWalletGateway campaignWalletGateway,
-                                 ApplicationEventPublisher eventPublisher) {
+                                 ApplicationEventPublisher eventPublisher,
+                                 @Value("${donatjs.email.near-target-threshold:0.98}") BigDecimal nearTargetThreshold) {
         this.campaignRepository = campaignRepository;
         this.campaignWalletGateway = campaignWalletGateway;
         this.eventPublisher = eventPublisher;
+        this.nearTargetThreshold = nearTargetThreshold;
     }
 
     @Override
@@ -72,6 +76,11 @@ public class SimpleCampaignService implements CampaignService {
     @Override
     public List<Campaign> findAllCampaigns() {
         return campaignRepository.findAll();
+    }
+
+    @Override
+    public List<Campaign> findByCreatorId(String creatorId) {
+        return campaignRepository.findByCreatorId(creatorId);
     }
 
     @Override

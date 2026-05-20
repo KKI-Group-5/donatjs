@@ -35,7 +35,7 @@ class SimpleCampaignServiceTest {
         repository = new InMemoryCampaignRepository();
         walletGateway = new RecordingCampaignWalletGateway();
         eventPublisher = new RecordingEventPublisher();
-        service = new SimpleCampaignService(repository, walletGateway, eventPublisher);
+        service = new SimpleCampaignService(repository, walletGateway, eventPublisher, new BigDecimal("0.98"));
     }
 
     // ── createCampaign ───────────────────────────────────────────────────────────

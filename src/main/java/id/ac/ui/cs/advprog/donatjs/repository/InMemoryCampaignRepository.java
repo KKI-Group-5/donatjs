@@ -49,6 +49,17 @@ public class InMemoryCampaignRepository implements CampaignRepository {
     }
 
     @Override
+    public List<Campaign> findByCreatorId(String creatorId) {
+        List<Campaign> result = new ArrayList<>();
+        for (Campaign campaign : storage.values()) {
+            if (creatorId != null && creatorId.equals(campaign.getCreatorId())) {
+                result.add(campaign);
+            }
+        }
+        return result;
+    }
+
+    @Override
     public void deleteById(Long id) {
         storage.remove(id);
     }
