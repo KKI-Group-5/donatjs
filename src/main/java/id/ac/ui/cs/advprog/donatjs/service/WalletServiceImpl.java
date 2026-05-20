@@ -36,6 +36,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public Wallet getWalletByUserId(String userId) {
         return walletRepository.findByUserId(userId).orElseGet(() -> {
             long opening = Math.max(0L, IdrMoney.wholeRupiah(walletInitialBalance));
@@ -62,12 +63,14 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public Wallet deductBalance(String userId, double amount, String description) {
         long amt = IdrMoney.wholeRupiah(amount);
         if (amt <= 0) {
             throw new IllegalArgumentException("Deduction amount must be a positive whole rupiah amount.");
         }
-        Wallet wallet = getWalletByUserId(userId);
+        Wallet wallet = walletRepository.findByUserIdForWrite(userId)
+                .orElseThrow(() -> new IllegalStateException("Insufficient balance"));
         long bal = IdrMoney.wholeRupiah(wallet.getBalance());
         if (bal < amt) {
             throw new IllegalStateException("Insufficient balance");
@@ -89,12 +92,14 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public Wallet withdraw(String userId, double amount, String description) {
         long amt = IdrMoney.wholeRupiah(amount);
         if (amt <= 0) {
             throw new IllegalArgumentException("Withdrawal amount must be a positive whole rupiah amount.");
         }
-        Wallet wallet = getWalletByUserId(userId);
+        Wallet wallet = walletRepository.findByUserIdForWrite(userId)
+                .orElseThrow(() -> new InsufficientBalanceException("No wallet found for user."));
         long bal = IdrMoney.wholeRupiah(wallet.getBalance());
         if (bal < amt) {
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
@@ -121,12 +126,14 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
+    @SuppressWarnings("null")
     public Wallet deductForDonation(String userId, double amount, String campaignName) {
         long amt = IdrMoney.wholeRupiah(amount);
         if (amt <= 0) {
             throw new IllegalArgumentException("Donation amount must be a positive whole rupiah amount.");
         }
-        Wallet wallet = getWalletByUserId(userId);
+        Wallet wallet = walletRepository.findByUserIdForWrite(userId)
+                .orElseThrow(() -> new InsufficientBalanceException("No wallet found for user."));
         long bal = IdrMoney.wholeRupiah(wallet.getBalance());
         if (bal < amt) {
             NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));

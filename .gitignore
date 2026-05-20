@@ -1,4 +1,5 @@
 HELP.md
+.claude.json
 .commit-msg.tmp
 .gradle
 build/
@@ -36,14 +37,20 @@ out/
 
 ### VS Code ###
 .vscode/
-**/.DS_Store
-
-### Internal Documentation ###
-internal_documentation/
-.env
-.env.local
 
 ### macOS / JetBrains clutter ###
 .DS_Store
 **/.DS_Store
 pencil-new.pen
+
+### Internal Documentation ###
+internal_documentation/
+.env
+.env.local
+TEMPORARY_FILES/
+TEMP_CI_CD/
+
+### Local AI assistant config — never commit ###
+CLAUDE.md
+.claude/
+src/main/resources/application-local.properties

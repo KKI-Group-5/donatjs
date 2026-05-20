@@ -22,10 +22,10 @@
 
         <div class="auth-buttons" th:if="${isLoggedIn != true}">
             <a href="/login" class="btn-login">Log In</a>
-            <a href="/login" class="btn-signup">Sign Up</a>
+            <a href="/register" class="btn-signup">Sign Up</a>
         </div>
         <div class="auth-buttons" th:if="${isLoggedIn}" style="align-items:center;">
-            <span style="font-size:14px; font-weight:500; color:var(--text-secondary);" th:text="${currentUserName}">User</span>
+            <a href="/profile" class="profile-link" th:text="${currentUserName}">User</a>
             <form action="/logout" method="post" style="display:inline; margin:0;">
                 <button type="submit" class="btn-login" style="cursor:pointer; background:none; font-family:'Montserrat',sans-serif; font-size:14px;">Log Out</button>
             </form>

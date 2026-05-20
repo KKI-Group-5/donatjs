@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class WalletServiceImplTest {
 
     @Mock
@@ -47,7 +48,7 @@ class WalletServiceImplTest {
 
     @Test
     void withdraw_success_deductsBalanceAndSavesWithdrawalTransaction() {
-        when(walletRepository.findByUserId("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Wallet result = walletService.withdraw("user-001", 200000.0, "ATM Withdrawal");
@@ -64,7 +65,7 @@ class WalletServiceImplTest {
 
     @Test
     void withdraw_noDescription_usesDefaultDescription() {
-        when(walletRepository.findByUserId("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         walletService.withdraw("user-001", 100000.0, "");
@@ -76,7 +77,7 @@ class WalletServiceImplTest {
 
     @Test
     void withdraw_exactBalance_succeeds_andBalanceBecomesZero() {
-        when(walletRepository.findByUserId("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Wallet result = walletService.withdraw("user-001", 1000000.0, "Full withdrawal");
@@ -86,7 +87,7 @@ class WalletServiceImplTest {
 
     @Test
     void withdraw_insufficientBalance_throwsAndNothingSaved() {
-        when(walletRepository.findByUserId("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
 
         assertThatThrownBy(() -> walletService.withdraw("user-001", 2000000.0, "Too much"))
                 .isInstanceOf(InsufficientBalanceException.class);
@@ -112,7 +113,7 @@ class WalletServiceImplTest {
 
     @Test
     void deductForDonation_success_deductsBalanceAndSavesDonationTransaction() {
-        when(walletRepository.findByUserId("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Wallet result = walletService.deductForDonation("user-001", 500000.0, "Build a School");
@@ -129,7 +130,7 @@ class WalletServiceImplTest {
 
     @Test
     void deductForDonation_insufficientBalance_throwsAndNothingSaved() {
-        when(walletRepository.findByUserId("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
 
         assertThatThrownBy(() -> walletService.deductForDonation("user-001", 5000000.0, "Big Campaign"))
                 .isInstanceOf(InsufficientBalanceException.class);
@@ -154,7 +155,7 @@ class WalletServiceImplTest {
     @Test
     void deductForDonation_balanceNeverGoesNegative() {
         wallet.setBalance(100.0);
-        when(walletRepository.findByUserId("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
 
         assertThatThrownBy(() -> walletService.deductForDonation("user-001", 101.0, "Just over"))
                 .isInstanceOf(InsufficientBalanceException.class);

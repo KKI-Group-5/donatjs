@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
+import id.ac.ui.cs.advprog.donatjs.event.SubscriptionDebitFailedEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionFrequency;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
@@ -11,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,11 +24,13 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class SubscriptionSchedulerTest {
 
     @Mock private SubscriptionRepository subscriptionRepository;
     @Mock private WalletService walletService;
     @Mock private DonationService donationService;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private SubscriptionScheduler scheduler;
@@ -67,6 +71,7 @@ class SubscriptionSchedulerTest {
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
         verify(subscriptionRepository).save(captor.capture());
         assertEquals(LocalDate.now().plusMonths(1), captor.getValue().getNextDebitDate());
+        verify(eventPublisher, never()).publishEvent(any(SubscriptionDebitFailedEvent.class));
     }
 
     @Test
@@ -107,12 +112,34 @@ class SubscriptionSchedulerTest {
         doThrow(new IllegalStateException("Insufficient balance"))
                 .when(walletService).deductBalance(anyString(), anyDouble(), anyString());
 
-        // Should not throw — scheduler catches and logs
+        // Should not throw — scheduler catches and publishes a debit-failed event
         scheduler.processSubscriptions();
 
         verify(walletService).deductBalance(anyString(), anyDouble(), anyString());
         verify(donationService, never()).createDonation(any());
         verify(subscriptionRepository, never()).save(any());
+        verify(eventPublisher).publishEvent(any(SubscriptionDebitFailedEvent.class));
+    }
+
+    @Test
+    void processSubscriptions_publishedEventCarriesAllSubscriptionFields() {
+        when(subscriptionRepository.findByStatusAndNextDebitDateLessThanEqual(
+                SubscriptionStatus.ACTIVE, LocalDate.now()))
+                .thenReturn(List.of(dueSubscription));
+        doThrow(new IllegalStateException("Insufficient balance"))
+                .when(walletService).deductBalance(anyString(), anyDouble(), anyString());
+
+        scheduler.processSubscriptions();
+
+        ArgumentCaptor<SubscriptionDebitFailedEvent> captor =
+                ArgumentCaptor.forClass(SubscriptionDebitFailedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        SubscriptionDebitFailedEvent event = captor.getValue();
+        assertEquals(1L, event.getSubscriptionId());
+        assertEquals(USER_ID, event.getUserId());
+        assertEquals(CAMPAIGN_ID, event.getCampaignId());
+        assertEquals(AMOUNT, event.getAmount());
+        assertEquals("Insufficient balance", event.getReason());
     }
 
     @Test

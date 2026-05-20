@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class SubscriptionServiceImplTest {
 
     @Mock private SubscriptionRepository subscriptionRepository;
@@ -157,6 +158,17 @@ class SubscriptionServiceImplTest {
     }
 
     @Test
+    void updateFrequency_daily_advancesByOneDay() {
+        when(subscriptionRepository.findById(1L)).thenReturn(Optional.of(activeSubscription));
+        when(subscriptionRepository.save(any(Subscription.class))).thenAnswer(i -> i.getArgument(0));
+
+        SubscriptionResponse response = subscriptionService.updateFrequency(1L, USER_ID, SubscriptionFrequency.DAILY);
+
+        assertEquals(SubscriptionFrequency.DAILY, response.getFrequency());
+        assertEquals(LocalDate.now().plusDays(1), response.getNextDebitDate());
+    }
+
+    @Test
     void updateFrequency_wrongUser_throwsException() {
         when(subscriptionRepository.findById(1L)).thenReturn(Optional.of(activeSubscription));
 
@@ -190,5 +202,41 @@ class SubscriptionServiceImplTest {
         List<SubscriptionResponse> result = subscriptionService.getSubscriptionsByUser(USER_ID);
 
         assertTrue(result.isEmpty());
+    }
+
+    // ── auto-termination on campaign status change ───────────────────────
+
+    @Test
+    void terminateActiveSubscriptionsForCampaign_flipsAllActiveToTerminated() {
+        Subscription a = Subscription.builder()
+                .id(10L).userId("u1").campaignId(CAMPAIGN_ID).amount(AMOUNT)
+                .frequency(SubscriptionFrequency.MONTHLY).status(SubscriptionStatus.ACTIVE)
+                .nextDebitDate(LocalDate.now().plusMonths(1))
+                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+        Subscription b = Subscription.builder()
+                .id(11L).userId("u2").campaignId(CAMPAIGN_ID).amount(AMOUNT)
+                .frequency(SubscriptionFrequency.WEEKLY).status(SubscriptionStatus.ACTIVE)
+                .nextDebitDate(LocalDate.now().plusWeeks(1))
+                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+        when(subscriptionRepository.findByCampaignIdAndStatus(CAMPAIGN_ID, SubscriptionStatus.ACTIVE))
+                .thenReturn(List.of(a, b));
+
+        int terminated = subscriptionService.terminateActiveSubscriptionsForCampaign(CAMPAIGN_ID, "campaign deleted");
+
+        assertEquals(2, terminated);
+        assertEquals(SubscriptionStatus.TERMINATED, a.getStatus());
+        assertEquals(SubscriptionStatus.TERMINATED, b.getStatus());
+        verify(subscriptionRepository).saveAll(List.of(a, b));
+    }
+
+    @Test
+    void terminateActiveSubscriptionsForCampaign_noOpWhenNoneActive() {
+        when(subscriptionRepository.findByCampaignIdAndStatus(CAMPAIGN_ID, SubscriptionStatus.ACTIVE))
+                .thenReturn(List.of());
+
+        int terminated = subscriptionService.terminateActiveSubscriptionsForCampaign(CAMPAIGN_ID, "campaign deleted");
+
+        assertEquals(0, terminated);
+        verify(subscriptionRepository, never()).saveAll(any());
     }
 }

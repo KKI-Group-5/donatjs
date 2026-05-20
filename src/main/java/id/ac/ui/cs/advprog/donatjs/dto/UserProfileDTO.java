@@ -18,6 +18,12 @@ public class UserProfileDTO {
     private String bio;
     private LocalDate dateOfBirth;
 
+    // Milestone 4: Moderation flags
+    private boolean suspended;
+    private boolean flaggedForReview;
+    private int rejectedDonationCount;
+    private int rejectedCampaignCount;
+
     // Milestone 3: Aggregated activities
     private List<Campaign> createdCampaigns;
     private List<DonationResponse> donations;

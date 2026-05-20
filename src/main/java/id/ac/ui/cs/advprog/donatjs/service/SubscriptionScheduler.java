@@ -1,12 +1,14 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
+import id.ac.ui.cs.advprog.donatjs.event.SubscriptionDebitFailedEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Donation;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ public class SubscriptionScheduler {
     private final SubscriptionRepository subscriptionRepository;
     private final WalletService walletService;
     private final DonationService donationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
@@ -54,9 +57,15 @@ public class SubscriptionScheduler {
                         sub.getId(), sub.getUserId(), sub.getCampaignId(), sub.getAmount());
 
             } catch (IllegalStateException e) {
-                // Insufficient balance — skip this cycle. M5 adds notification logic.
                 log.warn("Subscription debit SKIPPED (insufficient balance): subscriptionId={}, userId={}: {}",
                         sub.getId(), sub.getUserId(), e.getMessage());
+                eventPublisher.publishEvent(new SubscriptionDebitFailedEvent(
+                        this,
+                        sub.getId(),
+                        sub.getUserId(),
+                        sub.getCampaignId(),
+                        sub.getAmount(),
+                        e.getMessage()));
             }
         }
     }
