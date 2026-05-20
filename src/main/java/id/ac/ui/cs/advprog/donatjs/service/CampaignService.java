@@ -14,6 +14,8 @@ public interface CampaignService {
 
     List<Campaign> findOpenCampaigns();
 
+    List<Campaign> findAllCampaigns();
+
     Optional<Campaign> findById(Long id);
 
     Campaign updateDescription(Long id, String description);

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.UnaryOperator;
 
 @Repository
 public class InMemoryCampaignRepository implements CampaignRepository {
@@ -50,6 +51,18 @@ public class InMemoryCampaignRepository implements CampaignRepository {
     @Override
     public void deleteById(Long id) {
         storage.remove(id);
+    }
+
+    @Override
+    public Optional<Campaign> computeAndSave(Long id, UnaryOperator<Campaign> updater) {
+        Campaign[] holder = {null};
+        storage.compute(id, (key, existing) -> {
+            if (existing == null) return null;
+            Campaign updated = updater.apply(existing);
+            holder[0] = updated;
+            return updated != null ? updated : existing;
+        });
+        return Optional.ofNullable(holder[0]);
     }
 }
 

@@ -2,67 +2,354 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${campaign.title}">Campaign Detail</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${campaign.title} + ' — DonatJS'">Campaign — DonatJS</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f8e9; color: #212121; line-height: 1.6; }
+        a { color: #2e7d32; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .nav { background: #1b5e20; padding: 0 32px; display: flex; align-items: center; gap: 24px; height: 58px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .nav .brand { font-size: 1.3rem; font-weight: 800; color: white; letter-spacing: 1px; }
+        .nav .brand:hover { text-decoration: none; }
+        .nav a.nav-link { color: rgba(255,255,255,0.8); font-size: 0.9rem; }
+        .nav a.nav-link:hover { color: white; text-decoration: none; }
+        .nav .spacer { flex: 1; }
+        .nav .btn-nav { background: #4caf50; color: white !important; padding: 7px 18px; border-radius: 20px; font-weight: 600; font-size: 0.88rem; }
+        .nav .btn-nav:hover { background: #388e3c; text-decoration: none; }
+
+        .container { max-width: 760px; margin: 0 auto; padding: 36px 24px; }
+
+        /* Campaign header card */
+        .campaign-header { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 20px; }
+        .header-banner { background: linear-gradient(135deg, #1b5e20, #388e3c); padding: 28px 28px 20px; color: white; }
+        .header-banner h1 { font-size: 1.6rem; font-weight: 800; line-height: 1.25; margin-bottom: 10px; }
+        .header-banner .meta { font-size: 0.85rem; color: rgba(255,255,255,0.75); display: flex; gap: 16px; flex-wrap: wrap; }
+
+        /* Status badge */
+        .badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-WAITING { background: #fff8e1; color: #f57f17; }
+        .badge-OPEN { background: #e8f5e9; color: #2e7d32; }
+        .badge-CLOSED { background: #e3f2fd; color: #1565c0; }
+        .badge-CANCELLED { background: #fce4ec; color: #c62828; }
+        .badge-REJECTED { background: #ede7f6; color: #4527a0; }
+        .badge-FRAUD { background: #ffebee; color: #b71c1c; }
+        .badge-DELETED { background: #f5f5f5; color: #616161; }
+
+        /* Progress section */
+        .progress-section { padding: 20px 28px; border-bottom: 1px solid #f0f0f0; }
+        .progress-numbers { display: flex; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+        .progress-raised { font-size: 1.5rem; font-weight: 800; color: #2e7d32; }
+        .progress-target { font-size: 0.9rem; color: #888; align-self: flex-end; padding-bottom: 4px; }
+        .progress-wrap { background: #e8f5e9; border-radius: 20px; height: 12px; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #2e7d32, #66bb6a); height: 100%; border-radius: 20px; width: 0%; transition: width 0.8s ease; }
+        .progress-pct { text-align: right; font-size: 0.82rem; color: #666; margin-top: 6px; }
+
+        /* Stats row */
+        .stats-row { display: flex; padding: 16px 28px; gap: 0; border-bottom: 1px solid #f0f0f0; }
+        .stat { flex: 1; text-align: center; padding: 8px 12px; }
+        .stat + .stat { border-left: 1px solid #eee; }
+        .stat .s-value { font-size: 1.1rem; font-weight: 700; color: #1b5e20; }
+        .stat .s-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+
+        /* Description */
+        .description-section { padding: 22px 28px; }
+        .description-section h3 { font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+        .description-section p { color: #333; line-height: 1.7; white-space: pre-wrap; }
+
+        /* Action buttons */
+        .actions-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px 24px; margin-bottom: 20px; }
+        .actions-card h3 { font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+        .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .btn { display: inline-block; padding: 9px 20px; border-radius: 7px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; text-align: center; transition: background 0.15s; }
+        .btn-primary { background: #2e7d32; color: white; }
+        .btn-primary:hover { background: #1b5e20; color: white; text-decoration: none; }
+        .btn-outline { background: transparent; color: #2e7d32; border: 2px solid #c8e6c9; }
+        .btn-outline:hover { background: #e8f5e9; text-decoration: none; color: #2e7d32; }
+        .btn-danger { background: #c62828; color: white; }
+        .btn-danger:hover { background: #b71c1c; }
+        .btn-warn { background: #e65100; color: white; }
+        .btn-warn:hover { background: #bf360c; }
+        .btn-info { background: #1565c0; color: white; }
+        .btn-info:hover { background: #0d47a1; }
+
+        /* Alert */
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; }
+        .alert-error { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; }
+        .alert-success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #4caf50; }
+
+        /* Admin panel */
+        .admin-panel { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 2px solid #ff8f00; overflow: hidden; margin-bottom: 20px; }
+        .admin-panel-header { background: #fff8e1; padding: 14px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #ffe082; }
+        .admin-panel-header h3 { font-size: 1rem; font-weight: 700; color: #e65100; }
+        .admin-panel-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+        .admin-section { }
+        .admin-section-title { font-size: 0.82rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
+        .admin-section .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* Admin edit form */
+        .admin-edit-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .admin-edit-form .full { grid-column: 1 / -1; }
+        .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #444; margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
+        .form-group input:focus { outline: none; border-color: #4caf50; box-shadow: 0 0 0 3px rgba(76,175,80,0.15); }
+
+        /* Breadcrumb */
+        .breadcrumb { font-size: 0.85rem; color: #888; margin-bottom: 20px; }
+        .breadcrumb a { color: #2e7d32; }
+        .breadcrumb span { color: #555; }
+
+        .footer { text-align: center; padding: 24px; color: #888; font-size: 0.82rem; border-top: 1px solid #dce8dc; margin-top: 32px; }
+
+        hr { border: none; border-top: 1px solid #e8f5e9; margin: 4px 0; }
+    </style>
 </head>
 <body>
-<h1 th:text="${campaign.title}">Campaign Title</h1>
 
-<p th:if="${deleteError}">
-    <strong th:text="${deleteError}">Delete error</strong>
-</p>
+<nav class="nav">
+    <a href="/" class="brand">DonatJS</a>
+    <div class="spacer"></div>
+    <a href="/campaigns" class="nav-link">Campaigns</a>
+    <a href="/campaigns/create" class="btn-nav">+ New Campaign</a>
+</nav>
 
-<p>
-    <strong>Description:</strong>
-    <span th:text="${campaign.description}">Description</span>
-</p>
+<div class="container">
 
-<p>
-    <strong>Deadline:</strong>
-    <span th:text="${campaign.deadline}">2026-01-01</span>
-</p>
+    <div class="breadcrumb">
+        <a href="/campaigns">← All Campaigns</a>
+        <span> / </span>
+        <span th:text="${campaign.title}">Campaign</span>
+    </div>
 
-<p>
-    <strong>Target Amount:</strong>
-    <span th:text="${campaign.targetAmount}">0</span>
-</p>
+    <!-- Flash error -->
+    <div class="alert alert-error" th:if="${deleteError}" th:text="${deleteError}"></div>
 
-<p>
-    <strong>Total Raised:</strong>
-    <span th:text="${campaign.totalRaised}">0</span>
-</p>
+    <!-- Campaign Header -->
+    <div class="campaign-header">
+        <div class="header-banner">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px;">
+                <h1 th:text="${campaign.title}">Campaign Title</h1>
+                <span th:class="'badge badge-' + ${campaign.status}" th:text="${campaign.status}"
+                      style="white-space:nowrap; margin-top:4px;">OPEN</span>
+            </div>
+            <div class="meta">
+                <span th:if="${campaign.creatorId != null}" th:text="'👤 ' + ${campaign.creatorId}">Creator</span>
+                <span th:if="${campaign.createdAt != null}"
+                      th:text="'📅 Created ' + ${#temporals.format(campaign.createdAt, 'dd MMM yyyy')}">Created</span>
+            </div>
+        </div>
 
-<p>
-    <strong>Status:</strong>
-    <span th:text="${campaign.status}">OPEN</span>
-</p>
+        <!-- Progress bar -->
+        <div class="progress-section">
+            <div class="progress-numbers">
+                <span class="progress-raised"
+                      th:text="${'Rp ' + #numbers.formatDecimal(campaign.totalRaised, 0, 'COMMA', 0, 'POINT')}">Rp 0</span>
+                <span class="progress-target"
+                      th:text="${campaign.targetAmount != null ? 'of Rp ' + #numbers.formatDecimal(campaign.targetAmount, 0, 'COMMA', 0, 'POINT') + ' goal' : 'no target set'}">of goal</span>
+            </div>
+            <div class="progress-wrap">
+                <div class="progress-fill"
+                     th:attr="data-raised=${campaign.totalRaised},data-target=${campaign.targetAmount}"
+                     id="main-progress">
+                </div>
+            </div>
+            <div class="progress-pct" id="progress-pct-label"></div>
+        </div>
 
-<!-- Admin Panel (75% Milestone: Fraud & Deadline Automation) -->
-<div th:if="${#request.getAttribute('X-Admin') == 'true' or false}" style="border: 2px solid red; padding: 10px; margin: 20px 0;">
-    <h3>Admin Actions (75% Milestone)</h3>
-    
-    <form th:action="@{|/campaigns/${campaign.id}/fraud|}" method="post" style="display:inline;">
-        <button type="submit" onclick="return confirm('Mark this campaign as FRAUD? This will trigger refunds.')">Mark as Fraud</button>
-    </form>
-    
-    <p style="font-size: 0.9em; color: #666;">
-        <em>Note: Fraud marking will change status to FRAUD and trigger refunds for all donations.
-        Event notifications will be published for external systems to process payouts/refunds.</em>
-    </p>
+        <!-- Stats row -->
+        <div class="stats-row">
+            <div class="stat">
+                <div class="s-value" th:text="${campaign.deadline != null ? campaign.deadline : '—'}">—</div>
+                <div class="s-label">Deadline</div>
+            </div>
+            <div class="stat">
+                <div class="s-value"
+                     th:text="${campaign.targetAmount != null ? 'Rp ' + #numbers.formatDecimal(campaign.targetAmount, 0, 'COMMA', 0, 'POINT') : '—'}">—</div>
+                <div class="s-label">Target</div>
+            </div>
+            <div class="stat">
+                <div class="s-value"
+                     th:text="${'Rp ' + #numbers.formatDecimal(campaign.totalRaised, 0, 'COMMA', 0, 'POINT')}">Rp 0</div>
+                <div class="s-label">Raised</div>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="description-section">
+            <h3>About this Campaign</h3>
+            <p th:text="${campaign.description}">Description</p>
+        </div>
+    </div>
+
+    <!-- User Actions -->
+    <div class="actions-card">
+        <h3>Actions</h3>
+        <div class="action-row">
+            <a th:href="@{|/campaigns/${campaign.id}/edit|}" class="btn btn-outline"
+               th:if="${campaign.status == T(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus).WAITING or campaign.status == T(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus).OPEN}">
+                ✏️ Edit Description
+            </a>
+            <form th:action="@{|/campaigns/${campaign.id}/delete|}" method="post" style="display:inline;"
+                  th:if="${campaign.status != T(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus).DELETED}">
+                <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('Delete this campaign? This only works if no donations have been made.')">
+                    🗑 Delete
+                </button>
+            </form>
+            <a href="/campaigns" class="btn btn-outline">← Back to List</a>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="admin-panel" th:if="${isAdmin}">
+        <div class="admin-panel-header">
+            <span>🔧</span>
+            <h3>Admin Panel</h3>
+            <span style="font-size:0.8rem; color:#888; margin-left:auto;">ID: <strong th:text="${campaign.id}">0</strong></span>
+        </div>
+        <div class="admin-panel-body">
+
+            <!-- Moderation -->
+            <div class="admin-section"
+                 th:if="${campaign.status == T(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus).WAITING}">
+                <div class="admin-section-title">Moderation (status: WAITING)</div>
+                <div class="btn-row">
+                    <button class="btn btn-primary"
+                            th:onclick="'approveCampaign(' + ${campaign.id} + ')'">
+                        ✅ Approve Campaign
+                    </button>
+                    <button class="btn btn-warn"
+                            th:onclick="'rejectCampaign(' + ${campaign.id} + ')'">
+                        ❌ Reject Campaign
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Edit -->
+            <div class="admin-section">
+                <div class="admin-section-title">Edit Campaign Fields</div>
+                <div class="admin-edit-form">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="admin-title" th:value="${campaign.title}" placeholder="Leave blank to keep current">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Amount (Rp)</label>
+                        <input type="number" id="admin-target" th:value="${campaign.targetAmount}" step="1000" placeholder="New target amount">
+                    </div>
+                    <div class="form-group">
+                        <label>Deadline</label>
+                        <input type="date" id="admin-deadline" th:value="${campaign.deadline}">
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:flex-end;">
+                        <button class="btn btn-info" style="width:100%;"
+                                th:onclick="'saveAdminEdit(' + ${campaign.id} + ')'">
+                            💾 Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="admin-section"
+                 th:if="${campaign.status != T(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus).FRAUD
+                      and campaign.status != T(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus).DELETED
+                      and campaign.status != T(id.ac.ui.cs.advprog.donatjs.model.CampaignStatus).CANCELLED}">
+                <div class="admin-section-title" style="color:#c62828;">Danger Zone</div>
+                <div class="btn-row">
+                    <button class="btn btn-danger"
+                            th:onclick="'markFraud(' + ${campaign.id} + ')'">
+                        🚨 Mark as Fraud &amp; Refund All
+                    </button>
+                    <button class="btn btn-warn"
+                            onclick="runDeadlineAutomation()">
+                        ⏱ Run Deadline Automation
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 
-<p>
-    <a th:href="@{|/campaigns/${campaign.id}/edit|}">Edit description</a>
-</p>
+<div class="footer">
+    &copy; 2025 DonatJS &mdash; Advanced Programming Course Project
+</div>
 
-<form th:action="@{|/campaigns/${campaign.id}/delete|}" method="post">
-    <button type="submit">Delete</button>
-</form>
+<script th:inline="javascript">
+    // Progress bar
+    (function () {
+        const bar = document.getElementById('main-progress');
+        const label = document.getElementById('progress-pct-label');
+        if (!bar) return;
+        const raised = parseFloat(bar.dataset.raised) || 0;
+        const target = parseFloat(bar.dataset.target) || 0;
+        if (target > 0) {
+            const pct = Math.min(100, (raised / target) * 100);
+            setTimeout(() => bar.style.width = pct.toFixed(1) + '%', 100);
+            label.textContent = pct.toFixed(1) + '% of goal reached';
+        } else {
+            label.textContent = 'No target set';
+        }
+    })();
 
-<p>
-    <a th:href="@{/campaigns}">Back to Campaigns</a> |
-    <a th:href="@{/}">Back to Home</a>
-</p>
+    // Admin actions
+    function approveCampaign(id) {
+        if (!confirm('Approve this campaign?\nIt will become publicly visible.')) return;
+        fetch('/campaigns/' + id + '/moderate', {
+            method: 'POST',
+            headers: { 'X-Admin': 'true', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approve: true })
+        }).then(r => r.ok ? location.reload() : r.text().then(t => alert('Error: ' + t)));
+    }
 
+    function rejectCampaign(id) {
+        if (!confirm('Reject this campaign?')) return;
+        fetch('/campaigns/' + id + '/moderate', {
+            method: 'POST',
+            headers: { 'X-Admin': 'true', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approve: false })
+        }).then(r => r.ok ? location.reload() : r.text().then(t => alert('Error: ' + t)));
+    }
+
+    function markFraud(id) {
+        if (!confirm('⚠️ Mark as FRAUD?\n\nThis will:\n• Set status to FRAUD\n• Trigger refunds for all donations\n• Publish fraud notification events\n\nThis cannot be undone.')) return;
+        fetch('/campaigns/' + id + '/fraud', {
+            method: 'POST',
+            headers: { 'X-Admin': 'true' }
+        }).then(r => r.ok ? location.reload() : r.text().then(t => alert('Error: ' + t)));
+    }
+
+    function runDeadlineAutomation() {
+        if (!confirm('Run deadline automation now?\n\nExpired OPEN/WAITING campaigns will be closed or cancelled.')) return;
+        fetch('/campaigns/deadline-automation/run', {
+            method: 'POST',
+            headers: { 'X-Admin': 'true' }
+        }).then(r => r.text()).then(msg => {
+            alert('✅ ' + msg);
+            location.reload();
+        });
+    }
+
+    function saveAdminEdit(id) {
+        const title = document.getElementById('admin-title').value.trim();
+        const deadline = document.getElementById('admin-deadline').value;
+        const targetVal = document.getElementById('admin-target').value;
+        const body = {};
+        if (title) body.title = title;
+        if (deadline) body.deadline = deadline;
+        if (targetVal) body.targetAmount = parseFloat(targetVal);
+        if (Object.keys(body).length === 0) { alert('No changes to save.'); return; }
+        fetch('/campaigns/' + id + '/admin-edit', {
+            method: 'POST',
+            headers: { 'X-Admin': 'true', 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        }).then(r => r.ok ? location.reload() : r.text().then(t => alert('Error: ' + t)));
+    }
+</script>
 </body>
 </html>
-

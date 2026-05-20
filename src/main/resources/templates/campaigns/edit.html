@@ -2,27 +2,113 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="'Edit Description - ' + ${campaign.title}">Edit Campaign Description</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Edit — ' + ${campaign.title} + ' — DonatJS'">Edit Campaign — DonatJS</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f8e9; color: #212121; line-height: 1.6; }
+        a { color: #2e7d32; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .nav { background: #1b5e20; padding: 0 32px; display: flex; align-items: center; gap: 24px; height: 58px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .nav .brand { font-size: 1.3rem; font-weight: 800; color: white; letter-spacing: 1px; }
+        .nav .brand:hover { text-decoration: none; }
+        .nav a.nav-link { color: rgba(255,255,255,0.8); font-size: 0.9rem; }
+        .nav a.nav-link:hover { color: white; text-decoration: none; }
+        .nav .spacer { flex: 1; }
+
+        .container { max-width: 640px; margin: 0 auto; padding: 36px 24px; }
+
+        .breadcrumb { font-size: 0.85rem; color: #888; margin-bottom: 20px; }
+        .breadcrumb a { color: #2e7d32; }
+
+        .form-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
+        .form-card-header { background: linear-gradient(135deg, #388e3c, #66bb6a); padding: 24px 28px; color: white; }
+        .form-card-header h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
+        .form-card-header .campaign-name { font-size: 0.9rem; color: rgba(255,255,255,0.85); background: rgba(0,0,0,0.15); display: inline-block; padding: 3px 10px; border-radius: 20px; margin-top: 6px; }
+        .form-card-body { padding: 28px; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.88rem; font-weight: 700; color: #333; margin-bottom: 7px; }
+        textarea {
+            width: 100%; padding: 12px 14px; border: 1.5px solid #d0d0d0; border-radius: 8px;
+            font-size: 0.95rem; font-family: inherit; resize: vertical; min-height: 140px;
+            transition: border-color 0.2s, box-shadow 0.2s; background: #fafafa;
+        }
+        textarea:focus { outline: none; border-color: #4caf50; box-shadow: 0 0 0 3px rgba(76,175,80,0.15); background: white; }
+        textarea.has-error { border-color: #c62828; background: #fff8f8; }
+        .field-error { color: #c62828; font-size: 0.8rem; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+        .field-error::before { content: '⚠'; }
+
+        .char-count { font-size: 0.78rem; color: #888; text-align: right; margin-top: 4px; }
+
+        .submit-section { margin-top: 8px; padding-top: 20px; border-top: 1px solid #f0f0f0; display: flex; gap: 12px; align-items: center; }
+        .btn-submit { background: #2e7d32; color: white; padding: 11px 26px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; border: none; cursor: pointer; transition: background 0.2s; }
+        .btn-submit:hover { background: #1b5e20; }
+        .btn-cancel { color: #666; font-size: 0.9rem; }
+
+        .footer { text-align: center; padding: 24px; color: #888; font-size: 0.82rem; border-top: 1px solid #dce8dc; margin-top: 32px; }
+    </style>
 </head>
 <body>
-<h1 th:text="'Edit Description for ' + ${campaign.title}">Edit Description</h1>
 
-<form th:action="@{|/campaigns/${campaign.id}/edit|}" th:object="${req}" method="post">
-    <div>
-        <label for="description">Description</label>
-        <textarea id="description" th:field="*{description}"></textarea>
-        <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span>
+<nav class="nav">
+    <a href="/" class="brand">DonatJS</a>
+    <div class="spacer"></div>
+    <a href="/campaigns" class="nav-link">Campaigns</a>
+</nav>
+
+<div class="container">
+
+    <div class="breadcrumb">
+        <a href="/campaigns">Campaigns</a>
+        <span> / </span>
+        <a th:href="@{|/campaigns/${campaign.id}|}" th:text="${campaign.title}">Campaign</a>
+        <span> / Edit</span>
     </div>
 
-    <div>
-        <button type="submit">Save</button>
+    <div class="form-card">
+        <div class="form-card-header">
+            <h1>✏️ Edit Description</h1>
+            <div class="campaign-name" th:text="${campaign.title}">Campaign Title</div>
+        </div>
+        <div class="form-card-body">
+
+            <form th:action="@{|/campaigns/${campaign.id}/edit|}" th:object="${req}" method="post" novalidate>
+
+                <div class="form-group">
+                    <label for="description">Campaign Description *</label>
+                    <textarea id="description" th:field="*{description}"
+                              th:classappend="${#fields.hasErrors('description')} ? 'has-error'"
+                              placeholder="Describe your campaign..."
+                              oninput="updateCount(this)"></textarea>
+                    <div class="char-count" id="char-count"></div>
+                    <div class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                </div>
+
+                <div class="submit-section">
+                    <button type="submit" class="btn-submit">Save Description</button>
+                    <a th:href="@{|/campaigns/${campaign.id}|}" class="btn-cancel">Cancel</a>
+                </div>
+            </form>
+
+        </div>
     </div>
-</form>
 
-<p>
-    <a th:href="@{|/campaigns/${campaign.id}|}">Back to Campaign</a>
-</p>
+</div>
 
+<div class="footer">
+    &copy; 2025 DonatJS &mdash; Advanced Programming Course Project
+</div>
+
+<script>
+    function updateCount(el) {
+        const len = el.value.length;
+        document.getElementById('char-count').textContent = len + ' characters';
+    }
+    // Init on load
+    const ta = document.getElementById('description');
+    if (ta) updateCount(ta);
+</script>
 </body>
 </html>
-
