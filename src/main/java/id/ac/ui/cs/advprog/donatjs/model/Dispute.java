@@ -37,6 +37,7 @@ public class Dispute {
     }
 
     public Dispute() {
+        // Default constructor required by JPA/Jackson
     }
 
     public UUID getId() { return id; }

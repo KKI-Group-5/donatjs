@@ -11,11 +11,12 @@ import org.springframework.lang.NonNull;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class DisputeServiceImpl implements DisputeService {
 
+    private static final String STATUS_PENDING = "PENDING";
+    
     private final DisputeRepository disputeRepository;
     private final UserRepository userRepository;
 
@@ -37,7 +38,7 @@ public class DisputeServiceImpl implements DisputeService {
         Dispute dispute = new Dispute();
         dispute.setUser(user);
         dispute.setReason(reason);
-        dispute.setStatus("PENDING");
+        dispute.setStatus(STATUS_PENDING);
         
         dispute = disputeRepository.save(dispute);
         return mapToDTO(dispute);
@@ -51,15 +52,15 @@ public class DisputeServiceImpl implements DisputeService {
                 
         return disputeRepository.findByUser(user).stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DisputeDTO> getAllPendingDisputes() {
-        return disputeRepository.findByStatus("PENDING").stream()
+        return disputeRepository.findByStatus(STATUS_PENDING).stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -68,7 +69,7 @@ public class DisputeServiceImpl implements DisputeService {
         Dispute dispute = disputeRepository.findById(disputeId)
                 .orElseThrow(() -> new IllegalArgumentException("Dispute not found"));
 
-        if (!"PENDING".equals(dispute.getStatus())) {
+        if (!STATUS_PENDING.equals(dispute.getStatus())) {
             throw new IllegalStateException("Dispute is already resolved");
         }
 

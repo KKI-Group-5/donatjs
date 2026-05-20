@@ -2,7 +2,6 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,7 +19,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings("null")
-public class LandingControllerTest {
+class LandingControllerTest {
 
     @Mock
     private CampaignService campaignService;
@@ -31,9 +30,6 @@ public class LandingControllerTest {
     @InjectMocks
     private LandingController landingController;
 
-    @BeforeEach
-    void setUp() {
-    }
 
     @Test
     void landingPage() {

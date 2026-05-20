@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.DonationService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class DonationPageControllerTest {
+class DonationPageControllerTest {
 
     @Mock
     private DonationService donationService;
@@ -32,9 +31,6 @@ public class DonationPageControllerTest {
     @InjectMocks
     private DonationPageController donationPageController;
 
-    @BeforeEach
-    void setUp() {
-    }
 
     @Test
     void testMyDonationsPage() {

@@ -7,6 +7,7 @@ public class DisputeSubmissionRequest {
     private String reason;
 
     public DisputeSubmissionRequest() {
+        // Default constructor required by JPA/Jackson
     }
 
     public String getReason() {

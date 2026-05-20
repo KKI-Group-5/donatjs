@@ -5,6 +5,7 @@ public class DisputeResolutionRequest {
     private String adminNotes;
 
     public DisputeResolutionRequest() {
+        // Default constructor required by JPA/Jackson
     }
 
     public boolean isApprove() {

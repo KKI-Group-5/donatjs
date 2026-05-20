@@ -14,6 +14,7 @@ public class DisputeDTO {
     private LocalDateTime createdAt;
 
     public DisputeDTO() {
+        // Default constructor required by JPA/Jackson
     }
 
     public UUID getId() { return id; }

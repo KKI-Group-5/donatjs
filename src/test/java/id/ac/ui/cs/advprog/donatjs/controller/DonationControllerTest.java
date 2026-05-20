@@ -5,7 +5,6 @@ import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.DonationService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class DonationControllerTest {
+class DonationControllerTest {
 
     @Mock
     private DonationService donationService;
@@ -37,9 +36,6 @@ public class DonationControllerTest {
     @InjectMocks
     private DonationController donationController;
 
-    @BeforeEach
-    void setUp() {
-    }
 
     @Test
     void testCreateDonationSuccess() {
