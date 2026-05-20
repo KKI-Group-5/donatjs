@@ -1,9 +1,11 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
+import id.ac.ui.cs.advprog.donatjs.model.Donation;
 import id.ac.ui.cs.advprog.donatjs.model.Transaction;
 import id.ac.ui.cs.advprog.donatjs.model.TransactionType;
 import id.ac.ui.cs.advprog.donatjs.model.Wallet;
+import id.ac.ui.cs.advprog.donatjs.repository.DonationRepository;
 import id.ac.ui.cs.advprog.donatjs.repository.TransactionRepository;
 import id.ac.ui.cs.advprog.donatjs.repository.WalletRepository;
 import id.ac.ui.cs.advprog.donatjs.util.IdrMoney;
@@ -24,13 +26,16 @@ public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final DonationRepository donationRepository;
     private final double walletInitialBalance;
 
     public WalletServiceImpl(WalletRepository walletRepository,
                              TransactionRepository transactionRepository,
+                             DonationRepository donationRepository,
                              @Value("${donatjs.wallet.initial-balance:0}") double walletInitialBalance) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.donationRepository = donationRepository;
         this.walletInitialBalance = walletInitialBalance;
     }
 
@@ -153,5 +158,37 @@ public class WalletServiceImpl implements WalletService {
         log.info("[NOTIFICATION] Donation of Rp {} deducted for user {} to campaign '{}'. New balance: Rp {}",
                 amt, userId, campaignName, newBal);
         return wallet;
+    }
+
+    @Override
+    @Transactional
+    @SuppressWarnings("null")
+    public int bulkRefundForCampaign(Long campaignId, String campaignName) {
+        List<Donation> donations = donationRepository
+                .findByCampaignIdAndStatus(campaignId, Donation.DonationStatus.SUCCESS);
+        int refunded = 0;
+        for (Donation donation : donations) {
+            if (donation.getPaymentMethod() != Donation.PaymentMethod.WALLET) {
+                log.warn("Skipped non-wallet donation id={} method={} userId={}",
+                        donation.getId(), donation.getPaymentMethod(), donation.getUserId());
+                continue;
+            }
+            long amt = donation.getAmount();
+            Wallet wallet = getWalletByUserId(donation.getUserId());
+            long bal = IdrMoney.wholeRupiah(wallet.getBalance());
+            wallet.setBalance(IdrMoney.asDouble(bal + amt));
+            walletRepository.save(wallet);
+            transactionRepository.save(Transaction.builder()
+                    .wallet(wallet)
+                    .amount(IdrMoney.asDouble(amt))
+                    .type(TransactionType.REFUND)
+                    .description("Refund: " + campaignName)
+                    .timestamp(LocalDateTime.now())
+                    .build());
+            donation.setStatus(Donation.DonationStatus.REFUNDED);
+            donationRepository.save(donation);
+            refunded++;
+        }
+        return refunded;
     }
 }

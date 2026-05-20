@@ -10,4 +10,5 @@ public interface WalletService {
     Wallet deductBalance(String userId, double amount, String description);
     Wallet withdraw(String userId, double amount, String description);
     Wallet deductForDonation(String userId, double amount, String campaignName);
+    int bulkRefundForCampaign(Long campaignId, String campaignName);
 }
