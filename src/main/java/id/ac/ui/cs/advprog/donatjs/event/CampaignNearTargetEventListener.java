@@ -51,7 +51,7 @@ public class CampaignNearTargetEventListener {
 
     private java.util.Optional<String> resolveEmail(String userIdString) {
         try {
-            return userRepository.findById(UUID.fromString(userIdString))
+            return userRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(userIdString)))
                     .map(AppUser::getEmail);
         } catch (IllegalArgumentException ex) {
             log.warn("Skipping non-UUID userId on saved campaign: {}", userIdString);

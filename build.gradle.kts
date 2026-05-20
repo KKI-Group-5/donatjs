@@ -42,6 +42,8 @@ dependencies {
 	implementation("me.paulschwarz:spring-dotenv:4.0.0")
 	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	implementation("org.flywaydb:flyway-core")
+	runtimeOnly("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("com.h2database:h2")
 	runtimeOnly("org.postgresql:postgresql")
 	runtimeOnly("com.mysql:mysql-connector-j")

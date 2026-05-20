@@ -19,4 +19,6 @@ public interface SavedCampaignRepository extends JpaRepository<SavedCampaign, Lo
     void deleteByUserIdAndCampaignId(String userId, String campaignId);
 
     List<SavedCampaign> findByCampaignId(String campaignId);
+
+    long deleteByCampaignId(String campaignId);
 }
