@@ -28,4 +28,23 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
     Optional<Donation> findByIdAndUserId(Long id, String userId);
 
     long countByUserIdAndStatus(String userId, DonationStatus status);
+
+    @Query("""
+            SELECT d.userId, SUM(d.amount), COUNT(d)
+            FROM Donation d
+            WHERE d.campaignId = :campaignId AND d.status = 'SUCCESS'
+            GROUP BY d.userId
+            ORDER BY SUM(d.amount) DESC
+            """)
+    List<Object[]> findTopDonatorsByCampaign(
+            @Param("campaignId") Long campaignId, org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            SELECT d.userId, SUM(d.amount), COUNT(d), COUNT(DISTINCT d.campaignId)
+            FROM Donation d
+            WHERE d.status = 'SUCCESS'
+            GROUP BY d.userId
+            ORDER BY SUM(d.amount) DESC
+            """)
+    List<Object[]> findOverallTopDonators(org.springframework.data.domain.Pageable pageable);
 }

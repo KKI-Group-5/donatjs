@@ -135,27 +135,27 @@
 
         .status-open {
             background: #dcfce7;
-            color: #16a34a;
+            color: #065f46;
         }
 
         .status-closed {
             background: #fee2e2;
-            color: #dc2626;
+            color: #7f1d1d;
         }
 
         .status-waiting {
             background: #fef9c3;
-            color: #854d0e;
+            color: #78350f;
         }
 
         .status-rejected {
             background: #fee2e2;
-            color: #dc2626;
+            color: #7f1d1d;
         }
 
         .status-deleted {
             background: #f3f4f6;
-            color: #6b7280;
+            color: #374151;
         }
 
         .modal-backdrop {
@@ -264,14 +264,12 @@
             <div class="detail-row">
                 <span class="detail-label">Target Amount</span>
                 <span class="detail-value"
-                    th:text="'Rp ' + ${#numbers.formatDecimal(campaign.targetAmount, 0, 'COMMA', 0, 'POINT')}">Rp
-                    0</span>
+                    th:text="'Rp ' + ${#numbers.formatDecimal(campaign.targetAmount, 0, 'COMMA', 0, 'POINT')}">Rp 0</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Total Raised</span>
                 <span class="detail-value"
-                    th:text="'Rp ' + ${#numbers.formatDecimal(campaign.totalRaised, 0, 'COMMA', 0, 'POINT')}">Rp
-                    0</span>
+                    th:text="'Rp ' + ${#numbers.formatDecimal(campaign.totalRaised, 0, 'COMMA', 0, 'POINT')}">Rp 0</span>
             </div>
             <div class="detail-row" style="border-bottom:none;">
                 <span class="detail-label">Status</span>
@@ -300,14 +298,23 @@
                 </span>
             </div>
 
+            <!-- Per-campaign leaderboard -->
+            <div id="leaderboard-section" style="margin-top: var(--spacing-xl);">
+                <h3 style="font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:var(--spacing-md);">
+                    Top Donors
+                </h3>
+                <div id="leaderboard-list">
+                    <p style="font-size:14px; color:var(--text-secondary);">Loading...</p>
+                </div>
+            </div>
+
             <!-- Admin Panel (75% Milestone: Fraud & Deadline Automation) -->
             <div th:if="${#request.getAttribute('X-Admin') == 'true' or false}"
                 style="border: 2px solid red; padding: 10px; margin: 20px 0;">
                 <h3>Admin Actions (75% Milestone)</h3>
                 <form th:action="@{|/campaigns/${campaign.id}/fraud|}" method="post" style="display:inline;">
                     <button type="submit"
-                        onclick="return confirm('Mark this campaign as FRAUD? This will trigger refunds.')">Mark as
-                        Fraud</button>
+                        onclick="return confirm('Mark this campaign as FRAUD? This will trigger refunds.')">Mark as Fraud</button>
                 </form>
                 <p style="font-size: 0.9em; color: #666;">
                     <em>Note: Fraud marking will change status to FRAUD and trigger refunds for all donations.
@@ -331,13 +338,14 @@
         </div>
     </div>
 
-    <!-- Donate modal -->
-    <div id="donateModal" class="modal-backdrop" onclick="if(event.target===this)closeDonate()" onkeydown="if(event.key === 'Enter' || event.key === ' '){if(event.target===this)closeDonate();}" tabindex="0" role="dialog" aria-modal="true">
+    <!-- Donate modal (native <dialog> for better accessibility) -->
+    <dialog id="donateModal" class="modal-backdrop">
         <div class="modal">
-            <h2>Donate to this campaign</h2>
-            <label>Amount (Rp)</label>
+            <h2 id="donateTitle">Donate to this campaign</h2>
+            <p id="donateDesc" style="display:none;">Modal for donating to a campaign</p>
+            <label for="donateAmount">Amount (Rp)</label>
             <input id="donateAmount" type="number" min="1000" step="1000" value="50000" />
-            <label>Payment method</label>
+            <label for="donateMethod">Payment method</label>
             <select id="donateMethod">
                 <option value="WALLET">Wallet (instant, no fee)</option>
                 <option value="BANK_TRANSFER">Bank transfer (Rp 1,500 fee)</option>
@@ -345,28 +353,29 @@
                 <option value="OVO">OVO (Rp 2,000 fee)</option>
                 <option value="DANA">DANA (Rp 2,000 fee)</option>
             </select>
-            <label>Notes (optional)</label>
+            <label for="donateNotes">Notes (optional)</label>
             <input id="donateNotes" type="text" placeholder="e.g. Keep up the great work!" />
             <div class="modal-actions">
                 <button class="btn-secondary" onclick="closeDonate()">Cancel</button>
                 <button class="btn-cta" style="height:40px;padding:0 18px;" onclick="submitDonate()">Donate</button>
             </div>
         </div>
-    </div>
+    </dialog>
 
-    <!-- Subscribe modal — two-step: details → confirm warning -->
-    <div id="subscribeModal" class="modal-backdrop" onclick="if(event.target===this)closeSubscribe()" onkeydown="if(event.key === 'Enter' || event.key === ' '){if(event.target===this)closeSubscribe();}" tabindex="0" role="dialog" aria-modal="true">
-        <div class="modal">
+    <!-- Subscribe modal — two-step: details → confirm warning (native <dialog>) -->
+    <dialog id="subscribeModal" class="modal-backdrop">
+        <div class="modal" aria-labelledby="subscribeTitle" aria-describedby="subscribeDesc">
             <!-- Step 1: enter details -->
             <div id="subStepDetails">
-                <h2>Start a recurring donation</h2>
+                <h2 id="subscribeTitle">Start a recurring donation</h2>
+                <p id="subscribeDesc" style="display:none;">Modal for setting up recurring donations</p>
                 <p style="font-size:13px; color:var(--text-secondary); margin-top:-8px; margin-bottom:12px;">
                     Recurring donations are debited automatically from your wallet each cycle. You can change frequency
                     or cancel anytime.
                 </p>
-                <label>Amount (Rp)</label>
+                <label for="subAmount">Amount (Rp)</label>
                 <input id="subAmount" type="number" min="1000" step="1000" value="25000" />
-                <label>Frequency</label>
+                <label for="subFrequency">Frequency</label>
                 <select id="subFrequency">
                     <option value="DAILY">Daily</option>
                     <option value="WEEKLY">Weekly</option>
@@ -374,37 +383,31 @@
                 </select>
                 <div class="modal-actions">
                     <button class="btn-secondary" onclick="closeSubscribe()">Cancel</button>
-                    <button class="btn-cta" style="height:40px;padding:0 18px;"
-                        onclick="reviewSubscribe()">Review</button>
+                    <button class="btn-cta" style="height:40px;padding:0 18px;" onclick="reviewSubscribe()">Review</button>
                 </div>
             </div>
 
             <!-- Step 2: confirmation warning -->
             <div id="subStepConfirm" style="display:none;">
                 <h2>Confirm your subscription</h2>
-                <div
-                    style="background:#FFF7E6; border:1px solid #F1C46B; border-radius:8px; padding:12px 14px; margin:8px 0 16px; font-size:13px; color:#6B4A00;">
+                <div style="background:#FFF7E6; border:1px solid #F1C46B; border-radius:8px; padding:12px 14px; margin:8px 0 16px; font-size:13px; color:#6B4A00;">
                     <strong>Heads up.</strong> By confirming you authorise DonatJS to debit your wallet on this
                     schedule. Please review the details below.
                 </div>
                 <ul style="list-style:none; padding:0; margin:0 0 14px; font-size:14px;">
-                    <li
-                        style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
+                    <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
                         <span style="color:var(--text-secondary);">Campaign</span>
                         <strong id="subReviewCampaign"></strong>
                     </li>
-                    <li
-                        style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
+                    <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
                         <span style="color:var(--text-secondary);">Amount per cycle</span>
                         <strong id="subReviewAmount"></strong>
                     </li>
-                    <li
-                        style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
+                    <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
                         <span style="color:var(--text-secondary);">Frequency</span>
                         <strong id="subReviewFrequency"></strong>
                     </li>
-                    <li
-                        style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
+                    <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-light);">
                         <span style="color:var(--text-secondary);">Payment method</span>
                         <strong>Wallet (only)</strong>
                     </li>
@@ -450,18 +453,33 @@
         function requireLogin() {
             if (!IS_LOGGED_IN) {
                 showToast('Please log in first', 'error');
-                setTimeout(function () { window.location.href = '/login'; }, 800);
+                setTimeout(function () { globalThis.location.href = '/login'; }, 800);
                 return false;
             }
             return true;
         }
 
         // ── Donate ────────────────────────────────────────────────────
-        function openDonate() { document.getElementById('donateModal').classList.add('open'); }
-        function closeDonate() { document.getElementById('donateModal').classList.remove('open'); }
+        function openDonate() {
+            var d = document.getElementById('donateModal');
+            if (!d) return;
+            if (typeof d.showModal === 'function') {
+                if (!d.open) d.showModal();
+            } else {
+                d.classList.add('open');
+            }
+        }
+        function closeDonate() {
+            var d = document.getElementById('donateModal');
+            if (!d) return;
+            if (typeof d.close === 'function') {
+                if (d.open) d.close();
+            }
+            d.classList.remove('open');
+        }
         function submitDonate() {
             if (!requireLogin()) return;
-            var amount = parseInt(document.getElementById('donateAmount').value, 10);
+            var amount = Number.parseInt(document.getElementById('donateAmount').value, 10);
             var method = document.getElementById('donateMethod').value;
             var notes = document.getElementById('donateNotes').value;
             if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
@@ -484,7 +502,7 @@
                     if (res.status === 201) {
                         showToast('Thank you! Donation successful.', 'success');
                         closeDonate();
-                        setTimeout(function () { window.location.reload(); }, 700);
+                        setTimeout(function () { globalThis.location.reload(); }, 700);
                     } else if (res.status === 422) {
                         showToast(res.body.error || 'Donation rejected', 'error');
                     } else {
@@ -498,10 +516,19 @@
         function openSubscribe() {
             if (!requireLogin()) return;
             backToSubDetails();
-            document.getElementById('subscribeModal').classList.add('open');
+            var d = document.getElementById('subscribeModal');
+            if (!d) return;
+            if (typeof d.showModal === 'function') {
+                if (!d.open) d.showModal();
+            } else {
+                d.classList.add('open');
+            }
         }
         function closeSubscribe() {
-            document.getElementById('subscribeModal').classList.remove('open');
+            var d = document.getElementById('subscribeModal');
+            if (!d) return;
+            if (typeof d.close === 'function') { if (d.open) d.close(); }
+            d.classList.remove('open');
             backToSubDetails();
         }
         function backToSubDetails() {
@@ -511,7 +538,7 @@
             if (btn) { btn.disabled = false; btn.textContent = 'Confirm & subscribe'; }
         }
         function reviewSubscribe() {
-            var amount = parseInt(document.getElementById('subAmount').value, 10);
+            var amount = Number.parseInt(document.getElementById('subAmount').value, 10);
             var frequency = document.getElementById('subFrequency').value;
             if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
 
@@ -525,7 +552,7 @@
         }
         function submitSubscribe() {
             if (!requireLogin()) return;
-            var amount = parseInt(document.getElementById('subAmount').value, 10);
+            var amount = Number.parseInt(document.getElementById('subAmount').value, 10);
             var frequency = document.getElementById('subFrequency').value;
             if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
 
@@ -544,7 +571,7 @@
                     if (res.ok) {
                         showToast('Subscription started!', 'success');
                         closeSubscribe();
-                        setTimeout(function () { window.location.href = '/subscriptions'; }, 700);
+                        setTimeout(function () { globalThis.location.href = '/subscriptions'; }, 700);
                     } else if (res.status === 422) {
                         showToast(res.body.error || 'Insufficient balance', 'error');
                         if (btn) { btn.disabled = false; btn.textContent = 'Confirm & subscribe'; }
@@ -608,11 +635,55 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            if (!IS_LOGGED_IN || !CURRENT_USER_ID) return;
-            fetch('/api/saved-campaigns/' + CURRENT_USER_ID + '/check/' + CAMPAIGN_ID)
+            if (IS_LOGGED_IN && CURRENT_USER_ID) {
+                fetch('/api/saved-campaigns/' + CURRENT_USER_ID + '/check/' + CAMPAIGN_ID)
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) { if (data && data.saved) updateSaveLabel(true); })
+                    .catch(function () { });
+            }
+
+            // ── Campaign leaderboard ───────────────────────────────────
+            fetch('/api/donations/campaign/' + CAMPAIGN_ID + '/leaderboard?limit=5')
                 .then(function (r) { return r.json(); })
-                .then(function (data) { if (data && data.saved) updateSaveLabel(true); })
-                .catch(function () { });
+                .then(function (entries) {
+                    var container = document.getElementById('leaderboard-list');
+                    if (!entries || entries.length === 0) {
+                        container.innerHTML = '<p style="font-size:14px;color:var(--text-secondary);">No donations yet. Be the first!</p>';
+                        return;
+                    }
+                    var medals = ['🥇', '🥈', '🥉'];
+                    var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                    entries.forEach(function (e) {
+                        var medal = e.rank <= 3 ? medals[e.rank - 1] : '#' + e.rank;
+                        var amount = 'Rp ' + Number(e.totalAmount).toLocaleString('id-ID');
+                        html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--soft-gray);">'
+                            + '<span style="font-size:18px;width:32px;text-align:center;flex-shrink:0;">' + medal + '</span>'
+                            + '<span style="flex:1;font-size:14px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.userId + '</span>'
+                            + '<span style="font-size:14px;font-weight:700;color:var(--kelly-green);flex-shrink:0;">' + amount + '</span>'
+                            + '</div>';
+                    });
+                    html += '</div>';
+                    html += '<a href="/leaderboard" style="display:inline-block;margin-top:10px;font-size:13px;color:var(--kelly-green);font-weight:600;">View overall leaderboard →</a>';
+                    container.innerHTML = html;
+                })
+                .catch(function () {
+                    document.getElementById('leaderboard-list').innerHTML =
+                        '<p style="font-size:14px;color:var(--text-secondary);">Could not load leaderboard.</p>';
+                });
+
+            // Attach dialog backdrop click and Escape key handlers for accessibility
+            (function attachDialogHandlers() {
+                var donateDialog = document.getElementById('donateModal');
+                if (donateDialog) {
+                    donateDialog.addEventListener('click', function (e) { if (e.target === this) closeDonate(); });
+                    donateDialog.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDonate(); });
+                }
+                var subscribeDialog = document.getElementById('subscribeModal');
+                if (subscribeDialog) {
+                    subscribeDialog.addEventListener('click', function (e) { if (e.target === this) closeSubscribe(); });
+                    subscribeDialog.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSubscribe(); });
+                }
+            })();
         });
     </script>
 </body>
