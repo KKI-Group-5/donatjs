@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Disputes | DonatJS Admin</title>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="brand">
+                <h2>DonatJS Admin</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="/admin/dashboard">Flagged Users</a>
+                <a href="/admin/disputes" class="active">Dispute Appeals</a>
+                <a href="/">Back to Site</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Dispute Appeals Review</h1>
+                <p>Review and resolve account suspension appeals from users.</p>
+            </header>
+
+            <section class="panel-section">
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>User Email</th>
+                                <th>Reason</th>
+                                <th>Submitted At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${pendingDisputes == null || pendingDisputes.isEmpty()}">
+                                <td colspan="4" class="empty-state">No pending disputes.</td>
+                            </tr>
+                            <tr th:each="d : ${pendingDisputes}">
+                                <td th:text="${d.userEmail}">user@example.com</td>
+                                <td th:text="${d.reason}">Reason text</td>
+                                <td th:text="${#temporals.format(d.createdAt, 'dd MMM yyyy HH:mm')}">Date</td>
+                                <td class="actions">
+                                    <button class="btn-unsuspend" th:data-id="${d.id}" onclick="resolveDispute(this.getAttribute('data-id'), true)">Approve</button>
+                                    <button class="btn-suspend" th:data-id="${d.id}" onclick="resolveDispute(this.getAttribute('data-id'), false)">Reject</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => { toast.className = 'toast'; }, 3000);
+        }
+
+        async function resolveDispute(id, approve) {
+            const action = approve ? "Approve" : "Reject";
+            const notes = prompt(`Admin Notes for this ${action}:`);
+            if (notes === null) return;
+
+            try {
+                const res = await fetch(`/api/disputes/${id}/resolve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approve: approve, adminNotes: notes })
+                });
+                if(res.ok) {
+                    showToast(`Dispute ${action.toLowerCase()}ed successfully`, 'success');
+                    setTimeout(() => globalThis.location.reload(), 1500);
+                } else {
+                    showToast('Failed to resolve dispute', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Network error', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -37,7 +37,7 @@ public class SubscriptionController {
             if (msg != null && msg.contains("already exists")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", msg));
             }
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", msg));
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", msg != null ? msg : "Unknown error"));
         }
     }
 

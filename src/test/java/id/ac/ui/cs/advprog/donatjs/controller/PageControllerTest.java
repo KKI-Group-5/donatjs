@@ -8,6 +8,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import id.ac.ui.cs.advprog.donatjs.dto.UserProfileDTO;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
+import id.ac.ui.cs.advprog.donatjs.service.ProfileService;
+import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 
 import java.util.Collections;
@@ -25,6 +32,15 @@ class PageControllerTest {
 
     @Mock
     private SavedCampaignService savedCampaignService;
+
+    @Mock
+    private SubscriptionService subscriptionService;
+
+    @Mock
+    private CurrentUserService currentUserService;
+
+    @Mock
+    private ProfileService profileService;
 
     @Mock
     private UserRepository userRepository;
@@ -66,6 +82,58 @@ class PageControllerTest {
         assertEquals("admin-dashboard", viewName);
         verify(userRepository).findAll();
         verify(model).addAttribute(eq("flaggedUsers"), anyList());
+    }
+
+    @Test
+    void testMySavedCampaignsPage() {
+        when(currentUserService.requireCurrentUserId()).thenReturn("user123");
+        when(savedCampaignService.getSavedCampaigns(anyString())).thenReturn(Collections.emptyList());
+
+        String viewName = pageController.mySavedCampaignsPage(model);
+
+        assertEquals("saved-campaigns", viewName);
+        verify(savedCampaignService).getSavedCampaigns("user123");
+        verify(model).addAttribute("userId", "user123");
+    }
+
+    @Test
+    void testSubscriptionsPage() {
+        when(subscriptionService.getSubscriptionsByUser("user123")).thenReturn(Collections.emptyList());
+
+        String viewName = pageController.subscriptionsPage("user123", model);
+
+        assertEquals("subscriptions", viewName);
+        verify(subscriptionService).getSubscriptionsByUser("user123");
+        verify(model).addAttribute("userId", "user123");
+        verify(model).addAttribute(eq("subscriptions"), eq(Collections.emptyList()));
+    }
+
+    @Test
+    void testMySubscriptionsPage() {
+        when(currentUserService.requireCurrentUserId()).thenReturn("user123");
+        when(subscriptionService.getSubscriptionsByUser("user123")).thenReturn(Collections.emptyList());
+
+        String viewName = pageController.mySubscriptionsPage(model);
+
+        assertEquals("subscriptions", viewName);
+        verify(subscriptionService).getSubscriptionsByUser("user123");
+        verify(model).addAttribute("userId", "user123");
+    }
+
+    @Test
+    void testProfileDashboard() {
+        SecurityContext securityContext = org.mockito.Mockito.mock(SecurityContext.class);
+        Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(currentUserService.getCurrentUserEmail(authentication)).thenReturn("test@test.com");
+        when(profileService.getUserProfile("test@test.com")).thenReturn(new UserProfileDTO("", "", "", null));
+
+        String viewName = pageController.profileDashboard(model);
+
+        assertEquals("profile", viewName);
+        verify(model).addAttribute(eq("profile"), org.mockito.ArgumentMatchers.any(UserProfileDTO.class));
     }
 
 }

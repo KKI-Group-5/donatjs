@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <th:block th:replace="~{fragments/head :: head}"></th:block>
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
+
 <body>
     <div class="admin-container">
         <aside class="sidebar">
@@ -15,6 +17,7 @@
             </div>
             <nav class="nav-menu">
                 <a href="/admin/dashboard" class="active">Flagged Users</a>
+                <a href="/admin/disputes">Dispute Appeals</a>
                 <a href="/">Back to Site</a>
             </nav>
         </aside>
@@ -45,15 +48,16 @@
                                 <td th:text="${user.name}">User Name</td>
                                 <td th:text="${user.email}">user@example.com</td>
                                 <td>
-                                    <span class="violation-count" th:text="${user.rejectedDonationCount + user.rejectedCampaignCount}">0</span>
+                                    <span class="violation-count"
+                                        th:text="${user.rejectedDonationCount + user.rejectedCampaignCount}">0</span>
                                 </td>
                                 <td>
                                     <span th:if="${user.suspended}" class="badge danger">Suspended</span>
                                     <span th:unless="${user.suspended}" class="badge warning">Flagged</span>
                                 </td>
                                 <td class="actions">
-                                    <button th:unless="${user.suspended}" class="btn-suspend" th:onclick="'suspendUser(\'' + ${user.id} + '\')'">Suspend</button>
-                                    <button class="btn-unsuspend" th:onclick="'unsuspendUser(\'' + ${user.id} + '\')'">Restore</button>
+                                    <button th:unless="${user.suspended}" class="btn-suspend" th:data-id="${user.id}" onclick="suspendUser(this.getAttribute('data-id'))">Suspend</button>
+                                    <button class="btn-unsuspend" th:data-id="${user.id}" onclick="unsuspendUser(this.getAttribute('data-id'))">Restore</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -74,10 +78,10 @@
         }
 
         async function suspendUser(id) {
-            if(!confirm("Are you sure you want to suspend this user?")) return;
+            if (!confirm("Are you sure you want to suspend this user?")) return;
             try {
                 const res = await fetch(`/api/admin/users/${id}/suspend`, { method: 'POST' });
-                if(res.ok) {
+                if (res.ok) {
                     showToast('User suspended successfully', 'success');
                     setTimeout(() => globalThis.location.reload(), 1500);
                 } else {
@@ -90,10 +94,10 @@
         }
 
         async function unsuspendUser(id) {
-            if(!confirm("Are you sure you want to restore this user? This will clear their violations.")) return;
+            if (!confirm("Are you sure you want to restore this user? This will clear their violations.")) return;
             try {
                 const res = await fetch(`/api/admin/users/${id}/unsuspend`, { method: 'POST' });
-                if(res.ok) {
+                if (res.ok) {
                     showToast('User restored successfully', 'success');
                     setTimeout(() => globalThis.location.reload(), 1500);
                 } else {
@@ -106,4 +110,5 @@
         }
     </script>
 </body>
+
 </html>
