@@ -114,6 +114,12 @@ tasks.named<Jar>("jar") {
 
 tasks.bootRun {
     environment(env.allVariables())
+    // Pass -Pprofile to capture a JFR recording for profiling analysis:
+    //   ./gradlew bootRun -Pprofile
+    // Output: build/donatjs-profile.jfr — open with JDK Mission Control.
+    if (project.hasProperty("profile")) {
+        jvmArgs("-XX:StartFlightRecording=duration=120s,filename=build/donatjs-profile.jfr,settings=profile,name=donatjs")
+    }
 }
 
 tasks.jacocoTestReport {

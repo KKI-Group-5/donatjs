@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.donatjs.event.SubscriptionDebitFailedEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Donation;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
+import id.ac.ui.cs.advprog.donatjs.monitoring.SubscriptionDebitJfrEvent;
 import id.ac.ui.cs.advprog.donatjs.repository.SubscriptionRepository;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,13 @@ public class SubscriptionScheduler {
         log.info("Subscription scheduler running: {} subscription(s) due", due.size());
 
         for (Subscription sub : due) {
+            SubscriptionDebitJfrEvent jfrEvent = new SubscriptionDebitJfrEvent();
+            jfrEvent.subscriptionId = sub.getId();
+            jfrEvent.userId        = sub.getUserId();
+            jfrEvent.campaignId    = sub.getCampaignId();
+            jfrEvent.amount        = sub.getAmount();
+            jfrEvent.begin();
+
             try {
                 walletService.deductBalance(
                         sub.getUserId(),
@@ -56,10 +64,13 @@ public class SubscriptionScheduler {
                 advanceNextDebitDate(sub);
                 subscriptionRepository.save(sub);
 
+                jfrEvent.success = true;
                 log.info("Subscription debit SUCCESS: subscriptionId={}, userId={}, campaignId={}, amount={}",
                         sub.getId(), sub.getUserId(), sub.getCampaignId(), sub.getAmount());
 
             } catch (IllegalStateException e) {
+                jfrEvent.success       = false;
+                jfrEvent.failureReason = e.getMessage();
                 log.warn("Subscription debit SKIPPED (insufficient balance): subscriptionId={}, userId={}: {}",
                         sub.getId(), sub.getUserId(), e.getMessage());
                 eventPublisher.publishEvent(new SubscriptionDebitFailedEvent(
@@ -69,6 +80,8 @@ public class SubscriptionScheduler {
                         sub.getCampaignId(),
                         sub.getAmount(),
                         e.getMessage()));
+            } finally {
+                jfrEvent.commit();
             }
         }
     }
