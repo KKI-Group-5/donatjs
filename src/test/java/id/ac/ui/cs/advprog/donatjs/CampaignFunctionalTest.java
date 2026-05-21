@@ -14,7 +14,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
@@ -31,7 +37,20 @@ import static org.hamcrest.Matchers.notNullValue;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc(addFilters = false)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@Import(CampaignFunctionalTest.PermitAllSecurityConfig.class)
 class CampaignFunctionalTest {
+
+    @TestConfiguration
+    static class PermitAllSecurityConfig {
+        @Bean
+        @Order(1)
+        SecurityFilterChain functionalTestChain(HttpSecurity http) throws Exception {
+            http.securityMatcher("/**")
+                    .authorizeHttpRequests(a -> a.anyRequest().permitAll())
+                    .csrf(c -> c.disable());
+            return http.build();
+        }
+    }
 
     @LocalServerPort
     int port;
