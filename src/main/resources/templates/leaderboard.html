@@ -6,8 +6,9 @@
     <title>DonatJS | Top Donors</title>
     <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}"/>
     <style>
+        /* ── Page shell ── */
         .leaderboard-page {
-            padding: var(--spacing-2xl) 80px;
+            padding: var(--spacing-2xl) 80px var(--spacing-2xl);
             min-height: 60vh;
             background: var(--bg-light);
         }
@@ -25,6 +26,115 @@
             font-size: 15px;
             color: var(--text-secondary);
         }
+
+        /* ── Podium ── */
+        .podium-section {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: var(--spacing-2xl);
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .podium-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            max-width: 220px;
+        }
+
+        /* Card above the platform */
+        .podium-card {
+            background: var(--white);
+            border: 1px solid var(--soft-gray);
+            border-radius: var(--radius-lg);
+            padding: 20px 16px 16px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+            margin-bottom: 0;
+        }
+        .podium-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.11);
+            transform: translateY(-2px);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        /* Avatar circle */
+        .podium-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--white);
+            margin: 0 auto 10px;
+            border: 3px solid var(--white);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .avatar-gold   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .avatar-silver { background: linear-gradient(135deg, #94a3b8, #64748b); }
+        .avatar-bronze { background: linear-gradient(135deg, #cd7c2f, #a05c1f); }
+
+        .podium-medal {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .podium-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+        }
+        .podium-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .podium-amount {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--kelly-green);
+        }
+        .podium-amount-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Platform step below the card */
+        .podium-platform {
+            width: 100%;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--white);
+        }
+        .platform-1st { height: 90px; background: linear-gradient(180deg, #f59e0b, #d97706); }
+        .platform-2nd { height: 64px; background: linear-gradient(180deg, #94a3b8, #64748b); }
+        .platform-3rd { height: 48px; background: linear-gradient(180deg, #cd7c2f, #a05c1f); }
+
+        /* Highlight border on 1st card */
+        .podium-item-1st .podium-card {
+            border-color: #f59e0b;
+            box-shadow: 0 4px 20px rgba(245,158,11,0.18);
+        }
+
+        /* ── List (rank 4+) ── */
         .leaderboard-card {
             background: var(--white);
             border: 1px solid var(--soft-gray);
@@ -34,30 +144,57 @@
             max-width: 760px;
             margin: 0 auto;
         }
+        .leaderboard-card-title {
+            padding: 14px var(--spacing-lg);
+            border-bottom: 1px solid var(--soft-gray);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--bg-light);
+        }
         .leaderboard-row {
             display: flex;
             align-items: center;
-            padding: var(--spacing-md) var(--spacing-lg);
+            padding: 14px var(--spacing-lg);
             border-bottom: 1px solid var(--soft-gray);
             gap: var(--spacing-md);
             transition: background 0.15s;
         }
         .leaderboard-row:last-child { border-bottom: none; }
         .leaderboard-row:hover { background: var(--bg-light); }
-        .rank {
-            font-size: 18px;
+
+        .rank-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            border: 1px solid var(--soft-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
             font-weight: 700;
-            width: 40px;
-            text-align: center;
-            flex-shrink: 0;
             color: var(--text-secondary);
+            flex-shrink: 0;
         }
-        .rank-1 { color: #f59e0b; font-size: 22px; }
-        .rank-2 { color: #94a3b8; font-size: 20px; }
-        .rank-3 { color: #cd7c2f; font-size: 20px; }
+        .list-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--white);
+            flex-shrink: 0;
+        }
         .donor-info { flex: 1; min-width: 0; }
-        .donor-id {
-            font-size: 15px;
+        .donor-name {
+            font-size: 14px;
             font-weight: 600;
             color: var(--text-primary);
             white-space: nowrap;
@@ -65,31 +202,37 @@
             text-overflow: ellipsis;
         }
         .donor-meta {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-        .donor-amount {
-            text-align: right;
-            flex-shrink: 0;
-        }
-        .donor-amount-value {
-            font-size: 17px;
-            font-weight: 700;
-            color: var(--kelly-green);
-        }
-        .donor-amount-label {
             font-size: 12px;
             color: var(--text-secondary);
             margin-top: 2px;
         }
+        .donor-amount { text-align: right; flex-shrink: 0; }
+        .donor-amount-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--kelly-green);
+        }
+        .donor-amount-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ── Empty state ── */
         .empty-state {
             text-align: center;
             padding: var(--spacing-2xl);
             color: var(--text-secondary);
         }
-        @media (max-width: 768px) {
-            .leaderboard-page { padding: var(--spacing-xl) 20px; }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .leaderboard-page { padding: var(--spacing-xl) 16px; }
+            .podium-section { gap: 8px; }
+            .podium-card { padding: 14px 10px 12px; }
+            .podium-avatar { width: 48px; height: 48px; font-size: 20px; }
+            .podium-medal { font-size: 22px; }
+            .podium-amount { font-size: 13px; }
         }
     </style>
 </head>
@@ -99,26 +242,85 @@
 
 <main class="leaderboard-page">
     <div class="leaderboard-header">
-        <h1>Top Donors</h1>
+        <h1>🏆 Top Donors</h1>
         <p>The most generous contributors across all campaigns on DonatJS.</p>
     </div>
 
-    <div class="leaderboard-card">
-        <div th:if="${#lists.isEmpty(leaderboard)}" class="empty-state">
-            <p>No donations recorded yet. Be the first to donate!</p>
-            <a href="/" class="btn-browse"
-               style="display:inline-block;margin-top:12px;padding:10px 24px;background:var(--kelly-green);color:#fff;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;">
-                Browse Campaigns
-            </a>
+    <!-- Empty state -->
+    <div th:if="${#lists.isEmpty(leaderboard)}" class="leaderboard-card empty-state">
+        <p>No donations recorded yet. Be the first to donate!</p>
+        <a href="/"
+           style="display:inline-block;margin-top:12px;padding:10px 24px;background:var(--kelly-green);color:#fff;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;">
+            Browse Campaigns
+        </a>
+    </div>
+
+    <!-- Podium: 2nd | 1st | 3rd -->
+    <div th:if="${!#lists.isEmpty(leaderboard)}" class="podium-section">
+
+        <!-- 2nd place (left) -->
+        <div th:if="${leaderboard.size() >= 2}" class="podium-item podium-item-2nd">
+            <div class="podium-card">
+                <div class="podium-avatar avatar-silver"
+                     th:text="${leaderboard[1].userId.substring(0,1).toUpperCase()}">U</div>
+                <span class="podium-medal">🥈</span>
+                <div class="podium-name" th:text="${leaderboard[1].userId}">username</div>
+                <div class="podium-meta"
+                     th:text="${leaderboard[1].donationCount} + ' donation' + (${leaderboard[1].donationCount} != 1 ? 's' : '')">
+                </div>
+                <div class="podium-amount"
+                     th:text="'Rp ' + ${#numbers.formatDecimal(leaderboard[1].totalAmount, 0, 'COMMA', 0, 'POINT')}">
+                </div>
+                <div class="podium-amount-label">total donated</div>
+            </div>
+            <div class="podium-platform platform-2nd">2</div>
         </div>
 
-        <div th:each="entry : ${leaderboard}" class="leaderboard-row">
-            <div th:class="${'rank rank-' + entry.rank}"
-                 th:text="${entry.rank == 1 ? '🥇' : (entry.rank == 2 ? '🥈' : (entry.rank == 3 ? '🥉' : '#' + entry.rank))}">
-                #1
+        <!-- 1st place (centre) -->
+        <div class="podium-item podium-item-1st">
+            <div class="podium-card">
+                <div class="podium-avatar avatar-gold"
+                     th:text="${leaderboard[0].userId.substring(0,1).toUpperCase()}">U</div>
+                <span class="podium-medal">🥇</span>
+                <div class="podium-name" th:text="${leaderboard[0].userId}">username</div>
+                <div class="podium-meta"
+                     th:text="${leaderboard[0].donationCount} + ' donation' + (${leaderboard[0].donationCount} != 1 ? 's' : '')">
+                </div>
+                <div class="podium-amount"
+                     th:text="'Rp ' + ${#numbers.formatDecimal(leaderboard[0].totalAmount, 0, 'COMMA', 0, 'POINT')}">
+                </div>
+                <div class="podium-amount-label">total donated</div>
             </div>
+            <div class="podium-platform platform-1st">1</div>
+        </div>
+
+        <!-- 3rd place (right) -->
+        <div th:if="${leaderboard.size() >= 3}" class="podium-item podium-item-3rd">
+            <div class="podium-card">
+                <div class="podium-avatar avatar-bronze"
+                     th:text="${leaderboard[2].userId.substring(0,1).toUpperCase()}">U</div>
+                <span class="podium-medal">🥉</span>
+                <div class="podium-name" th:text="${leaderboard[2].userId}">username</div>
+                <div class="podium-meta"
+                     th:text="${leaderboard[2].donationCount} + ' donation' + (${leaderboard[2].donationCount} != 1 ? 's' : '')">
+                </div>
+                <div class="podium-amount"
+                     th:text="'Rp ' + ${#numbers.formatDecimal(leaderboard[2].totalAmount, 0, 'COMMA', 0, 'POINT')}">
+                </div>
+                <div class="podium-amount-label">total donated</div>
+            </div>
+            <div class="podium-platform platform-3rd">3</div>
+        </div>
+    </div>
+
+    <!-- Rank 4+ list -->
+    <div th:if="${leaderboard.size() > 3}" class="leaderboard-card">
+        <div class="leaderboard-card-title">Other Top Donors</div>
+        <div th:each="entry : ${leaderboard}" th:if="${entry.rank > 3}" class="leaderboard-row">
+            <div class="rank-badge" th:text="${entry.rank}">#4</div>
+            <div class="list-avatar" th:text="${entry.userId.substring(0,1).toUpperCase()}">U</div>
             <div class="donor-info">
-                <div class="donor-id" th:text="${entry.userId}">user-id</div>
+                <div class="donor-name" th:text="${entry.userId}">user-id</div>
                 <div class="donor-meta"
                      th:text="${entry.donationCount} + ' donation' + (${entry.donationCount} != 1 ? 's' : '')
                                + ' across ' + ${entry.campaignCount} + ' campaign' + (${entry.campaignCount} != 1 ? 's' : '')">
@@ -132,6 +334,7 @@
             </div>
         </div>
     </div>
+
 </main>
 
 <div th:replace="~{fragments/footer :: footer}"></div>
