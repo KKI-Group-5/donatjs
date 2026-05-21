@@ -6,6 +6,7 @@ import id.ac.ui.cs.advprog.donatjs.model.Donation;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.SubscriptionRepository;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,6 +27,8 @@ public class SubscriptionScheduler {
     private final DonationService donationService;
     private final ApplicationEventPublisher eventPublisher;
 
+    @Timed(value = "subscription.debit.duration",
+           description = "Total time to process all due subscription debits in a scheduler run")
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     public void processSubscriptions() {
