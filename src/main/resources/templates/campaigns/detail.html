@@ -308,20 +308,6 @@
                 </div>
             </div>
 
-            <!-- Admin Panel (75% Milestone: Fraud & Deadline Automation) -->
-            <div th:if="${#request.getAttribute('X-Admin') == 'true' or false}"
-                style="border: 2px solid red; padding: 10px; margin: 20px 0;">
-                <h3>Admin Actions (75% Milestone)</h3>
-                <form th:action="@{|/campaigns/${campaign.id}/fraud|}" method="post" style="display:inline;">
-                    <button type="submit"
-                        onclick="return confirm('Mark this campaign as FRAUD? This will trigger refunds.')">Mark as Fraud</button>
-                </form>
-                <p style="font-size: 0.9em; color: #666;">
-                    <em>Note: Fraud marking will change status to FRAUD and trigger refunds for all donations.
-                        Event notifications will be published for external systems to process payouts/refunds.</em>
-                </p>
-            </div>
-
             <!-- Admin / owner actions -->
             <div class="detail-actions">
                 <a th:href="@{|/campaigns/${campaign.id}/edit|}">
@@ -332,7 +318,7 @@
                         onclick="return confirm('Delete this campaign? This cannot be undone.')">Delete</button>
                 </form>
                 <a th:href="@{/campaigns}">
-                    <button type="button" class="btn-secondary">← Back</button>
+                    <button type="button" class="btn-secondary">&#8592; Back</button>
                 </a>
             </div>
         </div>
@@ -362,10 +348,9 @@
         </div>
     </dialog>
 
-    <!-- Subscribe modal — two-step: details → confirm warning (native <dialog>) -->
+    <!-- Subscribe modal -->
     <dialog id="subscribeModal" class="modal-backdrop">
         <div class="modal" aria-labelledby="subscribeTitle" aria-describedby="subscribeDesc">
-            <!-- Step 1: enter details -->
             <div id="subStepDetails">
                 <h2 id="subscribeTitle">Start a recurring donation</h2>
                 <p id="subscribeDesc" style="display:none;">Modal for setting up recurring donations</p>
@@ -387,7 +372,6 @@
                 </div>
             </div>
 
-            <!-- Step 2: confirmation warning -->
             <div id="subStepConfirm" style="display:none;">
                 <h2>Confirm your subscription</h2>
                 <div style="background:#FFF7E6; border:1px solid #F1C46B; border-radius:8px; padding:12px 14px; margin:8px 0 16px; font-size:13px; color:#6B4A00;">
@@ -426,7 +410,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <div id="toast" class="toast"></div>
 
@@ -459,7 +443,6 @@
             return true;
         }
 
-        // ── Donate ────────────────────────────────────────────────────
         function openDonate() {
             var d = document.getElementById('donateModal');
             if (!d) return;
@@ -512,7 +495,6 @@
                 .catch(function () { showToast('Donation failed', 'error'); });
         }
 
-        // ── Subscribe ─────────────────────────────────────────────────
         function openSubscribe() {
             if (!requireLogin()) return;
             backToSubDetails();
@@ -589,7 +571,6 @@
                 });
         }
 
-        // ── Save toggle ───────────────────────────────────────────────
         function updateSaveLabel(isSaved) {
             var btn = document.getElementById('save-btn');
             if (!btn) return;
@@ -642,7 +623,6 @@
                     .catch(function () { });
             }
 
-            // ── Campaign leaderboard ───────────────────────────────────
             fetch('/api/donations/campaign/' + CAMPAIGN_ID + '/leaderboard?limit=5')
                 .then(function (r) { return r.json(); })
                 .then(function (entries) {
@@ -671,7 +651,6 @@
                         '<p style="font-size:14px;color:var(--text-secondary);">Could not load leaderboard.</p>';
                 });
 
-            // Attach dialog backdrop click and Escape key handlers for accessibility
             (function attachDialogHandlers() {
                 var donateDialog = document.getElementById('donateModal');
                 if (donateDialog) {
