@@ -12,6 +12,7 @@ val seleniumJavaVersion = "4.14.1"
 val seleniumJupiterVersion = "5.0.1"
 val webdrivermanagerVersion = "5.6.3"
 val junitJupiterVersion = "5.9.1"
+val serenityVersion = "4.2.3"
 
 java {
 	toolchain {
@@ -43,20 +44,29 @@ dependencies {
     testImplementation("io.github.bonigarcia:selenium-jupiter:$seleniumJupiterVersion")
     testImplementation("io.github.bonigarcia:webdrivermanager:$webdrivermanagerVersion")
     testImplementation("org.junit.jupiter:junit-jupiter:${junitJupiterVersion}")
+    testImplementation("net.serenity-bdd:serenity-core:$serenityVersion")
+    testImplementation("net.serenity-bdd:serenity-junit5:$serenityVersion")
+    testImplementation("net.serenity-bdd:serenity-rest-assured:$serenityVersion")
 }
 
 tasks.register<Test>("unitTest") {
 	description = "Runs unit tests."
 	group = "verification"
 
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
+
 	filter {
-		excludeTestsMatching("*FuncionalTest")
+		excludeTestsMatching("*FunctionalTest")
 	}
 }
 
 tasks.register<Test>("functionalTest") {
 	description = "Runs functional tests."
 	group = "verification"
+
+	testClassesDirs = sourceSets.test.get().output.classesDirs
+	classpath = sourceSets.test.get().runtimeClasspath
 
 	filter {
 		includeTestsMatching("*FunctionalTest")
@@ -76,4 +86,8 @@ tasks.test{
 
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+	}
 }

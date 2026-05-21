@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
+import id.ac.ui.cs.advprog.donatjs.event.CampaignNearTargetEvent;
+import id.ac.ui.cs.advprog.donatjs.event.CampaignStatusChangedEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignFraudDetectedEvent;
@@ -10,12 +12,14 @@ import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,18 +33,21 @@ public class SimpleCampaignService implements CampaignService {
     private final CampaignRepository campaignRepository;
     private final CampaignWalletGateway campaignWalletGateway;
     private final ApplicationEventPublisher eventPublisher;
+    private final BigDecimal nearTargetThreshold;
 
     public SimpleCampaignService(CampaignRepository campaignRepository) {
-        this(campaignRepository, new NoopCampaignWalletGateway(), event -> {});
+        this(campaignRepository, new NoopCampaignWalletGateway(), event -> {}, new BigDecimal("0.98"));
     }
 
     @Autowired
     public SimpleCampaignService(CampaignRepository campaignRepository,
                                  CampaignWalletGateway campaignWalletGateway,
-                                 ApplicationEventPublisher eventPublisher) {
+                                 ApplicationEventPublisher eventPublisher,
+                                 @Value("${donatjs.email.near-target-threshold:0.98}") BigDecimal nearTargetThreshold) {
         this.campaignRepository = campaignRepository;
         this.campaignWalletGateway = campaignWalletGateway;
         this.eventPublisher = eventPublisher;
+        this.nearTargetThreshold = nearTargetThreshold;
     }
 
     @Override
@@ -72,6 +79,11 @@ public class SimpleCampaignService implements CampaignService {
     @Override
     public List<Campaign> findAllCampaigns() {
         return campaignRepository.findAll();
+    }
+
+    @Override
+    public List<Campaign> findByCreatorId(String creatorId) {
+        return campaignRepository.findByCreatorId(creatorId);
     }
 
     @Override
@@ -114,8 +126,10 @@ public class SimpleCampaignService implements CampaignService {
             log.warn("Delete rejected for campaign {}: totalRaised={}", id, campaign.getTotalRaised());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete campaign with donations");
         }
+        CampaignStatus previous = campaign.getStatus();
         campaign.setStatus(CampaignStatus.DELETED);
         campaignRepository.save(campaign);
+        eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, campaign.getId(), previous, CampaignStatus.DELETED));
         log.info("Campaign {} marked DELETED by actor '{}'", id, actorId != null ? actorId : "admin");
     }
 
@@ -123,19 +137,22 @@ public class SimpleCampaignService implements CampaignService {
     public Campaign moderateCampaign(Long id, boolean approve) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (campaign.getStatus() != CampaignStatus.WAITING) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only WAITING campaign can be moderated");
+        if (campaign.getStatus() != CampaignStatus.WAITING && campaign.getStatus() != CampaignStatus.OPEN) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only WAITING or OPEN campaign can be moderated");
         }
-        campaign.setStatus(approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED);
+        CampaignStatus previous = campaign.getStatus();
+        CampaignStatus next = approve ? CampaignStatus.OPEN : CampaignStatus.REJECTED;
+        campaign.setStatus(next);
         Campaign saved = campaignRepository.save(campaign);
-
+        if (previous != next) {
+            eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, saved.getId(), previous, next));
+        }
         if (!approve) {
             log.info("Campaign {} REJECTED (creator='{}')", id, campaign.getCreatorId());
             eventPublisher.publishEvent(new RejectedCampaignEvent(this, saved, campaign.getCreatorId()));
         } else {
             log.info("Campaign {} APPROVED (now OPEN)", id);
         }
-
         return saved;
     }
 
@@ -174,6 +191,7 @@ public class SimpleCampaignService implements CampaignService {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Donation amount must be positive");
         }
+        boolean[] nearTargetJustTriggered = {false};
         // computeAndSave ensures the read-check-write cycle is atomic, preventing
         // lost-update races when concurrent donations arrive for the same campaign.
         Campaign updated = campaignRepository.computeAndSave(id, campaign -> {
@@ -187,6 +205,14 @@ public class SimpleCampaignService implements CampaignService {
                     && campaign.getTotalRaised().compareTo(campaign.getTargetAmount()) >= 0) {
                 campaign.setStatus(CampaignStatus.CLOSED);
             }
+            if (!campaign.isNearTargetNotified()
+                    && campaign.getTargetAmount() != null
+                    && campaign.getTargetAmount().compareTo(BigDecimal.ZERO) > 0) {
+                if (campaign.getTotalRaised().compareTo(thresholdAmount(campaign)) >= 0) {
+                    campaign.setNearTargetNotified(true);
+                    nearTargetJustTriggered[0] = true;
+                }
+            }
             return campaign;
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -197,7 +223,19 @@ public class SimpleCampaignService implements CampaignService {
             log.info("Donation of {} recorded for campaign {}. Total raised: {}",
                     amount, id, updated.getTotalRaised());
         }
+        if (nearTargetJustTriggered[0]) {
+            eventPublisher.publishEvent(new CampaignNearTargetEvent(
+                    this, updated.getId(), updated.getTitle(),
+                    updated.getTotalRaised(), updated.getTargetAmount()));
+            log.info("Campaign {} crossed near-target threshold. Email notification dispatched.", id);
+        }
         return updated;
+    }
+
+    private BigDecimal thresholdAmount(Campaign campaign) {
+        return campaign.getTargetAmount()
+                .multiply(nearTargetThreshold)
+                .setScale(0, RoundingMode.UP);
     }
 
     @Override
@@ -210,10 +248,12 @@ public class SimpleCampaignService implements CampaignService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campaign cannot be marked as fraud");
         }
 
+        CampaignStatus previous = campaign.getStatus();
         campaign.setStatus(CampaignStatus.FRAUD);
         Campaign saved = campaignRepository.save(campaign);
         log.warn("Campaign {} marked as FRAUD", id);
         eventPublisher.publishEvent(new CampaignFraudDetectedEvent(this, saved));
+        eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, saved.getId(), previous, CampaignStatus.FRAUD));
 
         BigDecimal refundAmount = saved.getTotalRaised() == null ? BigDecimal.ZERO : saved.getTotalRaised();
         if (refundAmount.compareTo(BigDecimal.ZERO) > 0) {
@@ -231,23 +271,23 @@ public class SimpleCampaignService implements CampaignService {
         int processed = 0;
 
         for (Campaign candidate : allCampaigns) {
-            // Quick pre-filter to skip obviously non-expired campaigns before locking.
             if (candidate.getDeadline() == null || candidate.getDeadline().isAfter(today)) continue;
             if (candidate.getStatus() != CampaignStatus.OPEN
                     && candidate.getStatus() != CampaignStatus.WAITING) continue;
 
             // computeAndSave makes the expiry check + status transition atomic,
-            // preventing double-processing if two threads run deadline automation concurrently
-            // or if a donation arrives at the exact same time the deadline is processed.
+            // preventing double-processing if two threads run deadline automation concurrently.
             boolean[] wasProcessed = {false};
             boolean[] isSuccess = {false};
             BigDecimal[] raised = {BigDecimal.ZERO};
+            CampaignStatus[] previous = {null};
 
             campaignRepository.computeAndSave(candidate.getId(), current -> {
                 if (!isExpiredProcessable(current, today)) return current;
                 BigDecimal r = current.getTotalRaised() == null ? BigDecimal.ZERO : current.getTotalRaised();
                 boolean success = current.getTargetAmount() != null
                         && r.compareTo(current.getTargetAmount()) >= 0;
+                previous[0] = current.getStatus();
                 current.setStatus(success ? CampaignStatus.CLOSED : CampaignStatus.CANCELLED);
                 wasProcessed[0] = true;
                 isSuccess[0] = success;
@@ -257,7 +297,9 @@ public class SimpleCampaignService implements CampaignService {
 
             if (!wasProcessed[0]) continue;
 
-            // Trigger wallet and notification events outside the repository lock.
+            CampaignStatus next = isSuccess[0] ? CampaignStatus.CLOSED : CampaignStatus.CANCELLED;
+            eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, candidate.getId(), previous[0], next));
+
             if (isSuccess[0]) {
                 campaignWalletGateway.requestPayout(candidate);
                 eventPublisher.publishEvent(new CampaignPayoutRequestedEvent(this, candidate, raised[0]));
@@ -296,7 +338,7 @@ public class SimpleCampaignService implements CampaignService {
         }
     }
 
-    private static class NoopCampaignWalletGateway implements CampaignWalletGateway {
+    public static class NoopCampaignWalletGateway implements CampaignWalletGateway {
         @Override
         public void requestPayout(Campaign campaign) {}
 

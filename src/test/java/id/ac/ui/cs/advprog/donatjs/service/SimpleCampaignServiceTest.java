@@ -1,8 +1,10 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.event.CampaignFraudDetectedEvent;
+import id.ac.ui.cs.advprog.donatjs.event.CampaignNearTargetEvent;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignPayoutRequestedEvent;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignRefundRequestedEvent;
+import id.ac.ui.cs.advprog.donatjs.event.CampaignStatusChangedEvent;
 import id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
@@ -35,7 +37,7 @@ class SimpleCampaignServiceTest {
         repository = new InMemoryCampaignRepository();
         walletGateway = new RecordingCampaignWalletGateway();
         eventPublisher = new RecordingEventPublisher();
-        service = new SimpleCampaignService(repository, walletGateway, eventPublisher);
+        service = new SimpleCampaignService(repository, walletGateway, eventPublisher, new java.math.BigDecimal("0.98"));
     }
 
     // ── createCampaign ───────────────────────────────────────────────────────────
@@ -308,9 +310,9 @@ class SimpleCampaignServiceTest {
         Campaign moderated = service.moderateCampaign(saved.getId(), false);
 
         assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
-        assertThat(eventPublisher.publishedEvents)
-                .hasSize(1)
-                .first()
+        assertThat(eventPublisher.publishedEvents).hasSize(2);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
+        assertThat(eventPublisher.publishedEvents.get(1))
                 .isInstanceOfSatisfying(RejectedCampaignEvent.class, event -> {
                     assertThat(event.getCreatorId()).isEqualTo("creator-123");
                     assertThat(event.getCampaign().getId()).isEqualTo(saved.getId());
@@ -318,11 +320,11 @@ class SimpleCampaignServiceTest {
     }
 
     @Test
-    void moderateCampaign_throwsBadRequest_whenCampaignIsNotWaiting() {
+    void moderateCampaign_throwsBadRequest_whenCampaignIsAlreadyClosed() {
         Campaign campaign = new Campaign();
-        campaign.setTitle("Already open");
+        campaign.setTitle("Already closed");
         campaign.setDescription("Desc");
-        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setStatus(CampaignStatus.CLOSED);
         Campaign saved = repository.save(campaign);
 
         assertThatThrownBy(() -> service.moderateCampaign(saved.getId(), true))
@@ -332,7 +334,7 @@ class SimpleCampaignServiceTest {
     }
 
     @Test
-    void moderateCampaign_approve_doesNotPublishEvent() {
+    void moderateCampaign_approve_publishesStatusChangedEvent() {
         Campaign campaign = new Campaign();
         campaign.setTitle("Waiting");
         campaign.setDescription("Desc");
@@ -341,7 +343,8 @@ class SimpleCampaignServiceTest {
 
         service.moderateCampaign(saved.getId(), true);
 
-        assertThat(eventPublisher.publishedEvents).isEmpty();
+        assertThat(eventPublisher.publishedEvents).hasSize(1);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
     }
 
     // ── adminUpdateCampaign ──────────────────────────────────────────────────────
@@ -502,6 +505,59 @@ class SimpleCampaignServiceTest {
                         .isEqualTo(HttpStatus.NOT_FOUND));
     }
 
+    @Test
+    void recordSuccessfulDonation_triggersNearTargetEvent_whenCrossing98PercentThreshold() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Near target");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(new BigDecimal("90"));
+        Campaign saved = repository.save(campaign);
+
+        // 90 + 10 = 100, which crosses the 98% threshold (98 out of 100)
+        service.recordSuccessfulDonation(saved.getId(), new BigDecimal("10"));
+
+        assertThat(eventPublisher.publishedEvents)
+                .anyMatch(e -> e instanceof CampaignNearTargetEvent);
+        assertThat(repository.findById(saved.getId()).orElseThrow().isNearTargetNotified()).isTrue();
+    }
+
+    @Test
+    void recordSuccessfulDonation_doesNotRetriggerNearTargetEvent_whenAlreadyNotified() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Already notified");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(new BigDecimal("99"));
+        campaign.setNearTargetNotified(true);
+        Campaign saved = repository.save(campaign);
+
+        service.recordSuccessfulDonation(saved.getId(), new BigDecimal("1"));
+
+        assertThat(eventPublisher.publishedEvents)
+                .noneMatch(e -> e instanceof CampaignNearTargetEvent);
+    }
+
+    @Test
+    void recordSuccessfulDonation_doesNotTriggerNearTargetEvent_whenBelowThreshold() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Below threshold");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        // 0 + 50 = 50, below 98% threshold
+        service.recordSuccessfulDonation(saved.getId(), new BigDecimal("50"));
+
+        assertThat(eventPublisher.publishedEvents)
+                .noneMatch(e -> e instanceof CampaignNearTargetEvent);
+        assertThat(repository.findById(saved.getId()).orElseThrow().isNearTargetNotified()).isFalse();
+    }
+
     // ── markAsFraud ──────────────────────────────────────────────────────────────
 
     @Test
@@ -517,7 +573,7 @@ class SimpleCampaignServiceTest {
 
         assertThat(updated.getStatus()).isEqualTo(CampaignStatus.FRAUD);
         assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
-        assertThat(eventPublisher.publishedCount).isEqualTo(2);
+        assertThat(eventPublisher.publishedCount).isEqualTo(3);
     }
 
     @Test
@@ -532,9 +588,9 @@ class SimpleCampaignServiceTest {
         service.markAsFraud(saved.getId());
 
         assertThat(walletGateway.refundRequestedCount).isZero();
-        assertThat(eventPublisher.publishedCount).isEqualTo(1);
-        assertThat(eventPublisher.publishedEvents.get(0))
-                .isInstanceOf(CampaignFraudDetectedEvent.class);
+        assertThat(eventPublisher.publishedCount).isEqualTo(2);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignFraudDetectedEvent.class);
+        assertThat(eventPublisher.publishedEvents.get(1)).isInstanceOf(CampaignStatusChangedEvent.class);
     }
 
     @Test
@@ -584,9 +640,9 @@ class SimpleCampaignServiceTest {
         assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CLOSED);
         assertThat(walletGateway.payoutRequestedCount).isEqualTo(1);
         assertThat(walletGateway.refundRequestedCount).isZero();
-        assertThat(eventPublisher.publishedCount).isEqualTo(1);
-        assertThat(eventPublisher.publishedEvents.get(0))
-                .isInstanceOf(CampaignPayoutRequestedEvent.class);
+        assertThat(eventPublisher.publishedCount).isEqualTo(2);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
+        assertThat(eventPublisher.publishedEvents.get(1)).isInstanceOf(CampaignPayoutRequestedEvent.class);
     }
 
     @Test
@@ -606,9 +662,9 @@ class SimpleCampaignServiceTest {
         assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CANCELLED);
         assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
         assertThat(walletGateway.payoutRequestedCount).isZero();
-        assertThat(eventPublisher.publishedCount).isEqualTo(1);
-        assertThat(eventPublisher.publishedEvents.get(0))
-                .isInstanceOf(CampaignRefundRequestedEvent.class);
+        assertThat(eventPublisher.publishedCount).isEqualTo(2);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
+        assertThat(eventPublisher.publishedEvents.get(1)).isInstanceOf(CampaignRefundRequestedEvent.class);
     }
 
     @Test
@@ -627,7 +683,8 @@ class SimpleCampaignServiceTest {
         assertThat(processed).isEqualTo(1);
         assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CANCELLED);
         assertThat(walletGateway.refundRequestedCount).isZero();
-        assertThat(eventPublisher.publishedCount).isZero();
+        assertThat(eventPublisher.publishedCount).isEqualTo(1);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
     }
 
     @Test
