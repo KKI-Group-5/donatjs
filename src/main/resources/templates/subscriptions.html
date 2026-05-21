@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | My Subscriptions</title>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="saved-campaigns-page">
+    <div class="saved-campaigns-header">
+        <h1>My Subscriptions</h1>
+        <span class="saved-campaigns-count"
+              th:text="${#lists.size(subscriptions)} + ' subscription' + (${#lists.size(subscriptions)} != 1 ? 's' : '')">
+        </span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(subscriptions)}" class="saved-campaigns-empty">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M2 12h20"/>
+        </svg>
+        <h2>No active subscriptions</h2>
+        <p>Subscribe to a campaign to support it on a recurring basis.</p>
+        <a href="/" class="btn-browse">Browse Campaigns</a>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(subscriptions)}" class="campaigns-grid">
+        <div th:each="sub : ${subscriptions}" class="campaign-card"
+             th:data-subscription-id="${sub.id}">
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title"
+                    th:text="'Campaign #' + ${sub.campaignId}"></h3>
+
+                <div class="subscription-meta">
+                    <span class="subscription-badge"
+                          th:text="${sub.frequency}"
+                          th:classappend="${sub.status == 'ACTIVE'} ? 'badge-active' : 'badge-inactive'">
+                    </span>
+                    <span th:text="'Rp ' + ${#numbers.formatInteger(sub.amount, 1, 'COMMA')}"></span>
+                    <span th:text="'Next debit: ' + ${sub.nextDebitDate}"></span>
+                    <span th:text="'Status: ' + ${sub.status}"></span>
+                </div>
+
+                <div th:if="${sub.status.name() == 'ACTIVE'}" class="campaign-card-actions">
+                    <div class="frequency-form">
+                        <select th:id="'freq-' + ${sub.id}" class="frequency-select">
+                            <option value="DAILY"   th:selected="${sub.frequency.name() == 'DAILY'}">Daily</option>
+                            <option value="WEEKLY"  th:selected="${sub.frequency.name() == 'WEEKLY'}">Weekly</option>
+                            <option value="MONTHLY" th:selected="${sub.frequency.name() == 'MONTHLY'}">Monthly</option>
+                        </select>
+                        <button class="btn-save"
+                                th:onclick="'updateFrequency(' + ${sub.id} + ', this)'">
+                            Change
+                        </button>
+                    </div>
+                    <button class="btn-remove"
+                            th:onclick="'cancelSubscription(' + ${sub.id} + ', this)'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M15 9l-6 6M9 9l6 6"/>
+                        </svg>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<div id="toast" class="toast"></div>
+
+<script th:inline="javascript">
+    var userId = [[${userId}]];
+
+    function showToast(message, type) {
+        var toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function() { toast.className = 'toast'; }, 3000);
+    }
+
+    function cancelSubscription(subscriptionId, button) {
+        if (!confirm('Are you sure you want to cancel this subscription?')) return;
+
+        fetch('/api/subscriptions/' + subscriptionId + '?userId=' + userId, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(response) {
+            if (response.ok) {
+                var card = button.closest('.campaign-card');
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                setTimeout(function() { card.remove(); }, 300);
+                showToast('Subscription cancelled', 'success');
+            } else {
+                response.json().then(function(data) {
+                    showToast(data.error || 'Failed to cancel subscription', 'error');
+                });
+            }
+        })
+        .catch(function() { showToast('Failed to cancel subscription', 'error'); });
+    }
+
+    function updateFrequency(subscriptionId, button) {
+        var select = document.getElementById('freq-' + subscriptionId);
+        var frequency = select.value;
+
+        fetch('/api/subscriptions/' + subscriptionId + '/frequency?userId=' + userId, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ frequency: frequency })
+        })
+        .then(function(response) {
+            if (response.ok) {
+                showToast('Frequency updated to ' + frequency.toLowerCase(), 'success');
+            } else {
+                response.json().then(function(data) {
+                    showToast(data.error || 'Failed to update frequency', 'error');
+                });
+            }
+        })
+        .catch(function() { showToast('Failed to update frequency', 'error'); });
+    }
+</script>
+
+</body>
+</html>

@@ -217,6 +217,7 @@ public class SimpleCampaignService implements CampaignService {
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         if (updated.getStatus() == CampaignStatus.CLOSED) {
+            eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, updated.getId(), CampaignStatus.OPEN, CampaignStatus.CLOSED));
             log.info("Campaign {} auto-closed: target reached (raised={}, target={})",
                     id, updated.getTotalRaised(), updated.getTargetAmount());
         } else {

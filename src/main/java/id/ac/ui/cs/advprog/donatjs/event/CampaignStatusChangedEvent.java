@@ -21,6 +21,12 @@ public class CampaignStatusChangedEvent extends ApplicationEvent {
         this.newStatus = newStatus;
     }
 
+    /**
+     * True for status transitions that should terminate active subscriptions
+     * tied to this campaign (per Milestone 4 "Automatic Termination" rule).
+     * CLOSED is a healthy lifecycle end and does NOT terminate subscriptions —
+     * it just stops further donations being accepted.
+     */
     public boolean shouldTerminateSubscriptions() {
         return newStatus == CampaignStatus.DELETED
                 || newStatus == CampaignStatus.CANCELLED

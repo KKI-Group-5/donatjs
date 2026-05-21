@@ -13,10 +13,9 @@ public interface CampaignService {
     Campaign createCampaign(Campaign campaign, String creatorId);
 
     List<Campaign> findOpenCampaigns();
+    List<Campaign> findByCreatorId(String creatorId);
 
     List<Campaign> findAllCampaigns();
-
-    List<Campaign> findByCreatorId(String creatorId);
 
     Optional<Campaign> findById(Long id);
 

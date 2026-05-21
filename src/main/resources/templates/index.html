@@ -1,111 +1,171 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DonatJS | Crowdfunding Platform</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f8e9; color: #212121; line-height: 1.6; }
-        a { color: #2e7d32; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-
-        /* Nav */
-        .nav { background: #1b5e20; padding: 0 32px; display: flex; align-items: center; gap: 24px; height: 58px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-        .nav .brand { font-size: 1.3rem; font-weight: 800; color: white; letter-spacing: 1px; }
-        .nav .brand:hover { text-decoration: none; }
-        .nav a.nav-link { color: rgba(255,255,255,0.8); font-size: 0.9rem; }
-        .nav a.nav-link:hover { color: white; text-decoration: none; }
-        .nav .spacer { flex: 1; }
-        .nav .btn-nav { background: #4caf50; color: white !important; padding: 7px 18px; border-radius: 20px; font-weight: 600; font-size: 0.88rem; }
-        .nav .btn-nav:hover { background: #388e3c; text-decoration: none; }
-
-        /* Hero */
-        .hero { background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%); color: white; padding: 80px 32px; text-align: center; }
-        .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 16px; }
-        .hero h1 span { color: #a5d6a7; }
-        .hero p { font-size: 1.2rem; color: rgba(255,255,255,0.85); max-width: 540px; margin: 0 auto 36px; }
-        .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-        .btn-hero-primary { background: white; color: #1b5e20; padding: 14px 32px; border-radius: 30px; font-weight: 700; font-size: 1rem; display: inline-block; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
-        .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); text-decoration: none; color: #1b5e20; }
-        .btn-hero-secondary { background: transparent; color: white; padding: 14px 32px; border-radius: 30px; font-weight: 700; font-size: 1rem; display: inline-block; border: 2px solid rgba(255,255,255,0.6); transition: background 0.15s, border-color 0.15s; }
-        .btn-hero-secondary:hover { background: rgba(255,255,255,0.1); border-color: white; text-decoration: none; color: white; }
-
-        /* Container */
-        .container { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
-
-        /* Features */
-        .section-title { text-align: center; font-size: 1.5rem; font-weight: 700; color: #1b5e20; margin-bottom: 32px; }
-        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
-        .feature-card { background: white; border-radius: 12px; padding: 28px 24px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-top: 4px solid #4caf50; }
-        .feature-card .icon { font-size: 2.2rem; margin-bottom: 12px; }
-        .feature-card h3 { font-size: 1rem; color: #1b5e20; font-weight: 700; margin-bottom: 8px; }
-        .feature-card p { font-size: 0.88rem; color: #666; }
-
-        /* CTA banner */
-        .cta-banner { background: linear-gradient(135deg, #2e7d32, #43a047); border-radius: 12px; padding: 40px 32px; text-align: center; color: white; margin-top: 48px; }
-        .cta-banner h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; }
-        .cta-banner p { color: rgba(255,255,255,0.85); margin-bottom: 24px; }
-        .btn-cta { background: white; color: #2e7d32; padding: 12px 28px; border-radius: 24px; font-weight: 700; display: inline-block; }
-        .btn-cta:hover { text-decoration: none; color: #1b5e20; background: #f1f8e9; }
-
-        /* Footer */
-        .footer { text-align: center; padding: 24px; color: #888; font-size: 0.82rem; border-top: 1px solid #dce8dc; margin-top: 32px; }
-    </style>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | Transparent Solidarity for Every Cause</title>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <meta name="current-user-id" th:content="${currentUserId}"/>
 </head>
 <body>
 
-<nav class="nav">
-    <a href="/" class="brand">DonatJS</a>
-    <div class="spacer"></div>
-    <a href="/campaigns" class="nav-link">Browse Campaigns</a>
-    <a href="/campaigns/create" class="btn-nav">+ Start a Campaign</a>
-</nav>
+<div th:replace="~{fragments/header :: header}"></div>
 
-<div class="hero">
-    <h1>Fund What <span>Matters</span></h1>
-    <p>Create, discover, and support campaigns that make a real difference in your community.</p>
-    <div class="hero-actions">
-        <a href="/campaigns" class="btn-hero-primary">Browse Campaigns</a>
-        <a href="/campaigns/create" class="btn-hero-secondary">Start a Campaign</a>
+<section class="hero">
+    <div class="hero-overlay">
+        <h1 class="hero-headline">Transparent Solidarity for Every Cause</h1>
+        <p class="hero-subheadline">
+            Join thousands making a real difference. Start your fundraising campaign
+            today with complete transparency and zero hidden fees.
+        </p>
+        <a th:href="@{/campaigns/create}"><button class="btn-cta">Start a Campaign</button></a>
     </div>
-</div>
+</section>
 
-<div class="container">
-    <p class="section-title">How DonatJS Works</p>
-    <div class="features">
-        <div class="feature-card">
-            <div class="icon">📋</div>
-            <h3>Create a Campaign</h3>
-            <p>Set your goal, deadline, and description. Your campaign goes to admin review before going live.</p>
-        </div>
-        <div class="feature-card">
-            <div class="icon">✅</div>
-            <h3>Get Approved</h3>
-            <p>Admins review your submission. Once approved, your campaign becomes visible to all supporters.</p>
-        </div>
-        <div class="feature-card">
-            <div class="icon">💚</div>
-            <h3>Receive Donations</h3>
-            <p>Supporters donate to your campaign. Reach your target and funds are automatically paid out.</p>
-        </div>
-        <div class="feature-card">
-            <div class="icon">🔒</div>
-            <h3>Safe & Transparent</h3>
-            <p>Missed targets trigger automatic refunds. Fraud detection protects every donor automatically.</p>
-        </div>
+<section class="campaigns-section">
+    <div class="section-header">
+        <h2 class="section-title">Active Campaigns</h2>
+        <p class="section-subtitle">Support causes that matter to you</p>
     </div>
 
-    <div class="cta-banner">
-        <h2>Ready to make a difference?</h2>
-        <p>Join the DonatJS community and start your fundraising journey today.</p>
-        <a href="/campaigns/create" class="btn-cta">Create Your Campaign</a>
+    <div th:if="${#lists.isEmpty(campaigns)}"
+         style="text-align:center; padding:48px 0; color:var(--text-secondary);">
+        <p style="font-size:18px; font-weight:500;">No active campaigns right now.</p>
+        <p style="margin-top:8px;">Be the first to
+            <a th:href="@{/campaigns/create}" style="color:var(--kelly-green); font-weight:600;">start one</a>.
+        </p>
     </div>
-</div>
 
-<div class="footer">
-    &copy; 2025 DonatJS &mdash; Advanced Programming Course Project
-</div>
+    <div class="campaigns-grid" th:unless="${#lists.isEmpty(campaigns)}">
+        <div class="campaign-card"
+             th:each="campaign : ${campaigns}"
+             th:data-campaign-id="${campaign.id}"
+             th:data-campaign-title="${campaign.title}"
+             th:data-campaign-organizer="${campaign.creatorId != null ? 'Creator ' + campaign.creatorId : 'DonatJS Community'}">
+            <img class="campaign-card-image"
+                 src="https://images.unsplash.com/photo-1593113630400-ea4288922497?w=600&q=80"
+                 th:alt="${campaign.title}"/>
+            <div class="campaign-card-content">
+                <h3 class="campaign-card-title" th:text="${campaign.title}">Campaign Title</h3>
+                <span class="campaign-card-organizer"
+                      th:text="'Deadline: ' + ${campaign.deadline}">Deadline</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill"
+                             th:with="pct=${campaign.targetAmount != null and campaign.targetAmount.signum() > 0
+                                           ? (campaign.totalRaised.doubleValue() / campaign.targetAmount.doubleValue()) * 100
+                                           : 0}"
+                             th:style="'width:' + (${pct} > 100 ? 100 : ${pct}) + '%'"></div>
+                    </div>
+                    <div class="progress-bar-info">
+                        <span>
+                            <strong th:text="'Rp ' + ${#numbers.formatDecimal(campaign.totalRaised, 0, 'COMMA', 0, 'POINT')}">Rp 0</strong>
+                            raised of
+                            Rp <span th:text="${#numbers.formatDecimal(campaign.targetAmount, 0, 'COMMA', 0, 'POINT')}">0</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="campaign-card-actions" style="display:flex; gap:8px;">
+                    <a th:href="@{|/campaigns/${campaign.id}|}" style="flex:1;">
+                        <button class="btn-cta" style="height:40px; font-size:14px; padding:0 16px; width:100%;">View</button>
+                    </a>
+                    <button th:if="${isLoggedIn}"
+                            class="btn-save"
+                            th:attr="data-cid=${campaign.id},
+                                     data-title=${campaign.title},
+                                     data-organizer=${campaign.creatorId != null ? 'Creator ' + campaign.creatorId : 'DonatJS Community'}"
+                            onclick="toggleSaveCard(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<div id="toast" class="toast"></div>
+
+<script th:inline="javascript">
+    var CURRENT_USER_ID = /*[[${currentUserId}]]*/ null;
+    var IS_LOGGED_IN = /*[[${isLoggedIn}]]*/ false;
+
+    function showToast(message, type) {
+        var toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function () { toast.className = 'toast'; }, 3000);
+    }
+
+    function markSaved(btn) {
+        btn.classList.add('saved');
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg> Saved';
+    }
+
+    function markUnsaved(btn) {
+        btn.classList.remove('saved');
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg> Save';
+    }
+
+    function toggleSaveCard(button) {
+        if (!IS_LOGGED_IN) {
+            window.location.href = '/login';
+            return;
+        }
+        var campaignId = button.dataset.cid;
+        var title = button.dataset.title;
+        var organizer = button.dataset.organizer;
+        var isSaved = button.classList.contains('saved');
+
+        if (isSaved) {
+            fetch('/api/saved-campaigns/' + CURRENT_USER_ID + '/' + campaignId, { method: 'DELETE' })
+                .then(function (r) {
+                    if (r.ok) { markUnsaved(button); showToast('Removed from saved', 'success'); }
+                    else { showToast('Failed to remove', 'error'); }
+                })
+                .catch(function () { showToast('Failed to remove', 'error'); });
+            return;
+        }
+
+        fetch('/api/saved-campaigns', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                campaignId: String(campaignId),
+                campaignTitle: title,
+                campaignOrganizer: organizer,
+                campaignImageUrl: 'https://images.unsplash.com/photo-1593113630400-ea4288922497?w=600&q=80'
+            })
+        })
+        .then(function (r) {
+            if (r.ok || r.status === 201) { markSaved(button); showToast('Campaign saved!', 'success'); }
+            else if (r.status === 409) { markSaved(button); showToast('Already saved', 'success'); }
+            else { showToast('Failed to save', 'error'); }
+        })
+        .catch(function () { showToast('Failed to save', 'error'); });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!IS_LOGGED_IN || !CURRENT_USER_ID) return;
+        document.querySelectorAll('.campaign-card').forEach(function (card) {
+            var campaignId = card.getAttribute('data-campaign-id');
+            if (!campaignId) return;
+            fetch('/api/saved-campaigns/' + CURRENT_USER_ID + '/check/' + campaignId)
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data && data.saved) {
+                        var btn = card.querySelector('.btn-save');
+                        if (btn) markSaved(btn);
+                    }
+                })
+                .catch(function () {});
+        });
+    });
+</script>
 </body>
 </html>

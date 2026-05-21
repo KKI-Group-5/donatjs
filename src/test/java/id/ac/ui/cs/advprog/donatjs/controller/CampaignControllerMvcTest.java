@@ -3,13 +3,18 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
+import id.ac.ui.cs.advprog.donatjs.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -24,6 +29,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -32,7 +38,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(CampaignController.class)
+@Import(SecurityConfig.class)
 @AutoConfigureMockMvc(addFilters = false)
+@SuppressWarnings("null")
 class CampaignControllerMvcTest {
 
     @Autowired
@@ -40,6 +48,12 @@ class CampaignControllerMvcTest {
 
     @MockitoBean
     private CampaignService campaignService;
+
+    @MockitoBean
+    private CurrentUserService currentUserService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     // ── GET /campaigns ───────────────────────────────────────────────────────────
 
@@ -70,13 +84,33 @@ class CampaignControllerMvcTest {
     // ── POST /campaigns/create ───────────────────────────────────────────────────
 
     @Test
+    @WithMockUser
     void postCreate_withBlankRequiredFields_returnsCreateViewWithErrors() throws Exception {
         mockMvc.perform(post("/campaigns/create")
+                        .with(csrf())
                         .param("title", "")
                         .param("description", ""))
                 .andExpect(status().isOk())
                 .andExpect(view().name("campaigns/create"))
                 .andExpect(model().attributeHasFieldErrors("campaign", "title", "description"));
+    }
+
+    @Test
+    @WithMockUser
+    void postCreate_usesAuthenticatedUserId() throws Exception {
+        Mockito.when(currentUserService.getCurrentUserId(Mockito.any())).thenReturn("user-123");
+
+        mockMvc.perform(post("/campaigns/create")
+                        .with(csrf())
+                        .header("X-User-Id", "user-123")
+                        .param("title", "Build Library")
+                        .param("description", "Support our village library")
+                        .param("deadline", LocalDate.now().plusDays(7).toString())
+                        .param("targetAmount", "100000"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/campaigns"));
+
+        Mockito.verify(campaignService).createCampaign(Mockito.any(Campaign.class), Mockito.eq("user-123"));
     }
 
     @Test
@@ -240,8 +274,9 @@ class CampaignControllerMvcTest {
     // ── POST /campaigns/{id}/fraud ────────────────────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "USER")
     void postFraud_withoutAdminHeader_returnsForbidden() throws Exception {
-        mockMvc.perform(post("/campaigns/1/fraud"))
+        mockMvc.perform(post("/campaigns/1/fraud").with(csrf()))
                 .andExpect(status().isForbidden());
     }
 

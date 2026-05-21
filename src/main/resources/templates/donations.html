@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | My Donations</title>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <style>
+        .donations-page {
+            padding: var(--spacing-2xl) 80px;
+            min-height: 60vh;
+            background: var(--bg-light);
+        }
+        .donations-header {
+            display: flex;
+            align-items: baseline;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+        .donations-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .donations-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: var(--soft-gray);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .donations-empty {
+            text-align: center;
+            padding: var(--spacing-2xl) 0;
+            color: var(--text-secondary);
+        }
+        .donations-empty svg {
+            width: 56px;
+            height: 56px;
+            color: var(--text-light, #ccc);
+            margin-bottom: var(--spacing-md);
+        }
+        .donations-empty h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+        .btn-browse {
+            display: inline-block;
+            margin-top: var(--spacing-md);
+            padding: 10px 24px;
+            background: var(--kelly-green);
+            color: #fff;
+            border-radius: var(--radius-sm, 8px);
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .donation-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        .donation-card {
+            background: var(--white);
+            border: 1px solid var(--soft-gray);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: var(--spacing-lg);
+        }
+        .donation-card-left {
+            flex: 1;
+        }
+        .donation-card-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+        .donation-badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .badge-success  { background: #eafaf1; color: #1e8449; }
+        .badge-rejected { background: #fdf2f2; color: #c0392b; }
+        .badge-refunded { background: #fef9e7; color: #b7770d; }
+        .donation-type {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--soft-gray);
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .donation-campaign {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .donation-details {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 16px;
+            margin-top: 6px;
+        }
+        .donation-notes {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-top: 6px;
+        }
+        .donation-card-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .donation-amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .donation-total {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .donation-date {
+            font-size: 12px;
+            color: var(--text-light, #aaa);
+            margin-top: 8px;
+        }
+        @media (max-width: 768px) {
+            .donations-page { padding: var(--spacing-xl) 24px; }
+            .donation-card { flex-direction: column; }
+            .donation-card-right { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="donations-page">
+    <div class="donations-header">
+        <h1>My Donations</h1>
+        <span class="donations-count"
+              th:text="${#lists.size(donations)} + ' donation' + (${#lists.size(donations)} != 1 ? 's' : '')">
+        </span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(donations)}" class="donations-empty">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+            <path d="M12 8v4m0 4h.01"/>
+        </svg>
+        <h2>No donations yet</h2>
+        <p>Browse campaigns and make your first donation.</p>
+        <a href="/" class="btn-browse">Browse Campaigns</a>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(donations)}" class="donation-list">
+        <div th:each="d : ${donations}" class="donation-card">
+            <div class="donation-card-left">
+                <div class="donation-card-meta">
+                    <span th:class="${'donation-badge ' +
+                        (d.status.name() == 'SUCCESS'  ? 'badge-success'  :
+                         d.status.name() == 'REJECTED' ? 'badge-rejected' : 'badge-refunded')}"
+                          th:text="${d.status.name()}">
+                    </span>
+                    <span class="donation-type" th:text="${d.type.name()}"></span>
+                </div>
+                <div class="donation-campaign"
+                     th:text="'Campaign #' + ${d.campaignId}">
+                </div>
+                <div class="donation-details">
+                    <span th:text="'Payment: ' + ${d.paymentMethod.name()}"></span>
+                    <span th:if="${d.fee > 0}"
+                          th:text="'Fee: Rp ' + ${#numbers.formatDecimal(d.fee, 0, 'COMMA', 0, 'POINT')}">
+                    </span>
+                </div>
+                <div th:if="${d.notes != null and !d.notes.isEmpty()}"
+                     class="donation-notes"
+                     th:text="'&quot;' + ${d.notes} + '&quot;'">
+                </div>
+            </div>
+            <div class="donation-card-right">
+                <div class="donation-amount"
+                     th:text="'Rp ' + ${#numbers.formatDecimal(d.amount, 0, 'COMMA', 0, 'POINT')}">
+                </div>
+                <div th:if="${d.fee > 0}" class="donation-total"
+                     th:text="'Total: Rp ' + ${#numbers.formatDecimal(d.totalAmount, 0, 'COMMA', 0, 'POINT')}">
+                </div>
+                <div class="donation-date"
+                     th:text="${#temporals.format(d.createdAt, 'dd MMM yyyy HH:mm')}">
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

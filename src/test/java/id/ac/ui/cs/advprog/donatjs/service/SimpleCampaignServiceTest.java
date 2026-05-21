@@ -24,10 +24,17 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
+@SuppressWarnings("null")
 class SimpleCampaignServiceTest {
 
     private InMemoryCampaignRepository repository;
+    private ApplicationEventPublisher publisher;
     private SimpleCampaignService service;
     private RecordingCampaignWalletGateway walletGateway;
     private RecordingEventPublisher eventPublisher;
@@ -36,8 +43,9 @@ class SimpleCampaignServiceTest {
     void setUp() {
         repository = new InMemoryCampaignRepository();
         walletGateway = new RecordingCampaignWalletGateway();
-        eventPublisher = new RecordingEventPublisher();
-        service = new SimpleCampaignService(repository, walletGateway, eventPublisher, new java.math.BigDecimal("0.98"));
+        publisher = mock(ApplicationEventPublisher.class);
+        eventPublisher = new RecordingEventPublisher(publisher);
+        service = new SimpleCampaignService(repository, walletGateway, eventPublisher, new BigDecimal("0.98"));
     }
 
     // ── createCampaign ───────────────────────────────────────────────────────────
@@ -223,7 +231,7 @@ class SimpleCampaignServiceTest {
     // ── deleteIfNoDonations ──────────────────────────────────────────────────────
 
     @Test
-    void deleteIfNoDonations_deletesWhenTotalRaisedZero() {
+    void deleteIfNoDonations_deletesAndPublishesStatusEvent() {
         Campaign campaign = new Campaign();
         campaign.setTitle("Deletable");
         campaign.setDescription("No donations yet");
@@ -236,6 +244,7 @@ class SimpleCampaignServiceTest {
 
         assertThat(repository.findById(id)).isPresent();
         assertThat(repository.findById(id).orElseThrow().getStatus()).isEqualTo(CampaignStatus.DELETED);
+        verify(publisher).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     @Test
@@ -264,8 +273,11 @@ class SimpleCampaignServiceTest {
 
         assertThatThrownBy(() -> service.deleteIfNoDonations(id))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
-                        .isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(ex -> {
+                    ResponseStatusException rse = (ResponseStatusException) ex;
+                    assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                });
+        verify(publisher, never()).publishEvent(any());
     }
 
     @Test
@@ -296,6 +308,26 @@ class SimpleCampaignServiceTest {
         Campaign moderated = service.moderateCampaign(saved.getId(), true);
 
         assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.OPEN);
+        verify(publisher).publishEvent(any(CampaignStatusChangedEvent.class));
+    }
+
+    @Test
+    void moderateCampaign_reject_publishesRejectionStatusEvent() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Waiting campaign");
+        campaign.setDescription("To review");
+        campaign.setStatus(CampaignStatus.WAITING);
+        Campaign saved = repository.save(campaign);
+
+        Campaign moderated = service.moderateCampaign(saved.getId(), false);
+
+        assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
+
+        org.mockito.ArgumentCaptor<CampaignStatusChangedEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(CampaignStatusChangedEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().getNewStatus()).isEqualTo(CampaignStatus.REJECTED);
+        assertThat(captor.getValue().shouldTerminateSubscriptions()).isTrue();
     }
 
     @Test
@@ -310,9 +342,10 @@ class SimpleCampaignServiceTest {
         Campaign moderated = service.moderateCampaign(saved.getId(), false);
 
         assertThat(moderated.getStatus()).isEqualTo(CampaignStatus.REJECTED);
-        assertThat(eventPublisher.publishedEvents).hasSize(2);
-        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
-        assertThat(eventPublisher.publishedEvents.get(1))
+        assertThat(eventPublisher.publishedEvents)
+                .filteredOn(e -> e instanceof RejectedCampaignEvent)
+                .hasSize(1)
+                .first()
                 .isInstanceOfSatisfying(RejectedCampaignEvent.class, event -> {
                     assertThat(event.getCreatorId()).isEqualTo("creator-123");
                     assertThat(event.getCampaign().getId()).isEqualTo(saved.getId());
@@ -422,15 +455,9 @@ class SimpleCampaignServiceTest {
 
     @Test
     void recordSuccessfulDonation_closesCampaignWhenTargetReached() {
-        Campaign campaign = new Campaign();
-        campaign.setTitle("Donation target");
-        campaign.setDescription("Desc");
-        campaign.setStatus(CampaignStatus.OPEN);
-        campaign.setTargetAmount(new BigDecimal("100"));
-        campaign.setTotalRaised(new BigDecimal("90"));
-        Campaign saved = repository.save(campaign);
+        Campaign campaign = openCampaign(new BigDecimal("100"), new BigDecimal("90"));
 
-        Campaign updated = service.recordSuccessfulDonation(saved.getId(), new BigDecimal("15"));
+        Campaign updated = service.recordSuccessfulDonation(campaign.getId(), new BigDecimal("15"));
 
         assertThat(updated.getTotalRaised()).isEqualByComparingTo(new BigDecimal("105"));
         assertThat(updated.getStatus()).isEqualTo(CampaignStatus.CLOSED);
@@ -558,6 +585,16 @@ class SimpleCampaignServiceTest {
         assertThat(repository.findById(saved.getId()).orElseThrow().isNearTargetNotified()).isFalse();
     }
 
+    @Test
+    void recordSuccessfulDonation_publishesBothNearTargetAndClosedEvents_whenCrossingDirectlyToTarget() {
+        Campaign campaign = openCampaign(new BigDecimal("1000"), new BigDecimal("100")); // 10%
+
+        service.recordSuccessfulDonation(campaign.getId(), new BigDecimal("950")); // jumps to 1050 = 105%
+
+        verify(publisher).publishEvent(any(CampaignNearTargetEvent.class));
+        verify(publisher, times(2)).publishEvent(any());
+    }
+
     // ── markAsFraud ──────────────────────────────────────────────────────────────
 
     @Test
@@ -643,6 +680,8 @@ class SimpleCampaignServiceTest {
         assertThat(eventPublisher.publishedCount).isEqualTo(2);
         assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
         assertThat(eventPublisher.publishedEvents.get(1)).isInstanceOf(CampaignPayoutRequestedEvent.class);
+        verify(publisher, times(2)).publishEvent(any());
+        verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     @Test
@@ -665,6 +704,8 @@ class SimpleCampaignServiceTest {
         assertThat(eventPublisher.publishedCount).isEqualTo(2);
         assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
         assertThat(eventPublisher.publishedEvents.get(1)).isInstanceOf(CampaignRefundRequestedEvent.class);
+        verify(publisher, times(2)).publishEvent(any());
+        verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     @Test
@@ -746,6 +787,16 @@ class SimpleCampaignServiceTest {
 
     // ── helpers ──────────────────────────────────────────────────────────────────
 
+    private Campaign openCampaign(BigDecimal target, BigDecimal raised) {
+        Campaign c = new Campaign();
+        c.setTitle("c");
+        c.setDescription("d");
+        c.setStatus(CampaignStatus.OPEN);
+        c.setTargetAmount(target);
+        c.setTotalRaised(raised);
+        return repository.save(c);
+    }
+
     private static class RecordingCampaignWalletGateway implements CampaignWalletGateway {
         private int payoutRequestedCount;
         private int refundRequestedCount;
@@ -764,11 +815,28 @@ class SimpleCampaignServiceTest {
     private static class RecordingEventPublisher implements ApplicationEventPublisher {
         private int publishedCount;
         private final List<Object> publishedEvents = new ArrayList<>();
+        private final ApplicationEventPublisher delegate;
+
+        RecordingEventPublisher(ApplicationEventPublisher delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void publishEvent(org.springframework.context.ApplicationEvent event) {
+            publishedCount++;
+            publishedEvents.add(event);
+            delegate.publishEvent(event);
+        }
 
         @Override
         public void publishEvent(Object event) {
-            publishedCount++;
-            publishedEvents.add(event);
+            if (event instanceof org.springframework.context.ApplicationEvent ae) {
+                publishEvent(ae);
+            } else {
+                publishedCount++;
+                publishedEvents.add(event);
+                delegate.publishEvent(event);
+            }
         }
     }
 }

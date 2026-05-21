@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sign Up | DonatJS</title>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/auth.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join us and start supporting causes you care about</p>
+        </div>
+
+        <div id="statusBox" class="status-message"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label class="form-label" for="name">Full Name</label>
+                <input type="text" id="name" class="form-input" placeholder="John Doe" required/>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="email">Email Address</label>
+                <input type="email" id="email" class="form-input" placeholder="john@example.com" required/>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dateOfBirth">Date of Birth</label>
+                    <input type="date" id="dateOfBirth" class="form-input" required/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bio">Bio (Brief description about yourself)</label>
+                <textarea id="bio" class="form-textarea" placeholder="Tell us about yourself..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn-auth">Sign Up</button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a th:href="@{/login}" class="auth-link">Log In</a>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const statusBox = document.getElementById('statusBox');
+        const data = {
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            dateOfBirth: document.getElementById('dateOfBirth').value,
+            bio: document.getElementById('bio').value
+        };
+
+        fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(async response => {
+            const message = await response.text();
+            statusBox.style.display = 'block';
+            if (response.ok) {
+                statusBox.style.background = '#ECFDF5';
+                statusBox.style.color = '#065F46';
+                statusBox.textContent = 'Registration successful! Redirecting to login...';
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            } else {
+                statusBox.style.background = '#FEE2E2';
+                statusBox.style.color = '#991B1B';
+                statusBox.textContent = 'Error: ' + message;
+            }
+        })
+        .catch(error => {
+            statusBox.style.display = 'block';
+            statusBox.style.background = '#FEE2E2';
+            statusBox.style.color = '#991B1B';
+            statusBox.textContent = 'Something went wrong. Please try again.';
+        });
+    });
+</script>
+
+</body>
+</html>
