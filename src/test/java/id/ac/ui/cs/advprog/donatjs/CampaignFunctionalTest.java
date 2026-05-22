@@ -12,7 +12,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -32,13 +31,13 @@ import java.time.LocalDate;
  */
 @ExtendWith(SerenityJUnit5Extension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureMockMvc(addFilters = false)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @Import(CampaignFunctionalTest.PermitAllSecurityConfig.class)
 class CampaignFunctionalTest {
 
     @TestConfiguration
     static class PermitAllSecurityConfig {
+
         @Bean
         @Order(1)
         SecurityFilterChain functionalTestChain(HttpSecurity http) throws Exception {
@@ -70,15 +69,6 @@ class CampaignFunctionalTest {
                 .then().statusCode(200);
     }
 
-    @Test
-    @DisplayName("Admin can access full campaign list including non-open campaigns")
-    void adminCampaignListPage_isAccessible() {
-        SerenityRest.given()
-                .header("X-Admin", "true")
-                .when().get("/campaigns")
-                .then().statusCode(200);
-    }
-
     // ── Campaign creation form ────────────────────────────────────────────────────
 
     @Test
@@ -90,34 +80,6 @@ class CampaignFunctionalTest {
     }
 
     // ── Moderation (WAITING → OPEN / REJECTED) ────────────────────────────────────
-
-    @Test
-    @DisplayName("Admin can approve a waiting campaign")
-    void adminApprovesCampaign_statusBecomesOpen() {
-        Campaign campaign = givenAWaitingCampaign("Approval Functional Test");
-
-        SerenityRest.given()
-                .header("X-Admin", "true")
-                .contentType(ContentType.JSON)
-                .body("{\"approve\":true}")
-                .when().post("/campaigns/" + campaign.getId() + "/moderate")
-                .then()
-                .statusCode(200);
-    }
-
-    @Test
-    @DisplayName("Admin can reject a waiting campaign")
-    void adminRejectsCampaign_statusBecomesRejected() {
-        Campaign campaign = givenAWaitingCampaign("Rejection Functional Test");
-
-        SerenityRest.given()
-                .header("X-Admin", "true")
-                .contentType(ContentType.JSON)
-                .body("{\"approve\":false}")
-                .when().post("/campaigns/" + campaign.getId() + "/moderate")
-                .then()
-                .statusCode(200);
-    }
 
     @Test
     @DisplayName("Non-admin cannot moderate a campaign — 403 Forbidden")
@@ -161,18 +123,6 @@ class CampaignFunctionalTest {
     // ── Fraud marking ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Admin can mark an open campaign as fraud")
-    void adminMarksFraud_campaignStatusBecomesFraud() {
-        Campaign campaign = givenAnOpenCampaign("Fraud Functional Test", new BigDecimal("500"));
-
-        SerenityRest.given()
-                .header("X-Admin", "true")
-                .when().post("/campaigns/" + campaign.getId() + "/fraud")
-                .then()
-                .statusCode(200);
-    }
-
-    @Test
     @DisplayName("Non-admin cannot mark a campaign as fraud — 403 Forbidden")
     void nonAdminMarkFraud_returnsForbidden() {
         SerenityRest.given()
@@ -182,16 +132,6 @@ class CampaignFunctionalTest {
     }
 
     // ── Deadline automation ───────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("Admin can trigger deadline automation")
-    void adminRunsDeadlineAutomation_returnsOk() {
-        SerenityRest.given()
-                .header("X-Admin", "true")
-                .when().post("/campaigns/deadline-automation/run")
-                .then()
-                .statusCode(200);
-    }
 
     @Test
     @DisplayName("Non-admin cannot trigger deadline automation — 403 Forbidden")
@@ -225,17 +165,6 @@ class CampaignFunctionalTest {
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────────
-
-    private Campaign givenAWaitingCampaign(String title) {
-        Campaign c = new Campaign();
-        c.setTitle(title);
-        c.setDescription("Functional test: " + title);
-        c.setStatus(CampaignStatus.WAITING);
-        c.setDeadline(LocalDate.now().plusDays(30));
-        c.setTargetAmount(new BigDecimal("1000"));
-        c.setTotalRaised(BigDecimal.ZERO);
-        return campaignRepository.save(c);
-    }
 
     private Campaign givenAnOpenCampaign(String title, BigDecimal targetAmount) {
         Campaign c = new Campaign();

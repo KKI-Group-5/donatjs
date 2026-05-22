@@ -6,16 +6,20 @@ import id.ac.ui.cs.advprog.donatjs.dto.CampaignModerationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationUpdateRequest;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -42,12 +46,24 @@ public class CampaignControllerTest {
     @Mock
     private CampaignService campaignService;
 
+    @Mock
+    private CurrentUserService currentUserService;
+
     @InjectMocks
     private CampaignController campaignController;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
     private Campaign campaign;
+
+    private static RequestPostProcessor asAdmin() {
+        return request -> {
+            request.setUserPrincipal(new UsernamePasswordAuthenticationToken(
+                    "admin", null,
+                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+            return request;
+        };
+    }
 
     @BeforeEach
     void setUp() {
@@ -148,7 +164,6 @@ public class CampaignControllerTest {
     }
 
     @Test
-    @WithMockUser
     void deleteCampaignSuccess() throws Exception {
         mockMvc.perform(post("/campaigns/1/delete")
                         .with(csrf()))
@@ -157,7 +172,6 @@ public class CampaignControllerTest {
     }
 
     @Test
-    @WithMockUser
     void deleteCampaignWithDonations() throws Exception {
         doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete")).when(campaignService).deleteIfNoDonations(anyLong(), any(), anyBoolean());
 
@@ -174,8 +188,8 @@ public class CampaignControllerTest {
         when(campaignService.moderateCampaign(1L, true)).thenReturn(campaign);
 
         mockMvc.perform(post("/campaigns/1/moderate")
+                        .with(asAdmin())
                         .with(csrf())
-                        .header("X-Admin", "true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk());
@@ -188,7 +202,6 @@ public class CampaignControllerTest {
 
         mockMvc.perform(post("/campaigns/1/moderate")
                         .with(csrf())
-                        .header("X-Admin", "false")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isForbidden());
@@ -201,15 +214,14 @@ public class CampaignControllerTest {
         when(campaignService.adminUpdateCampaign(eq(1L), any(), any(), any())).thenReturn(campaign);
 
         mockMvc.perform(post("/campaigns/1/admin-edit")
+                        .with(asAdmin())
                         .with(csrf())
-                        .header("X-Admin", "true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser
     void recordDonation() throws Exception {
         DonationUpdateRequest req = new DonationUpdateRequest();
         req.setAmount(java.math.BigDecimal.valueOf(100L));
@@ -223,24 +235,22 @@ public class CampaignControllerTest {
     }
 
     @Test
-    @WithMockUser
     void markFraudAsAdmin() throws Exception {
         when(campaignService.markAsFraud(1L)).thenReturn(campaign);
 
         mockMvc.perform(post("/campaigns/1/fraud")
-                        .with(csrf())
-                        .header("X-Admin", "true"))
+                        .with(asAdmin())
+                        .with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser
     void runDeadlineAutomationAsAdmin() throws Exception {
         when(campaignService.processExpiredCampaigns(any())).thenReturn(5);
 
         mockMvc.perform(post("/campaigns/deadline-automation/run")
-                        .with(csrf())
-                        .header("X-Admin", "true"))
+                        .with(asAdmin())
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Processed expired campaigns: 5"));
     }

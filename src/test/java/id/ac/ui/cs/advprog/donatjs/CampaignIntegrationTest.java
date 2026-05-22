@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import org.springframework.security.test.context.support.WithMockUser;
 
 /**
  * Integration tests that boot the full Spring context and exercise the
@@ -84,12 +85,12 @@ class CampaignIntegrationTest {
     // ── Approve flow: WAITING → OPEN ─────────────────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void moderate_approve_makesWaitingCampaignOpen() throws Exception {
         Campaign campaign = createWaitingCampaign("Campaign to approve");
         Long id = campaign.getId();
 
         mockMvc.perform(post("/campaigns/" + id + "/moderate")
-                        .header("X-Admin", "true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"approve\":true}"))
                 .andExpect(status().isOk());
@@ -101,12 +102,12 @@ class CampaignIntegrationTest {
     // ── Reject flow: WAITING → REJECTED ──────────────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void moderate_reject_makesWaitingCampaignRejected() throws Exception {
         Campaign campaign = createWaitingCampaign("Campaign to reject");
         Long id = campaign.getId();
 
         mockMvc.perform(post("/campaigns/" + id + "/moderate")
-                        .header("X-Admin", "true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"approve\":false}"))
                 .andExpect(status().isOk());
@@ -150,6 +151,7 @@ class CampaignIntegrationTest {
     // ── Deadline automation ───────────────────────────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deadlineAutomation_cancelsExpiredOpenCampaign() throws Exception {
         Campaign campaign = new Campaign();
         campaign.setTitle("Expired campaign");
@@ -160,8 +162,7 @@ class CampaignIntegrationTest {
         campaign.setTotalRaised(BigDecimal.ZERO);
         Campaign saved = campaignRepository.save(campaign);
 
-        mockMvc.perform(post("/campaigns/deadline-automation/run")
-                        .header("X-Admin", "true"))
+        mockMvc.perform(post("/campaigns/deadline-automation/run"))
                 .andExpect(status().isOk());
 
         assertThat(campaignRepository.findById(saved.getId()).orElseThrow().getStatus())
@@ -177,14 +178,14 @@ class CampaignIntegrationTest {
     // ── Fraud marking ─────────────────────────────────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void markFraud_makesOpenCampaignFraud() throws Exception {
         Campaign campaign = createOpenCampaign("Fraudulent campaign", new BigDecimal("1000"));
         campaign.setTotalRaised(new BigDecimal("100"));
         campaignRepository.save(campaign);
         Long id = campaign.getId();
 
-        mockMvc.perform(post("/campaigns/" + id + "/fraud")
-                        .header("X-Admin", "true"))
+        mockMvc.perform(post("/campaigns/" + id + "/fraud"))
                 .andExpect(status().isOk());
 
         assertThat(campaignRepository.findById(id).orElseThrow().getStatus())

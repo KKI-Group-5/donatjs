@@ -5,15 +5,18 @@ import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
 import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
-import id.ac.ui.cs.advprog.donatjs.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,10 +41,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(CampaignController.class)
-@Import(SecurityConfig.class)
-@AutoConfigureMockMvc(addFilters = false)
+@Import(CampaignControllerMvcTest.PermitAllSecurityConfig.class)
 @SuppressWarnings("null")
 class CampaignControllerMvcTest {
+
+    @TestConfiguration
+    static class PermitAllSecurityConfig {
+        @Bean
+        @Order(1)
+        SecurityFilterChain testChain(HttpSecurity http) throws Exception {
+            http.securityMatcher("/**")
+                    .authorizeHttpRequests(a -> a.anyRequest().permitAll())
+                    .csrf(c -> c.disable());
+            return http.build();
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -214,12 +228,12 @@ class CampaignControllerMvcTest {
     // ── POST /campaigns/{id}/moderate ────────────────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void postModerate_withAdminHeader_returnsOk() throws Exception {
         Campaign campaign = buildCampaign(1L, "Waiting", CampaignStatus.OPEN);
         Mockito.when(campaignService.moderateCampaign(eq(1L), eq(true))).thenReturn(campaign);
 
         mockMvc.perform(post("/campaigns/1/moderate")
-                        .header("X-Admin", "true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"approve\":true}"))
                 .andExpect(status().isOk());
@@ -236,13 +250,13 @@ class CampaignControllerMvcTest {
     // ── POST /campaigns/{id}/admin-edit ──────────────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void postAdminEdit_withAdminHeader_returnsOk() throws Exception {
         Campaign campaign = buildCampaign(2L, "Updated", CampaignStatus.OPEN);
         Mockito.when(campaignService.adminUpdateCampaign(eq(2L), any(), any(), any()))
                 .thenReturn(campaign);
 
         mockMvc.perform(post("/campaigns/2/admin-edit")
-                        .header("X-Admin", "true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Updated\"}"))
                 .andExpect(status().isOk());
@@ -281,23 +295,23 @@ class CampaignControllerMvcTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void postFraud_withAdminHeader_returnsOk() throws Exception {
         Campaign campaign = buildCampaign(1L, "Fraud", CampaignStatus.FRAUD);
         Mockito.when(campaignService.markAsFraud(1L)).thenReturn(campaign);
 
-        mockMvc.perform(post("/campaigns/1/fraud")
-                        .header("X-Admin", "true"))
+        mockMvc.perform(post("/campaigns/1/fraud"))
                 .andExpect(status().isOk());
     }
 
     // ── POST /campaigns/deadline-automation/run ───────────────────────────────────
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void postDeadlineAutomation_withAdminHeader_returnsOk() throws Exception {
         Mockito.when(campaignService.processExpiredCampaigns(any())).thenReturn(3);
 
-        mockMvc.perform(post("/campaigns/deadline-automation/run")
-                        .header("X-Admin", "true"))
+        mockMvc.perform(post("/campaigns/deadline-automation/run"))
                 .andExpect(status().isOk());
     }
 

@@ -2,9 +2,13 @@ package id.ac.ui.cs.advprog.donatjs.controller;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
+import id.ac.ui.cs.advprog.donatjs.dto.LeaderboardEntry;
+import id.ac.ui.cs.advprog.donatjs.dto.WithdrawalRequestResponse;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
+import id.ac.ui.cs.advprog.donatjs.model.WithdrawalRequestStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.DonationService;
+import id.ac.ui.cs.advprog.donatjs.service.WithdrawalRequestService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +33,9 @@ class DonationControllerTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
+    @Mock
+    private WithdrawalRequestService withdrawalRequestService;
 
     @Mock
     private Authentication authentication;
@@ -131,5 +138,74 @@ class DonationControllerTest {
     void testHandleIllegalState() {
         ResponseEntity<?> res = donationController.handleIllegalState(new IllegalStateException("error state"));
         assertEquals(HttpStatus.CONFLICT, res.getStatusCode());
+    }
+
+    @Test
+    void testGetOverallLeaderboard() {
+        LeaderboardEntry entry = LeaderboardEntry.builder().rank(1).userId("u1").totalAmount(100L).build();
+        when(donationService.getOverallLeaderboard(10)).thenReturn(Arrays.asList(entry));
+        ResponseEntity<List<LeaderboardEntry>> res = donationController.getOverallLeaderboard(10);
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertEquals(1, java.util.Objects.requireNonNull(res.getBody()).size());
+    }
+
+    @Test
+    void testGetCampaignLeaderboard() {
+        LeaderboardEntry entry = LeaderboardEntry.builder().rank(1).userId("u1").totalAmount(200L).build();
+        when(donationService.getCampaignLeaderboard(1L, 5)).thenReturn(Arrays.asList(entry));
+        ResponseEntity<List<LeaderboardEntry>> res = donationController.getCampaignLeaderboard(1L, 5);
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertEquals(1, java.util.Objects.requireNonNull(res.getBody()).size());
+    }
+
+    @Test
+    void testRequestWithdrawal() {
+        when(currentUserService.getCurrentUserId(authentication)).thenReturn("user-1");
+        WithdrawalRequestResponse response = WithdrawalRequestResponse.builder()
+                .id(1L).donationId(5L).userId("user-1")
+                .status(WithdrawalRequestStatus.PENDING).build();
+        when(withdrawalRequestService.requestWithdrawal(5L, "user-1", "reason")).thenReturn(response);
+
+        ResponseEntity<WithdrawalRequestResponse> res =
+                donationController.requestWithdrawal(5L, "reason", authentication);
+
+        assertEquals(HttpStatus.CREATED, res.getStatusCode());
+        assertEquals(response, res.getBody());
+    }
+
+    @Test
+    void testGetPendingWithdrawalRequests() {
+        WithdrawalRequestResponse response = WithdrawalRequestResponse.builder()
+                .id(2L).status(WithdrawalRequestStatus.PENDING).build();
+        when(withdrawalRequestService.getPendingRequests()).thenReturn(Arrays.asList(response));
+
+        ResponseEntity<List<WithdrawalRequestResponse>> res = donationController.getPendingWithdrawalRequests();
+
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertEquals(1, java.util.Objects.requireNonNull(res.getBody()).size());
+    }
+
+    @Test
+    void testApproveWithdrawal() {
+        WithdrawalRequestResponse response = WithdrawalRequestResponse.builder()
+                .id(3L).status(WithdrawalRequestStatus.APPROVED).build();
+        when(withdrawalRequestService.approveWithdrawal(3L)).thenReturn(response);
+
+        ResponseEntity<WithdrawalRequestResponse> res = donationController.approveWithdrawal(3L);
+
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertEquals(WithdrawalRequestStatus.APPROVED, java.util.Objects.requireNonNull(res.getBody()).getStatus());
+    }
+
+    @Test
+    void testRejectWithdrawal() {
+        WithdrawalRequestResponse response = WithdrawalRequestResponse.builder()
+                .id(4L).status(WithdrawalRequestStatus.REJECTED).build();
+        when(withdrawalRequestService.rejectWithdrawal(4L)).thenReturn(response);
+
+        ResponseEntity<WithdrawalRequestResponse> res = donationController.rejectWithdrawal(4L);
+
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertEquals(WithdrawalRequestStatus.REJECTED, java.util.Objects.requireNonNull(res.getBody()).getStatus());
     }
 }

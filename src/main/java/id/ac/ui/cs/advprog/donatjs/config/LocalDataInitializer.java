@@ -142,6 +142,7 @@ public class LocalDataInitializer {
             user.setName(name);
             user.setBio(bio);
             user.setDateOfBirth(LocalDate.of(2000, 1, 1));
+            user.setAdmin(email.equals(ADMIN_EMAIL));
             return repo.save(user);
         });
     }
