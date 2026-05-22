@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,7 +23,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 /**
  * Integration tests that boot the full Spring context and exercise the
@@ -47,6 +51,17 @@ class CampaignIntegrationTest {
     void setUp() {
         // Nothing to clean up; @DirtiesContext resets the Spring context (and thus
         // the in-memory repository) before each test method.
+    }
+
+    // addFilters=false disables the security filter chain, so @WithMockUser never
+    // reaches the controller's Authentication parameter (getUserPrincipal stays null).
+    // Set the request principal directly so admin-gated endpoints see ROLE_ADMIN.
+    private static RequestPostProcessor adminPrincipal() {
+        return request -> {
+            request.setUserPrincipal(new UsernamePasswordAuthenticationToken(
+                    "admin", "N/A", List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+            return request;
+        };
     }
 
     // ── Campaign list page ────────────────────────────────────────────────────────
@@ -93,6 +108,7 @@ class CampaignIntegrationTest {
         Long id = campaign.getId();
 
         mockMvc.perform(post("/campaigns/" + id + "/moderate")
+                        .with(adminPrincipal())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"approve\":true}"))
                 .andExpect(status().isOk());
@@ -110,6 +126,7 @@ class CampaignIntegrationTest {
         Long id = campaign.getId();
 
         mockMvc.perform(post("/campaigns/" + id + "/moderate")
+                        .with(adminPrincipal())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"approve\":false}"))
                 .andExpect(status().isOk());
@@ -164,7 +181,8 @@ class CampaignIntegrationTest {
         campaign.setTotalRaised(BigDecimal.ZERO);
         Campaign saved = campaignRepository.save(campaign);
 
-        mockMvc.perform(post("/campaigns/deadline-automation/run"))
+        mockMvc.perform(post("/campaigns/deadline-automation/run")
+                        .with(adminPrincipal()))
                 .andExpect(status().isOk());
 
         assertThat(campaignRepository.findById(saved.getId()).orElseThrow().getStatus())
@@ -187,7 +205,8 @@ class CampaignIntegrationTest {
         campaignRepository.save(campaign);
         Long id = campaign.getId();
 
-        mockMvc.perform(post("/campaigns/" + id + "/fraud"))
+        mockMvc.perform(post("/campaigns/" + id + "/fraud")
+                        .with(adminPrincipal()))
                 .andExpect(status().isOk());
 
         assertThat(campaignRepository.findById(id).orElseThrow().getStatus())
