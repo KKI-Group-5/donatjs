@@ -222,4 +222,53 @@ class WalletServiceImplTest {
 
         assertThat(result).isEmpty();
     }
+
+    // ── deductBalance() ──────────────────────────────────────────────────────
+
+    @Test
+    void deductBalance_success_deductsBalanceAndSavesSubscriptionTransaction() {
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Wallet result = walletService.deductBalance("user-001", 50000.0, "Monthly Subscription");
+
+        assertThat(result.getBalance()).isEqualTo(950000.0);
+
+        ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(txCaptor.capture());
+        Transaction saved = txCaptor.getValue();
+        assertThat(saved.getType()).isEqualTo(TransactionType.SUBSCRIPTION);
+        assertThat(saved.getAmount()).isEqualTo(50000.0);
+        assertThat(saved.getDescription()).isEqualTo("Monthly Subscription");
+    }
+
+    @Test
+    void deductBalance_noDescription_usesDefaultDescription() {
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        walletService.deductBalance("user-001", 50000.0, "");
+
+        ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(txCaptor.capture());
+        assertThat(txCaptor.getValue().getDescription()).isEqualTo("Subscription debit");
+    }
+
+    @Test
+    void deductBalance_insufficientBalance_throwsAndNothingSaved() {
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
+
+        assertThatThrownBy(() -> walletService.deductBalance("user-001", 2000000.0, "Too much"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Insufficient balance");
+
+        verify(walletRepository, never()).save(any());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void deductBalance_zeroAmount_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> walletService.deductBalance("user-001", 0, "Zero"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

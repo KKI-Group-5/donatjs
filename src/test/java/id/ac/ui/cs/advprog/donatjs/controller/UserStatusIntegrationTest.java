@@ -93,4 +93,29 @@ class UserStatusIntegrationTest {
                     }
                 });
     }
+
+    @Test
+    void testAction_GetBlockedAndRedirectedWhenProfileIncomplete() throws Exception {
+        when(userRepository.findByEmail("incomplete@test.com")).thenReturn(Optional.of(incompleteUser));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/campaigns")
+                        .with(oauth2Login().attributes(attrs -> attrs.put("email", "incomplete@test.com"))))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl("/profile?incomplete=true"));
+    }
+
+    @Test
+    void testAction_GetAllowedWhenProfileComplete() throws Exception {
+        AppUser completeUser = new AppUser();
+        completeUser.setEmail("complete@test.com");
+        completeUser.setBio("Detailed Bio");
+        completeUser.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        completeUser.setSuspended(false);
+
+        when(userRepository.findByEmail("complete@test.com")).thenReturn(Optional.of(completeUser));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/campaigns")
+                        .with(oauth2Login().attributes(attrs -> attrs.put("email", "complete@test.com"))))
+                .andExpect(status().isOk());
+    }
 }

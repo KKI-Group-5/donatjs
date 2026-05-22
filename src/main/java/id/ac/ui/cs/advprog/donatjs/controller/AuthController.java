@@ -25,4 +25,12 @@ public class AuthController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/verify")
+    public org.springframework.web.servlet.ModelAndView verifyEmail(@RequestParam String token) {
+        boolean isVerified = authService.verifyEmail(token);
+        org.springframework.web.servlet.ModelAndView mav = new org.springframework.web.servlet.ModelAndView("auth/verify");
+        mav.addObject("success", isVerified);
+        return mav;
+    }
 }

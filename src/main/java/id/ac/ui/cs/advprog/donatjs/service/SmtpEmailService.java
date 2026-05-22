@@ -2,7 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @Primary
-@ConditionalOnBean(JavaMailSender.class)
+@ConditionalOnProperty(name = "spring.mail.host")
 public class SmtpEmailService implements EmailService {
 
     private final JavaMailSender mailSender;

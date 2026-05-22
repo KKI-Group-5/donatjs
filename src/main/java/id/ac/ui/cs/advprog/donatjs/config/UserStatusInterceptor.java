@@ -23,9 +23,11 @@ public class UserStatusInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
-        // Only intercept state-changing requests (POST, PUT, PATCH)
         String method = request.getMethod();
-        if (!"POST".equalsIgnoreCase(method) && !"PUT".equalsIgnoreCase(method) && !"PATCH".equalsIgnoreCase(method)) {
+        String uri = request.getRequestURI();
+        
+        // Skip static assets
+        if (uri.startsWith("/css/") || uri.startsWith("/js/") || uri.startsWith("/images/")) {
             return true;
         }
 
@@ -40,22 +42,34 @@ public class UserStatusInterceptor implements HandlerInterceptor {
         AppUser user = userRepository.findByEmail(email).orElse(null);
         if (user == null) return true;
 
-        // Block suspended users from all actions
-        if (user.isSuspended()) {
+        boolean isStateChanging = "POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method);
+
+        // Block suspended users from state-changing actions
+        if (user.isSuspended() && isStateChanging) {
             throw new UserStatusException("Action blocked: Your account is suspended. Please contact the administrator.");
         }
 
-        // Block users with incomplete profiles from specific action modules
-        if (user.getBio() == null || user.getDateOfBirth() == null) {
-            // Allow exceptions for profile completion endpoints
-            String uri = request.getRequestURI();
-            if (uri.contains("/api/profile") || uri.contains("/api/auth")) {
+        return handleIncompleteProfile(user, uri, method, response, isStateChanging);
+    }
+
+    private boolean handleIncompleteProfile(AppUser user, String uri, String method, HttpServletResponse response, boolean isStateChanging) throws java.io.IOException {
+        if (user.getBio() == null || user.getDateOfBirth() == null || user.getBio().isBlank()) {
+            if (isExemptUri(uri)) {
                 return true;
             }
-            throw new ProfileIncompleteException("Action blocked: Please complete your profile (Bio and Date of Birth) before performing this action.");
+            if ("GET".equalsIgnoreCase(method) && !uri.startsWith("/api/")) {
+                response.sendRedirect("/profile?incomplete=true");
+                return false;
+            }
+            if (isStateChanging) {
+                throw new ProfileIncompleteException("Action blocked: Please complete your profile (Bio and Date of Birth) before performing this action.");
+            }
         }
-
         return true;
+    }
+
+    private boolean isExemptUri(String uri) {
+        return uri.equals("/profile") || uri.startsWith("/api/profile") || uri.startsWith("/api/auth") || uri.equals("/login") || uri.equals("/logout") || uri.equals("/error") || uri.equals("/register");
     }
 
     private String getEmailFromPrincipal(Object principal) {
