@@ -27,8 +27,13 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public org.springframework.web.servlet.ModelAndView showVerifyPage() {
-        return new org.springframework.web.servlet.ModelAndView("auth/verify");
+    public org.springframework.web.servlet.ModelAndView showVerifyPage(@RequestParam(value = "token", required = false) String token) {
+        org.springframework.web.servlet.ModelAndView mav = new org.springframework.web.servlet.ModelAndView("auth/verify");
+        if (token != null) {
+            boolean isVerified = authService.verifyEmail(token);
+            mav.addObject("success", isVerified);
+        }
+        return mav;
     }
 
     @PostMapping("/verify")

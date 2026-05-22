@@ -11,7 +11,9 @@ import java.util.Optional;
 import id.ac.ui.cs.advprog.donatjs.model.VerificationToken;
 import id.ac.ui.cs.advprog.donatjs.repository.VerificationTokenRepository;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class AuthService {
 
@@ -40,18 +42,9 @@ public class AuthService {
         newUser.setName(request.getName());
         newUser.setBio(request.getBio());
         newUser.setDateOfBirth(request.getDateOfBirth());
-        newUser.setVerified(false);
+        newUser.setVerified(true);
 
         AppUser savedUser = userRepository.save(newUser);
-
-        // Generate and save verification token (6-digit OTP)
-        String token = String.format("%06d", new java.util.Random().nextInt(1000000));
-        VerificationToken vToken = new VerificationToken(token, savedUser);
-        tokenRepository.save(vToken);
-
-        // Send verification email
-        emailService.sendEmail(savedUser.getEmail(), "Your DonatJS Verification Code",
-                "Your verification code is:\n\n" + token + "\n\nPlease enter this code on the website to verify your account.");
 
         return savedUser;
     }

@@ -60,12 +60,14 @@ class AuthServiceTest {
         AppUser savedUser = new AppUser();
         savedUser.setEmail(validRequest.getEmail());
         savedUser.setName(validRequest.getName());
-        when(userRepository.save(any(AppUser.class))).thenReturn(savedUser);
+        savedUser.setVerified(true);
+        when(userRepository.save(any(AppUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         AppUser result = authService.registerUser(validRequest);
 
         assertNotNull(result);
         assertEquals(validRequest.getEmail(), result.getEmail());
+        assertTrue(result.isVerified());
         verify(passwordEncoder, times(1)).encode(validRequest.getPassword());
         verify(userRepository, times(1)).save(any(AppUser.class));
     }

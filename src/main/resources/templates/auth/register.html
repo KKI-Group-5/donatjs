@@ -84,9 +84,9 @@
             if (response.ok) {
                 statusBox.style.background = '#ECFDF5';
                 statusBox.style.color = '#065F46';
-                statusBox.textContent = 'Registration successful! Redirecting to verification page...';
+                statusBox.textContent = 'Registration successful! Redirecting to login page...';
                 setTimeout(() => {
-                    window.location.href = '/api/auth/verify';
+                    window.location.href = '/login';
                 }, 2000);
             } else {
                 statusBox.style.background = '#FEE2E2';
