@@ -63,7 +63,7 @@ public class SimpleCampaignService implements CampaignService {
         if (campaign.getTotalRaised() == null) {
             campaign.setTotalRaised(BigDecimal.ZERO);
         }
-        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setStatus(CampaignStatus.WAITING);
         campaign.setCreatorId(creatorId);
         Campaign saved = campaignRepository.save(campaign);
         log.info("Campaign {} created by creator '{}' with title '{}'",
