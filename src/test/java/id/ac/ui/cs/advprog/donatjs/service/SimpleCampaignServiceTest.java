@@ -75,7 +75,7 @@ class SimpleCampaignServiceTest {
         Campaign result = service.createCampaign(campaign);
 
         assertThat(result.getTotalRaised()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(result.getStatus()).isEqualTo(CampaignStatus.OPEN);
+        assertThat(result.getStatus()).isEqualTo(CampaignStatus.WAITING);
     }
 
     @Test
@@ -87,7 +87,7 @@ class SimpleCampaignServiceTest {
         Campaign result = service.createCampaign(campaign, "user-42");
 
         assertThat(result.getCreatorId()).isEqualTo("user-42");
-        assertThat(result.getStatus()).isEqualTo(CampaignStatus.OPEN);
+        assertThat(result.getStatus()).isEqualTo(CampaignStatus.WAITING);
     }
 
     @Test
