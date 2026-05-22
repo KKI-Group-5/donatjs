@@ -18,13 +18,11 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
@@ -48,24 +46,22 @@ class CampaignFunctionalTest {
 
     @TestConfiguration
     static class PermitAllSecurityConfig {
+
         @Bean
-        @Primary
-        UserDetailsService testUserDetailsService() {
+        @Order(1)
+        SecurityFilterChain functionalTestChain(HttpSecurity http) throws Exception {
             UserDetails admin = User.builder()
                     .username(ADMIN_USER)
                     .password("{noop}" + ADMIN_PASS)
                     .roles("ADMIN")
                     .build();
-            return new InMemoryUserDetailsManager(admin);
-        }
+            InMemoryUserDetailsManager uds = new InMemoryUserDetailsManager(admin);
 
-        @Bean
-        @Order(1)
-        SecurityFilterChain functionalTestChain(HttpSecurity http) throws Exception {
             http.securityMatcher("/**")
                     .authorizeHttpRequests(a -> a.anyRequest().permitAll())
                     .csrf(c -> c.disable())
-                    .httpBasic(Customizer.withDefaults());
+                    .httpBasic(Customizer.withDefaults())
+                    .userDetailsService(uds);
             return http.build();
         }
     }
