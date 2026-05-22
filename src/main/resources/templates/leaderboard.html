@@ -84,23 +84,6 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.11);
             transform: translateY(-2px);
         }
-        .podium-avatar {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 26px;
-            font-weight: 700;
-            color: var(--white);
-            margin: 0 auto 10px;
-            border: 3px solid var(--white);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-        .avatar-gold   { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .avatar-silver { background: linear-gradient(135deg, #94a3b8, #64748b); }
-        .avatar-bronze { background: linear-gradient(135deg, #cd7c2f, #a05c1f); }
         .podium-medal  { font-size: 28px; display: block; margin-bottom: 8px; }
         .podium-name {
             font-size: 14px;
@@ -174,18 +157,6 @@
             font-size: 13px;
             font-weight: 700;
             color: var(--text-secondary);
-            flex-shrink: 0;
-        }
-        .list-avatar {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #22C55E, #16A34A);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--white);
             flex-shrink: 0;
         }
         .donor-info { flex: 1; min-width: 0; }
@@ -266,11 +237,10 @@
     function fmtRp(amount)   { return 'Rp ' + Number(amount).toLocaleString('id-ID'); }
 
     /* ── podium card HTML builder ── */
-    function podiumCard(entry, medal, avatarClass) {
+    function podiumCard(entry, medal) {
         var dc = Number(entry.donationCount);
         var name = entry.displayName || entry.userId;
         return '<div class="podium-card">'
-            + '<div class="podium-avatar ' + avatarClass + '">' + initial(name) + '</div>'
             + '<span class="podium-medal">' + medal + '</span>'
             + '<div class="podium-name">' + esc(name) + '</div>'
             + '<div class="podium-meta">' + dc + ' donation' + (dc !== 1 ? 's' : '') + '</div>'
@@ -284,17 +254,17 @@
         var html = '';
         if (top3[1]) {
             html += '<div class="podium-item podium-item-2nd">'
-                + podiumCard(top3[1], '🥈', 'avatar-silver')
+                + podiumCard(top3[1], '🥈')
                 + '<div class="podium-platform platform-2nd">2</div></div>';
         }
         if (top3[0]) {
             html += '<div class="podium-item podium-item-1st">'
-                + podiumCard(top3[0], '🥇', 'avatar-gold')
+                + podiumCard(top3[0], '🥇')
                 + '<div class="podium-platform platform-1st">1</div></div>';
         }
         if (top3[2]) {
             html += '<div class="podium-item podium-item-3rd">'
-                + podiumCard(top3[2], '🥉', 'avatar-bronze')
+                + podiumCard(top3[2], '🥉')
                 + '<div class="podium-platform platform-3rd">3</div></div>';
         }
         return html;
@@ -307,7 +277,6 @@
             var name = e.displayName || e.userId;
             return '<div class="leaderboard-row">'
                 + '<div class="rank-badge">' + e.rank + '</div>'
-                + '<div class="list-avatar">' + initial(name) + '</div>'
                 + '<div class="donor-info">'
                 +   '<div class="donor-name">' + esc(name) + '</div>'
                 +   '<div class="donor-meta">' + dc + ' donation' + (dc !== 1 ? 's' : '')
