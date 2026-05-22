@@ -6,8 +6,9 @@
     <title>DonatJS | Top Donors</title>
     <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}"/>
     <style>
+        /* ── Page shell ── */
         .leaderboard-page {
-            padding: var(--spacing-2xl) 80px;
+            padding: var(--spacing-2xl) 80px var(--spacing-2xl);
             min-height: 60vh;
             background: var(--bg-light);
         }
@@ -24,7 +25,115 @@
         .leaderboard-header p {
             font-size: 15px;
             color: var(--text-secondary);
+            margin-bottom: 10px;
         }
+        .lb-live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--white);
+            border: 1px solid var(--soft-gray);
+            border-radius: 999px;
+            padding: 4px 12px;
+        }
+        .lb-live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--kelly-green);
+            flex-shrink: 0;
+            animation: lb-pulse 2s ease-in-out infinite;
+        }
+        @keyframes lb-pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        /* ── Podium ── */
+        .podium-section {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: var(--spacing-2xl);
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .podium-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            max-width: 220px;
+        }
+        .podium-card {
+            background: var(--white);
+            border: 1px solid var(--soft-gray);
+            border-radius: var(--radius-lg);
+            padding: 20px 16px 16px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+            transition: box-shadow 0.2s, transform 0.2s;
+            box-sizing: border-box;
+        }
+        .podium-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.11);
+            transform: translateY(-2px);
+        }
+        .podium-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--white);
+            margin: 0 auto 10px;
+            border: 3px solid var(--white);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .avatar-gold   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .avatar-silver { background: linear-gradient(135deg, #94a3b8, #64748b); }
+        .avatar-bronze { background: linear-gradient(135deg, #cd7c2f, #a05c1f); }
+        .podium-medal  { font-size: 28px; display: block; margin-bottom: 8px; }
+        .podium-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+        }
+        .podium-meta   { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+        .podium-amount { font-size: 16px; font-weight: 700; color: var(--kelly-green); }
+        .podium-amount-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        .podium-platform {
+            width: 100%;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--white);
+        }
+        .platform-1st { height: 90px; background: linear-gradient(180deg, #f59e0b, #d97706); }
+        .platform-2nd { height: 64px; background: linear-gradient(180deg, #94a3b8, #64748b); }
+        .platform-3rd { height: 48px; background: linear-gradient(180deg, #cd7c2f, #a05c1f); }
+        .podium-item-1st .podium-card {
+            border-color: #f59e0b;
+            box-shadow: 0 4px 20px rgba(245,158,11,0.18);
+        }
+
+        /* ── List (rank 4+) ── */
         .leaderboard-card {
             background: var(--white);
             border: 1px solid var(--soft-gray);
@@ -34,62 +143,82 @@
             max-width: 760px;
             margin: 0 auto;
         }
+        .leaderboard-card-title {
+            padding: 14px var(--spacing-lg);
+            border-bottom: 1px solid var(--soft-gray);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--bg-light);
+        }
         .leaderboard-row {
             display: flex;
             align-items: center;
-            padding: var(--spacing-md) var(--spacing-lg);
+            padding: 14px var(--spacing-lg);
             border-bottom: 1px solid var(--soft-gray);
             gap: var(--spacing-md);
             transition: background 0.15s;
         }
         .leaderboard-row:last-child { border-bottom: none; }
         .leaderboard-row:hover { background: var(--bg-light); }
-        .rank {
-            font-size: 18px;
-            font-weight: 700;
-            width: 40px;
-            text-align: center;
-            flex-shrink: 0;
-            color: var(--text-secondary);
-        }
-        .rank-1 { color: #f59e0b; font-size: 22px; }
-        .rank-2 { color: #94a3b8; font-size: 20px; }
-        .rank-3 { color: #cd7c2f; font-size: 20px; }
-        .donor-info { flex: 1; min-width: 0; }
-        .donor-id {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .donor-meta {
+        .rank-badge {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            border: 1px solid var(--soft-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 13px;
+            font-weight: 700;
             color: var(--text-secondary);
-            margin-top: 2px;
-        }
-        .donor-amount {
-            text-align: right;
             flex-shrink: 0;
         }
-        .donor-amount-value {
-            font-size: 17px;
+        .list-avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
             font-weight: 700;
-            color: var(--kelly-green);
+            color: var(--white);
+            flex-shrink: 0;
         }
-        .donor-amount-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 2px;
+        .donor-info { flex: 1; min-width: 0; }
+        .donor-name {
+            font-size: 14px; font-weight: 600; color: var(--text-primary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
+        .donor-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .donor-amount { text-align: right; flex-shrink: 0; }
+        .donor-amount-value { font-size: 15px; font-weight: 700; color: var(--kelly-green); }
+        .donor-amount-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+        /* ── Empty / loading ── */
         .empty-state {
             text-align: center;
             padding: var(--spacing-2xl);
             color: var(--text-secondary);
         }
-        @media (max-width: 768px) {
-            .leaderboard-page { padding: var(--spacing-xl) 20px; }
+        .lb-loading {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .leaderboard-page  { padding: var(--spacing-xl) 16px; }
+            .podium-section    { gap: 8px; }
+            .podium-card       { padding: 14px 10px 12px; }
+            .podium-avatar     { width: 48px; height: 48px; font-size: 20px; }
+            .podium-medal      { font-size: 22px; }
+            .podium-amount     { font-size: 13px; }
         }
     </style>
 </head>
@@ -99,42 +228,149 @@
 
 <main class="leaderboard-page">
     <div class="leaderboard-header">
-        <h1>Top Donors</h1>
+        <h1>🏆 Top Donors</h1>
         <p>The most generous contributors across all campaigns on DonatJS.</p>
+        <div class="lb-live-badge">
+            <span class="lb-live-dot"></span>
+            <span id="lb-overall-updated">Loading…</span>
+        </div>
     </div>
 
-    <div class="leaderboard-card">
-        <div th:if="${#lists.isEmpty(leaderboard)}" class="empty-state">
-            <p>No donations recorded yet. Be the first to donate!</p>
-            <a href="/" class="btn-browse"
-               style="display:inline-block;margin-top:12px;padding:10px 24px;background:var(--kelly-green);color:#fff;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;">
-                Browse Campaigns
-            </a>
-        </div>
+    <!-- Podium (rendered by JS) -->
+    <div class="podium-section" id="podium-wrapper">
+        <div class="lb-loading">Loading leaderboard…</div>
+    </div>
 
-        <div th:each="entry : ${leaderboard}" class="leaderboard-row">
-            <div th:class="${'rank rank-' + entry.rank}"
-                 th:text="${entry.rank == 1 ? '🥇' : (entry.rank == 2 ? '🥈' : (entry.rank == 3 ? '🥉' : '#' + entry.rank))}">
-                #1
-            </div>
-            <div class="donor-info">
-                <div class="donor-id" th:text="${entry.userId}">user-id</div>
-                <div class="donor-meta"
-                     th:text="${entry.donationCount} + ' donation' + (${entry.donationCount} != 1 ? 's' : '')
-                               + ' across ' + ${entry.campaignCount} + ' campaign' + (${entry.campaignCount} != 1 ? 's' : '')">
-                </div>
-            </div>
-            <div class="donor-amount">
-                <div class="donor-amount-value"
-                     th:text="'Rp ' + ${#numbers.formatDecimal(entry.totalAmount, 0, 'COMMA', 0, 'POINT')}">
-                </div>
-                <div class="donor-amount-label">total donated</div>
-            </div>
-        </div>
+    <!-- Rank 4+ list (rendered by JS, hidden until there are entries) -->
+    <div class="leaderboard-card" id="list-card" style="display:none;">
+        <div class="leaderboard-card-title">Other Top Donors</div>
+        <div id="list-wrapper"></div>
     </div>
 </main>
 
 <div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+    /* ── helpers ── */
+    function esc(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+    function initial(userId) { return userId ? esc(userId.charAt(0).toUpperCase()) : '?'; }
+    function fmtRp(amount)   { return 'Rp ' + Number(amount).toLocaleString('id-ID'); }
+
+    /* ── podium card HTML builder ── */
+    function podiumCard(entry, medal, avatarClass) {
+        var dc = Number(entry.donationCount);
+        return '<div class="podium-card">'
+            + '<div class="podium-avatar ' + avatarClass + '">' + initial(entry.userId) + '</div>'
+            + '<span class="podium-medal">' + medal + '</span>'
+            + '<div class="podium-name">' + esc(entry.userId) + '</div>'
+            + '<div class="podium-meta">' + dc + ' donation' + (dc !== 1 ? 's' : '') + '</div>'
+            + '<div class="podium-amount">' + fmtRp(entry.totalAmount) + '</div>'
+            + '<div class="podium-amount-label">total donated</div>'
+            + '</div>';
+    }
+
+    /* ── build podium section (2nd | 1st | 3rd) ── */
+    function buildPodium(top3) {
+        var html = '';
+        if (top3[1]) {
+            html += '<div class="podium-item podium-item-2nd">'
+                + podiumCard(top3[1], '🥈', 'avatar-silver')
+                + '<div class="podium-platform platform-2nd">2</div></div>';
+        }
+        if (top3[0]) {
+            html += '<div class="podium-item podium-item-1st">'
+                + podiumCard(top3[0], '🥇', 'avatar-gold')
+                + '<div class="podium-platform platform-1st">1</div></div>';
+        }
+        if (top3[2]) {
+            html += '<div class="podium-item podium-item-3rd">'
+                + podiumCard(top3[2], '🥉', 'avatar-bronze')
+                + '<div class="podium-platform platform-3rd">3</div></div>';
+        }
+        return html;
+    }
+
+    /* ── build rank-4+ list ── */
+    function buildList(rest) {
+        return rest.map(function (e) {
+            var dc = Number(e.donationCount), cc = Number(e.campaignCount);
+            return '<div class="leaderboard-row">'
+                + '<div class="rank-badge">' + e.rank + '</div>'
+                + '<div class="list-avatar">' + initial(e.userId) + '</div>'
+                + '<div class="donor-info">'
+                +   '<div class="donor-name">' + esc(e.userId) + '</div>'
+                +   '<div class="donor-meta">' + dc + ' donation' + (dc !== 1 ? 's' : '')
+                +     ' across ' + cc + ' campaign' + (cc !== 1 ? 's' : '') + '</div>'
+                + '</div>'
+                + '<div class="donor-amount">'
+                +   '<div class="donor-amount-value">' + fmtRp(e.totalAmount) + '</div>'
+                +   '<div class="donor-amount-label">total donated</div>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    /* ── fetch + render ── */
+    function refreshOverallLeaderboard() {
+        var podiumWrapper = document.getElementById('podium-wrapper');
+        var listCard      = document.getElementById('list-card');
+        var listWrapper   = document.getElementById('list-wrapper');
+        var updatedEl     = document.getElementById('lb-overall-updated');
+
+        fetch('/api/donations/leaderboard?limit=20')
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function (entries) {
+                if (!entries || entries.length === 0) {
+                    podiumWrapper.innerHTML =
+                        '<div class="empty-state">'
+                        + '<p>No donations recorded yet. Be the first to donate!</p>'
+                        + '<a href="/" style="display:inline-block;margin-top:12px;padding:10px 24px;'
+                        + 'background:var(--kelly-green);color:#fff;border-radius:8px;font-weight:600;'
+                        + 'font-size:14px;text-decoration:none;">Browse Campaigns</a>'
+                        + '</div>';
+                    listCard.style.display = 'none';
+                } else {
+                    podiumWrapper.innerHTML = buildPodium(entries.slice(0, 3));
+                    var rest = entries.slice(3);
+                    if (rest.length > 0) {
+                        listWrapper.innerHTML  = buildList(rest);
+                        listCard.style.display = '';
+                    } else {
+                        listCard.style.display = 'none';
+                    }
+                }
+                if (updatedEl) updatedEl.textContent = 'Updated just now';
+            })
+            .catch(function () {
+                if (updatedEl) updatedEl.textContent = 'Could not refresh';
+            });
+    }
+
+    /* ── bootstrap: fetch immediately, then poll every 20 s ── */
+    document.addEventListener('DOMContentLoaded', function () {
+        refreshOverallLeaderboard();
+        var pollInterval = setInterval(refreshOverallLeaderboard, 20000);
+
+        /* pause polling when tab is hidden, resume + refresh when it comes back */
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                clearInterval(pollInterval);
+            } else {
+                pollInterval = setInterval(refreshOverallLeaderboard, 20000);
+                refreshOverallLeaderboard();
+            }
+        });
+    });
+</script>
 
 </body>
 </html>

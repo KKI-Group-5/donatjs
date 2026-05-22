@@ -4,10 +4,12 @@ import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
 import id.ac.ui.cs.advprog.donatjs.dto.LeaderboardEntry;
 import id.ac.ui.cs.advprog.donatjs.dto.WithdrawalRequestResponse;
+import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
 import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import id.ac.ui.cs.advprog.donatjs.service.DonationService;
 import id.ac.ui.cs.advprog.donatjs.service.WithdrawalRequestService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -131,5 +133,15 @@ public class DonationController {
     @org.springframework.web.bind.annotation.ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<Map<String, String>> handleInsufficientBalance(InsufficientBalanceException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", ex.getMessage()));
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleEntityNotFound(EntityNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
     }
 }

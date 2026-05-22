@@ -42,6 +42,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/campaigns", "/campaigns/").permitAll()
                         .requestMatchers(HttpMethod.GET, "/campaigns/{id:[0-9]+}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/campaigns/**").permitAll()
+                        // Leaderboard data is public — allow unauthenticated JS polling
+                        .requestMatchers(HttpMethod.GET, "/leaderboard").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/donations/leaderboard").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/donations/campaign/*/leaderboard").permitAll()
                         // Fraud reporting called by internal modules — requires authentication
                         .requestMatchers("/api/users/report-fraud-activity").authenticated()
                         // Admin moderation endpoints — requires ADMIN role
