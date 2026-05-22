@@ -17,11 +17,23 @@ import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import id.ac.ui.cs.advprog.donatjs.repository.VerificationTokenRepository;
+import id.ac.ui.cs.advprog.donatjs.model.VerificationToken;
+import id.ac.ui.cs.advprog.donatjs.model.AppUser;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AuthAndProfileFunctionalTest {
 
     @LocalServerPort
     private int port;
+
+    @Autowired
+    private VerificationTokenRepository tokenRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private WebDriver driver;
     private String baseUrl;
@@ -69,6 +81,19 @@ public class AuthAndProfileFunctionalTest {
         // Assuming registration redirects to login page
         wait.until(ExpectedConditions.urlContains("/login"));
         assertTrue(driver.getCurrentUrl().contains("/login"));
+
+        // Fetch token from DB
+        AppUser user = userRepository.findByEmail(testEmail).orElseThrow();
+        VerificationToken token = tokenRepository.findAll().stream()
+                .filter(t -> t.getUser().getId().equals(user.getId()))
+                .findFirst().orElseThrow();
+
+        // Verify email via URL
+        driver.get(baseUrl + "/api/auth/verify?token=" + token.getToken());
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+
+        // Go back to login explicitly if needed
+        driver.get(baseUrl + "/login");
 
         // Phase 2: Login
         WebElement loginEmailInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("username")));

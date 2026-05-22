@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Email Verification | DonatJS</title>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/auth.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="auth-container">
+    <div class="auth-card" style="text-align: center;">
+        <div class="auth-header" style="margin-bottom: 2rem;">
+            <div th:if="${success}">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--kelly-green-hover)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <h1 class="auth-title">Email Verified!</h1>
+                <p class="auth-subtitle">Your email address has been successfully verified.</p>
+            </div>
+            
+            <div th:unless="${success}">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h1 class="auth-title">Verification Failed</h1>
+                <p class="auth-subtitle">The verification link is invalid, malformed, or has expired.</p>
+            </div>
+        </div>
+
+        <a th:if="${success}" th:href="@{/login}" style="text-decoration: none;">
+            <button class="btn-auth">Proceed to Login</button>
+        </a>
+
+        <a th:unless="${success}" th:href="@{/register}" style="text-decoration: none;">
+            <button class="btn-auth">Register Again</button>
+        </a>
+
+        <div class="auth-footer" style="margin-top: 1.5rem;">
+            Need help? <a th:href="@{/support}" class="auth-link">Contact Support</a>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

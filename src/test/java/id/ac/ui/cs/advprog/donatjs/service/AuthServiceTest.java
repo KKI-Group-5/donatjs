@@ -3,6 +3,8 @@ package id.ac.ui.cs.advprog.donatjs.service;
 import id.ac.ui.cs.advprog.donatjs.dto.RegisterRequest;
 import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
+import id.ac.ui.cs.advprog.donatjs.repository.VerificationTokenRepository;
+import id.ac.ui.cs.advprog.donatjs.model.VerificationToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,12 @@ class AuthServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private VerificationTokenRepository tokenRepository;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private AuthService authService;
@@ -88,5 +96,47 @@ class AuthServiceTest {
 
         verify(passwordEncoder, times(1)).encode("securepassword");
         assertNotEquals("securepassword", result.getPassword());
+    }
+
+    @Test
+    void verifyEmail_ValidToken_ReturnsTrueAndSetsVerified() {
+        AppUser user = new AppUser();
+        user.setVerified(false);
+        VerificationToken token = new VerificationToken("valid-token", user);
+        when(tokenRepository.findByToken("valid-token")).thenReturn(Optional.of(token));
+
+        boolean result = authService.verifyEmail("valid-token");
+
+        assertTrue(result);
+        assertTrue(user.isVerified());
+        verify(userRepository, times(1)).save(user);
+        verify(tokenRepository, times(1)).delete(token);
+    }
+
+    @Test
+    void verifyEmail_ExpiredToken_ReturnsFalseAndDoesNotVerify() {
+        AppUser user = new AppUser();
+        user.setVerified(false);
+        VerificationToken token = new VerificationToken("expired-token", user);
+        token.setExpiryDate(java.time.LocalDateTime.now().minusHours(1));
+        when(tokenRepository.findByToken("expired-token")).thenReturn(Optional.of(token));
+
+        boolean result = authService.verifyEmail("expired-token");
+
+        assertFalse(result);
+        assertFalse(user.isVerified());
+        verify(userRepository, never()).save(any());
+        verify(tokenRepository, never()).delete(any());
+    }
+
+    @Test
+    void verifyEmail_TokenNotFound_ReturnsFalse() {
+        when(tokenRepository.findByToken("non-existent")).thenReturn(Optional.empty());
+
+        boolean result = authService.verifyEmail("non-existent");
+
+        assertFalse(result);
+        verify(userRepository, never()).save(any());
+        verify(tokenRepository, never()).delete(any());
     }
 }

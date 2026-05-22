@@ -10,6 +10,7 @@ import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationStatus;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationType;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.PaymentMethod;
 import id.ac.ui.cs.advprog.donatjs.repository.DonationRepository;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,9 @@ class DonationServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private DonationService donationService;
