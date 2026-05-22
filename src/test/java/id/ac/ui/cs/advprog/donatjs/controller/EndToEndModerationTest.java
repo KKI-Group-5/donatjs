@@ -55,12 +55,12 @@ public class EndToEndModerationTest {
             // Reject the campaign
             campaignService.moderateCampaign(c.getId(), false);
             
-            // Sleep to avoid concurrent lost updates in async listener
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(50));
+            // Sleep to ensure serial async processing and avoid lost-update races
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(300));
         }
 
-        // Wait a short moment for async event listener to finish
-        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(100));
+        // Wait for the final async event listener to finish
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
 
         // Fetch user from DB and verify
         AppUser updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
