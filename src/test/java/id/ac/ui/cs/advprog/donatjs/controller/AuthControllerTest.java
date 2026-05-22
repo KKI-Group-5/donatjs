@@ -81,4 +81,24 @@ class AuthControllerTest {
                         .content(invalidJson))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void verify_ValidToken_Returns200() throws Exception {
+        when(authService.verifyEmail("valid-token")).thenReturn(true);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/auth/verify")
+                        .param("token", "valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Email verified successfully! You can now log in."));
+    }
+
+    @Test
+    void verify_InvalidToken_Returns400() throws Exception {
+        when(authService.verifyEmail("invalid-token")).thenReturn(false);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/auth/verify")
+                        .param("token", "invalid-token"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Invalid or expired verification token."));
+    }
 }
