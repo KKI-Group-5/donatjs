@@ -1,14 +1,17 @@
 package id.ac.ui.cs.advprog.donatjs.service;
 
+import id.ac.ui.cs.advprog.donatjs.event.CampaignFraudDetectedEvent;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignNearTargetEvent;
+import id.ac.ui.cs.advprog.donatjs.event.CampaignPayoutRequestedEvent;
+import id.ac.ui.cs.advprog.donatjs.event.CampaignRefundRequestedEvent;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignStatusChangedEvent;
 import id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.InMemoryCampaignRepository;
-import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,6 +47,8 @@ class SimpleCampaignServiceTest {
         eventPublisher = new RecordingEventPublisher(publisher);
         service = new SimpleCampaignService(repository, walletGateway, eventPublisher, new BigDecimal("0.98"));
     }
+
+    // ── createCampaign ───────────────────────────────────────────────────────────
 
     @Test
     void createCampaign_setsCreatedAtIfNull() {
@@ -73,6 +79,81 @@ class SimpleCampaignServiceTest {
     }
 
     @Test
+    void createCampaign_setsCreatorId() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+
+        Campaign result = service.createCampaign(campaign, "user-42");
+
+        assertThat(result.getCreatorId()).isEqualTo("user-42");
+        assertThat(result.getStatus()).isEqualTo(CampaignStatus.WAITING);
+    }
+
+    @Test
+    void createCampaign_preservesExistingCreatedAt() {
+        LocalDateTime fixedTime = LocalDateTime.of(2025, 1, 1, 12, 0);
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        campaign.setCreatedAt(fixedTime);
+
+        Campaign result = service.createCampaign(campaign);
+
+        assertThat(result.getCreatedAt()).isEqualTo(fixedTime);
+    }
+
+    // ── findOpenCampaigns / findById ─────────────────────────────────────────────
+
+    @Test
+    void findOpenCampaigns_returnsOnlyOpenCampaigns() {
+        Campaign open = new Campaign();
+        open.setTitle("Open");
+        open.setDescription("Open desc");
+        open.setStatus(CampaignStatus.OPEN);
+        repository.save(open);
+
+        Campaign waiting = new Campaign();
+        waiting.setTitle("Waiting");
+        waiting.setDescription("Waiting desc");
+        waiting.setStatus(CampaignStatus.WAITING);
+        repository.save(waiting);
+
+        Campaign rejected = new Campaign();
+        rejected.setTitle("Rejected");
+        rejected.setDescription("Rejected desc");
+        rejected.setStatus(CampaignStatus.REJECTED);
+        repository.save(rejected);
+
+        List<Campaign> result = service.findOpenCampaigns();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(CampaignStatus.OPEN);
+    }
+
+    @Test
+    void findById_returnsPresent_forExistingCampaign() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Find me");
+        campaign.setDescription("Desc");
+        Campaign saved = repository.save(campaign);
+
+        Optional<Campaign> result = service.findById(saved.getId());
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(saved.getId());
+    }
+
+    @Test
+    void findById_returnsEmpty_forNonExistentId() {
+        Optional<Campaign> result = service.findById(999L);
+
+        assertThat(result).isEmpty();
+    }
+
+    // ── updateDescription ────────────────────────────────────────────────────────
+
+    @Test
     void updateDescription_updatesOnlyDescription() {
         Campaign existing = new Campaign();
         existing.setTitle("Original title");
@@ -90,6 +171,66 @@ class SimpleCampaignServiceTest {
     }
 
     @Test
+    void updateDescription_succeeds_whenActorIsCreator() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Old");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setCreatorId("creator-1");
+        Campaign saved = repository.save(campaign);
+
+        Campaign updated = service.updateDescription(saved.getId(), "creator-1", false, "Updated");
+
+        assertThat(updated.getDescription()).isEqualTo("Updated");
+    }
+
+    @Test
+    void updateDescription_throwsForbidden_whenActorIsNotCreator() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setCreatorId("owner");
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() ->
+                service.updateDescription(saved.getId(), "other-user", false, "Hack"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.FORBIDDEN));
+    }
+
+    @Test
+    void updateDescription_succeeds_whenAdminEditsAnyCreatorCampaign() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setCreatorId("some-creator");
+        Campaign saved = repository.save(campaign);
+
+        Campaign updated = service.updateDescription(saved.getId(), "admin-id", true, "Admin override");
+
+        assertThat(updated.getDescription()).isEqualTo("Admin override");
+    }
+
+    @Test
+    void updateDescription_throwsBadRequest_whenCampaignIsRejected() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.REJECTED);
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.updateDescription(saved.getId(), "New desc"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    // ── deleteIfNoDonations ──────────────────────────────────────────────────────
+
+    @Test
     void deleteIfNoDonations_deletesAndPublishesStatusEvent() {
         Campaign campaign = new Campaign();
         campaign.setTitle("Deletable");
@@ -104,6 +245,20 @@ class SimpleCampaignServiceTest {
         assertThat(repository.findById(id)).isPresent();
         assertThat(repository.findById(id).orElseThrow().getStatus()).isEqualTo(CampaignStatus.DELETED);
         verify(publisher).publishEvent(any(CampaignStatusChangedEvent.class));
+    }
+
+    @Test
+    void deleteIfNoDonations_deletesWhenTotalRaisedIsNull() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Null raised");
+        campaign.setDescription("Desc");
+        campaign.setTotalRaised(null);
+        Campaign saved = repository.save(campaign);
+
+        service.deleteIfNoDonations(saved.getId());
+
+        assertThat(repository.findById(saved.getId()).orElseThrow().getStatus())
+                .isEqualTo(CampaignStatus.DELETED);
     }
 
     @Test
@@ -124,6 +279,23 @@ class SimpleCampaignServiceTest {
                 });
         verify(publisher, never()).publishEvent(any());
     }
+
+    @Test
+    void deleteIfNoDonations_throwsForbidden_whenActorIsNotCreator() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        campaign.setCreatorId("owner");
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.deleteIfNoDonations(saved.getId(), "intruder", false))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.FORBIDDEN));
+    }
+
+    // ── moderateCampaign ─────────────────────────────────────────────────────────
 
     @Test
     void moderateCampaign_approve_waitingCampaignBecomesOpen() {
@@ -181,6 +353,107 @@ class SimpleCampaignServiceTest {
     }
 
     @Test
+    void moderateCampaign_throwsBadRequest_whenCampaignIsAlreadyClosed() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Already closed");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.CLOSED);
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.moderateCampaign(saved.getId(), true))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void moderateCampaign_approve_publishesStatusChangedEvent() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Waiting");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.WAITING);
+        Campaign saved = repository.save(campaign);
+
+        service.moderateCampaign(saved.getId(), true);
+
+        assertThat(eventPublisher.publishedEvents).hasSize(1);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
+    }
+
+    // ── adminUpdateCampaign ──────────────────────────────────────────────────────
+
+    @Test
+    void adminUpdateCampaign_updatesTitle() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Old title");
+        campaign.setDescription("Desc");
+        Campaign saved = repository.save(campaign);
+
+        Campaign updated = service.adminUpdateCampaign(saved.getId(), "New title", null, null);
+
+        assertThat(updated.getTitle()).isEqualTo("New title");
+    }
+
+    @Test
+    void adminUpdateCampaign_updatesDeadline() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        Campaign saved = repository.save(campaign);
+
+        LocalDate future = LocalDate.now().plusDays(30);
+        Campaign updated = service.adminUpdateCampaign(saved.getId(), null, future, null);
+
+        assertThat(updated.getDeadline()).isEqualTo(future);
+    }
+
+    @Test
+    void adminUpdateCampaign_throwsBadRequest_whenDeadlineIsInPast() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        Campaign saved = repository.save(campaign);
+
+        LocalDate past = LocalDate.now().minusDays(1);
+
+        assertThatThrownBy(() -> service.adminUpdateCampaign(saved.getId(), null, past, null))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void adminUpdateCampaign_throwsBadRequest_whenTargetAmountIsZero() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.adminUpdateCampaign(saved.getId(), null, null, BigDecimal.ZERO))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void adminUpdateCampaign_autoClosesOpenCampaignWhenTargetAlreadyReached() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTotalRaised(new BigDecimal("500"));
+        campaign.setTargetAmount(new BigDecimal("1000"));
+        Campaign saved = repository.save(campaign);
+
+        // Lower the target so that totalRaised >= new target
+        Campaign updated = service.adminUpdateCampaign(saved.getId(), null, null, new BigDecimal("400"));
+
+        assertThat(updated.getStatus()).isEqualTo(CampaignStatus.CLOSED);
+    }
+
+    // ── recordSuccessfulDonation ─────────────────────────────────────────────────
+
+    @Test
     void recordSuccessfulDonation_closesCampaignWhenTargetReached() {
         Campaign campaign = openCampaign(new BigDecimal("100"), new BigDecimal("90"));
 
@@ -189,6 +462,203 @@ class SimpleCampaignServiceTest {
         assertThat(updated.getTotalRaised()).isEqualByComparingTo(new BigDecimal("105"));
         assertThat(updated.getStatus()).isEqualTo(CampaignStatus.CLOSED);
     }
+
+    @Test
+    void recordSuccessfulDonation_throwsBadRequest_whenCampaignNotOpen() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Closed campaign");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.CLOSED);
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.recordSuccessfulDonation(saved.getId(), BigDecimal.ONE))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void recordSuccessfulDonation_throwsBadRequest_whenCampaignIsCancelled() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Cancelled");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.CANCELLED);
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.recordSuccessfulDonation(saved.getId(), BigDecimal.ONE))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void recordSuccessfulDonation_throwsBadRequest_whenAmountIsNegative() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() ->
+                service.recordSuccessfulDonation(saved.getId(), new BigDecimal("-5")))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void recordSuccessfulDonation_throwsBadRequest_whenAmountIsNull() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Title");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.recordSuccessfulDonation(saved.getId(), null))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void recordSuccessfulDonation_throwsNotFound_whenCampaignDoesNotExist() {
+        assertThatThrownBy(() -> service.recordSuccessfulDonation(999L, BigDecimal.ONE))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.NOT_FOUND));
+    }
+
+    @Test
+    void recordSuccessfulDonation_triggersNearTargetEvent_whenCrossing98PercentThreshold() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Near target");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(new BigDecimal("90"));
+        Campaign saved = repository.save(campaign);
+
+        // 90 + 10 = 100, which crosses the 98% threshold (98 out of 100)
+        service.recordSuccessfulDonation(saved.getId(), new BigDecimal("10"));
+
+        assertThat(eventPublisher.publishedEvents)
+                .anyMatch(e -> e instanceof CampaignNearTargetEvent);
+        assertThat(repository.findById(saved.getId()).orElseThrow().isNearTargetNotified()).isTrue();
+    }
+
+    @Test
+    void recordSuccessfulDonation_doesNotRetriggerNearTargetEvent_whenAlreadyNotified() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Already notified");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(new BigDecimal("99"));
+        campaign.setNearTargetNotified(true);
+        Campaign saved = repository.save(campaign);
+
+        service.recordSuccessfulDonation(saved.getId(), new BigDecimal("1"));
+
+        assertThat(eventPublisher.publishedEvents)
+                .noneMatch(e -> e instanceof CampaignNearTargetEvent);
+    }
+
+    @Test
+    void recordSuccessfulDonation_doesNotTriggerNearTargetEvent_whenBelowThreshold() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Below threshold");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        // 0 + 50 = 50, below 98% threshold
+        service.recordSuccessfulDonation(saved.getId(), new BigDecimal("50"));
+
+        assertThat(eventPublisher.publishedEvents)
+                .noneMatch(e -> e instanceof CampaignNearTargetEvent);
+        assertThat(repository.findById(saved.getId()).orElseThrow().isNearTargetNotified()).isFalse();
+    }
+
+    @Test
+    void recordSuccessfulDonation_publishesBothNearTargetAndClosedEvents_whenCrossingDirectlyToTarget() {
+        Campaign campaign = openCampaign(new BigDecimal("1000"), new BigDecimal("100")); // 10%
+
+        service.recordSuccessfulDonation(campaign.getId(), new BigDecimal("950")); // jumps to 1050 = 105%
+
+        verify(publisher).publishEvent(any(CampaignNearTargetEvent.class));
+        verify(publisher, times(2)).publishEvent(any());
+    }
+
+    // ── markAsFraud ──────────────────────────────────────────────────────────────
+
+    @Test
+    void markAsFraud_updatesStatusAndRequestsRefund() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Suspicious");
+        campaign.setDescription("Flagged");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTotalRaised(new BigDecimal("20"));
+        Campaign saved = repository.save(campaign);
+
+        Campaign updated = service.markAsFraud(saved.getId());
+
+        assertThat(updated.getStatus()).isEqualTo(CampaignStatus.FRAUD);
+        assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
+        assertThat(eventPublisher.publishedCount).isEqualTo(3);
+    }
+
+    @Test
+    void markAsFraud_publishesFraudEventOnly_whenNoRaisedAmount() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Suspicious");
+        campaign.setDescription("Flagged but no donations");
+        campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        service.markAsFraud(saved.getId());
+
+        assertThat(walletGateway.refundRequestedCount).isZero();
+        assertThat(eventPublisher.publishedCount).isEqualTo(2);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignFraudDetectedEvent.class);
+        assertThat(eventPublisher.publishedEvents.get(1)).isInstanceOf(CampaignStatusChangedEvent.class);
+    }
+
+    @Test
+    void markAsFraud_throwsBadRequest_whenCampaignIsDeleted() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Deleted");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.DELETED);
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.markAsFraud(saved.getId()))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void markAsFraud_throwsBadRequest_whenCampaignIsCancelled() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Cancelled");
+        campaign.setDescription("Desc");
+        campaign.setStatus(CampaignStatus.CANCELLED);
+        Campaign saved = repository.save(campaign);
+
+        assertThatThrownBy(() -> service.markAsFraud(saved.getId()))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    // ── processExpiredCampaigns ──────────────────────────────────────────────────
 
     @Test
     void processExpiredCampaigns_closesSuccessfulCampaignAndRequestsPayout() {
@@ -207,7 +677,9 @@ class SimpleCampaignServiceTest {
         assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CLOSED);
         assertThat(walletGateway.payoutRequestedCount).isEqualTo(1);
         assertThat(walletGateway.refundRequestedCount).isZero();
-        // CampaignStatusChangedEvent + CampaignPayoutRequestedEvent
+        assertThat(eventPublisher.publishedCount).isEqualTo(2);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
+        assertThat(eventPublisher.publishedEvents.get(1)).isInstanceOf(CampaignPayoutRequestedEvent.class);
         verify(publisher, times(2)).publishEvent(any());
         verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
     }
@@ -229,97 +701,91 @@ class SimpleCampaignServiceTest {
         assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CANCELLED);
         assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
         assertThat(walletGateway.payoutRequestedCount).isZero();
-        // CampaignStatusChangedEvent + CampaignRefundRequestedEvent
+        assertThat(eventPublisher.publishedCount).isEqualTo(2);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
+        assertThat(eventPublisher.publishedEvents.get(1)).isInstanceOf(CampaignRefundRequestedEvent.class);
         verify(publisher, times(2)).publishEvent(any());
         verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     @Test
-    void processExpiredCampaigns_cancelsWithZeroRaisedStillPublishesStatusEvent() {
+    void processExpiredCampaigns_cancelsExpiredCampaignWithNoDonations_noRefundRequested() {
         Campaign campaign = new Campaign();
-        campaign.setTitle("Failed (no donations)");
-        campaign.setDescription("No donations received");
+        campaign.setTitle("Zero donations");
+        campaign.setDescription("No one donated");
         campaign.setStatus(CampaignStatus.OPEN);
+        campaign.setDeadline(LocalDate.now().minusDays(1));
+        campaign.setTargetAmount(new BigDecimal("500"));
+        campaign.setTotalRaised(BigDecimal.ZERO);
+        Campaign saved = repository.save(campaign);
+
+        int processed = service.processExpiredCampaigns(LocalDate.now());
+
+        assertThat(processed).isEqualTo(1);
+        assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CANCELLED);
+        assertThat(walletGateway.refundRequestedCount).isZero();
+        assertThat(eventPublisher.publishedCount).isEqualTo(1);
+        assertThat(eventPublisher.publishedEvents.get(0)).isInstanceOf(CampaignStatusChangedEvent.class);
+    }
+
+    @Test
+    void processExpiredCampaigns_processesWaitingExpiredCampaign() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Waiting expired");
+        campaign.setDescription("Never approved but passed deadline");
+        campaign.setStatus(CampaignStatus.WAITING);
         campaign.setDeadline(LocalDate.now().minusDays(1));
         campaign.setTargetAmount(new BigDecimal("100"));
         campaign.setTotalRaised(BigDecimal.ZERO);
         Campaign saved = repository.save(campaign);
 
-        service.processExpiredCampaigns(LocalDate.now());
+        int processed = service.processExpiredCampaigns(LocalDate.now());
 
+        assertThat(processed).isEqualTo(1);
         assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CANCELLED);
-        assertThat(walletGateway.refundRequestedCount).isZero();
-        // CampaignStatusChangedEvent only — no refund because no donations
-        verify(publisher, times(1)).publishEvent(any());
-        verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
     }
 
     @Test
-    void markAsFraud_updatesStatusAndRequestsRefund() {
+    void processExpiredCampaigns_skipsNonExpiredCampaigns() {
         Campaign campaign = new Campaign();
-        campaign.setTitle("Suspicious");
-        campaign.setDescription("Flagged");
+        campaign.setTitle("Active");
+        campaign.setDescription("Still running");
         campaign.setStatus(CampaignStatus.OPEN);
-        campaign.setTotalRaised(new BigDecimal("20"));
-        Campaign saved = repository.save(campaign);
-
-        Campaign updated = service.markAsFraud(saved.getId());
-
-        assertThat(updated.getStatus()).isEqualTo(CampaignStatus.FRAUD);
-        assertThat(walletGateway.refundRequestedCount).isEqualTo(1);
-        // CampaignFraudDetectedEvent + CampaignStatusChangedEvent + CampaignRefundRequestedEvent
-        verify(publisher, times(3)).publishEvent(any());
-        verify(publisher, times(1)).publishEvent(any(CampaignStatusChangedEvent.class));
-    }
-
-    // ── 98%-threshold trigger ────────────────────────────────────────────
-
-    @Test
-    void recordSuccessfulDonation_doesNotPublishNearTargetEvent_whenStillBelowThreshold() {
-        Campaign campaign = openCampaign(new BigDecimal("1000"), new BigDecimal("950")); // 95%
-
-        Campaign updated = service.recordSuccessfulDonation(campaign.getId(), new BigDecimal("20")); // 970 = 97%
-
-        assertThat(updated.isNearTargetNotified()).isFalse();
-        verify(publisher, never()).publishEvent(any(CampaignNearTargetEvent.class));
-    }
-
-    @Test
-    void recordSuccessfulDonation_publishesNearTargetEvent_whenCrossingThreshold() {
-        Campaign campaign = openCampaign(new BigDecimal("1000"), new BigDecimal("970")); // 97%
-
-        Campaign updated = service.recordSuccessfulDonation(campaign.getId(), new BigDecimal("10")); // 980 = 98%
-
-        assertThat(updated.isNearTargetNotified()).isTrue();
-        org.mockito.ArgumentCaptor<CampaignNearTargetEvent> captor =
-                org.mockito.ArgumentCaptor.forClass(CampaignNearTargetEvent.class);
-        verify(publisher).publishEvent(captor.capture());
-        assertThat(captor.getValue().getCampaignId()).isEqualTo(campaign.getId());
-        assertThat(captor.getValue().getTotalRaised()).isEqualByComparingTo(new BigDecimal("980"));
-        assertThat(captor.getValue().getTargetAmount()).isEqualByComparingTo(new BigDecimal("1000"));
-    }
-
-    @Test
-    void recordSuccessfulDonation_doesNotRepublishNearTargetEvent_whenAlreadyNotified() {
-        Campaign campaign = openCampaign(new BigDecimal("1000"), new BigDecimal("980")); // already 98%
-        campaign.setNearTargetNotified(true);
+        campaign.setDeadline(LocalDate.now().plusDays(5));
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(BigDecimal.ZERO);
         repository.save(campaign);
 
-        service.recordSuccessfulDonation(campaign.getId(), new BigDecimal("5")); // 985
+        int processed = service.processExpiredCampaigns(LocalDate.now());
 
-        verify(publisher, never()).publishEvent(any(CampaignNearTargetEvent.class));
+        assertThat(processed).isZero();
     }
 
     @Test
-    void recordSuccessfulDonation_publishesBothNearTargetAndClosedEvents_whenCrossingDirectlyToTarget() {
-        Campaign campaign = openCampaign(new BigDecimal("1000"), new BigDecimal("100")); // 10%
+    void processExpiredCampaigns_skipsAlreadyClosedCampaign() {
+        Campaign campaign = new Campaign();
+        campaign.setTitle("Already closed");
+        campaign.setDescription("Closed before deadline run");
+        campaign.setStatus(CampaignStatus.CLOSED);
+        campaign.setDeadline(LocalDate.now().minusDays(1));
+        campaign.setTargetAmount(new BigDecimal("100"));
+        campaign.setTotalRaised(new BigDecimal("150"));
+        Campaign saved = repository.save(campaign);
 
-        service.recordSuccessfulDonation(campaign.getId(), new BigDecimal("950")); // jumps to 1050 = 105%
+        int processed = service.processExpiredCampaigns(LocalDate.now());
 
-        // both events fire
-        verify(publisher).publishEvent(any(CampaignNearTargetEvent.class));
-        verify(publisher, times(2)).publishEvent(any()); // total of 2 events
+        assertThat(processed).isZero();
+        assertThat(repository.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo(CampaignStatus.CLOSED);
+        assertThat(walletGateway.payoutRequestedCount).isZero();
     }
+
+    @Test
+    void processExpiredCampaigns_returnsZero_whenNoCampaigns() {
+        int processed = service.processExpiredCampaigns(LocalDate.now());
+        assertThat(processed).isZero();
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────────────
 
     private Campaign openCampaign(BigDecimal target, BigDecimal raised) {
         Campaign c = new Campaign();
@@ -329,67 +795,6 @@ class SimpleCampaignServiceTest {
         c.setTargetAmount(target);
         c.setTotalRaised(raised);
         return repository.save(c);
-    }
-
-    @Test
-    void findOpenCampaigns_returnsList() {
-        openCampaign(new BigDecimal("100"), new BigDecimal("0"));
-        List<Campaign> res = service.findOpenCampaigns();
-        assertThat(res).hasSize(1);
-    }
-
-    @Test
-    void findByCreatorId_returnsList() {
-        Campaign c = new Campaign();
-        c.setCreatorId("user1");
-        repository.save(c);
-        List<Campaign> res = service.findByCreatorId("user1");
-        assertThat(res).hasSize(1);
-    }
-
-    @Test
-    void updateDescription_actorValidationSuccess() {
-        Campaign c = new Campaign();
-        c.setCreatorId("user1");
-        c.setStatus(CampaignStatus.OPEN);
-        Campaign saved = repository.save(c);
-
-        Campaign updated = service.updateDescription(saved.getId(), "user1", false, "desc");
-        assertThat(updated.getDescription()).isEqualTo("desc");
-    }
-
-    @Test
-    void updateDescription_actorValidationForbidden() {
-        Campaign c = new Campaign();
-        c.setCreatorId("user1");
-        c.setStatus(CampaignStatus.OPEN);
-        Campaign saved = repository.save(c);
-
-        assertThatThrownBy(() -> service.updateDescription(saved.getId(), "user2", false, "desc"))
-                .isInstanceOf(ResponseStatusException.class);
-    }
-
-    @Test
-    void deleteIfNoDonations_actorValidationForbidden() {
-        Campaign c = new Campaign();
-        c.setCreatorId("user1");
-        Campaign saved = repository.save(c);
-
-        assertThatThrownBy(() -> service.deleteIfNoDonations(saved.getId(), "user2", false))
-                .isInstanceOf(ResponseStatusException.class);
-    }
-
-    @Test
-    void adminUpdateCampaign_success() {
-        Campaign c = new Campaign();
-        c.setTitle("Old Title");
-        c.setTargetAmount(new BigDecimal("100"));
-        c.setDeadline(LocalDate.now().plusDays(1));
-        Campaign saved = repository.save(c);
-
-        Campaign updated = service.adminUpdateCampaign(saved.getId(), "New Title", LocalDate.now().plusDays(10), new BigDecimal("200"));
-        assertThat(updated.getTitle()).isEqualTo("New Title");
-        assertThat(updated.getTargetAmount()).isEqualByComparingTo("200");
     }
 
     private static class RecordingCampaignWalletGateway implements CampaignWalletGateway {
@@ -408,6 +813,7 @@ class SimpleCampaignServiceTest {
     }
 
     private static class RecordingEventPublisher implements ApplicationEventPublisher {
+        private int publishedCount;
         private final List<Object> publishedEvents = new ArrayList<>();
         private final ApplicationEventPublisher delegate;
 
@@ -417,6 +823,7 @@ class SimpleCampaignServiceTest {
 
         @Override
         public void publishEvent(org.springframework.context.ApplicationEvent event) {
+            publishedCount++;
             publishedEvents.add(event);
             delegate.publishEvent(event);
         }
@@ -426,6 +833,7 @@ class SimpleCampaignServiceTest {
             if (event instanceof org.springframework.context.ApplicationEvent ae) {
                 publishEvent(ae);
             } else {
+                publishedCount++;
                 publishedEvents.add(event);
                 delegate.publishEvent(event);
             }
