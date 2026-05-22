@@ -116,7 +116,7 @@ class CampaignControllerMvcTest {
 
         mockMvc.perform(post("/campaigns/create")
                         .with(csrf())
-                        .header("X-User-Id", "user-123")
+                        .header("X-User-Id", "spoofed-user")
                         .param("title", "Build Library")
                         .param("description", "Support our village library")
                         .param("deadline", LocalDate.now().plusDays(7).toString())
@@ -134,6 +134,7 @@ class CampaignControllerMvcTest {
                 .thenReturn(created);
 
         mockMvc.perform(post("/campaigns/create")
+                        .header("X-User-Id", "user-123")
                         .param("title", "New Campaign")
                         .param("description", "A valid description")
                         .param("deadline", LocalDate.now().plusDays(10).toString())
@@ -197,6 +198,7 @@ class CampaignControllerMvcTest {
                 .thenReturn(updated);
 
         mockMvc.perform(post("/campaigns/3/edit")
+                        .header("X-User-Id", "user-123")
                         .param("description", "Updated description"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("/campaigns/3*"));
@@ -221,6 +223,10 @@ class CampaignControllerMvcTest {
                 .when(campaignService).deleteIfNoDonations(anyLong(), any(), eq(false));
 
         mockMvc.perform(post("/campaigns/4/delete"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/campaigns/4/delete")
+                        .header("X-User-Id", "user-123"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("/campaigns*"));
     }

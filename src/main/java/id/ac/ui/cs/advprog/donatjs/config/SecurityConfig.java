@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import id.ac.ui.cs.advprog.donatjs.security.OAuth2LoginSuccessHandler;
+import id.ac.ui.cs.advprog.donatjs.service.CustomOAuth2UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Configuration
@@ -22,6 +23,9 @@ public class SecurityConfig {
     
     @Autowired(required = false)
     private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+
+    @Autowired(required = false)
+    private CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -60,6 +64,10 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2 -> {
                         oauth2.loginPage(LOGIN_URL);
+                        if (customOAuth2UserService != null) {
+                            oauth2.userInfoEndpoint(userInfo ->
+                                    userInfo.userService(customOAuth2UserService));
+                        }
                         if (oAuth2LoginSuccessHandler != null) {
                             oauth2.successHandler(oAuth2LoginSuccessHandler);
                         } else {

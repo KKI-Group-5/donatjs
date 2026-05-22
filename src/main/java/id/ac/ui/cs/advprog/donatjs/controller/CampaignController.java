@@ -71,7 +71,8 @@ public class CampaignController {
     @PostMapping("/create")
     public String createCampaign(@Valid @ModelAttribute("campaign") Campaign campaign,
                                  BindingResult bindingResult,
-                                 @RequestHeader(value = "X-User-Id", required = false) String userId) {
+                                 @RequestHeader(value = "X-User-Id", required = false) String userId,
+                                 Authentication authentication) {
         if (campaign.getDeadline() != null && !campaign.getDeadline().isAfter(LocalDate.now())) {
             bindingResult.rejectValue("deadline", "deadline.notFuture", "Deadline must be in the future");
         }
@@ -80,7 +81,7 @@ public class CampaignController {
             return "campaigns/create";
         }
 
-        campaignService.createCampaign(campaign, userId);
+        campaignService.createCampaign(campaign, resolveCurrentUserId(authentication, userId));
         return "redirect:/campaigns";
     }
 
@@ -123,7 +124,9 @@ public class CampaignController {
             return "campaigns/edit";
         }
 
-        Campaign updated = campaignService.updateDescription(id, userId, isAdmin(authentication), req.getDescription());
+        boolean admin = isAdmin(authentication);
+        Campaign updated = campaignService.updateDescription(
+                id, resolveActorId(authentication, userId, admin), admin, req.getDescription());
         return "redirect:/campaigns/" + updated.getId();
     }
 
@@ -133,7 +136,8 @@ public class CampaignController {
                                  Authentication authentication,
                                  RedirectAttributes redirectAttributes) {
         try {
-            campaignService.deleteIfNoDonations(id, userId, isAdmin(authentication));
+            boolean admin = isAdmin(authentication);
+            campaignService.deleteIfNoDonations(id, resolveActorId(authentication, userId, admin), admin);
             return "redirect:/campaigns";
         } catch (ResponseStatusException ex) {
             if (ex.getStatusCode() == HttpStatus.BAD_REQUEST) {
@@ -195,5 +199,30 @@ public class CampaignController {
         }
         int processed = campaignService.processExpiredCampaigns(LocalDate.now());
         return ResponseEntity.ok("Processed expired campaigns: " + processed);
+    }
+
+    private String resolveActorId(Authentication authentication, String fallbackUserId, boolean admin) {
+        if (admin) {
+            return null;
+        }
+        return resolveCurrentUserId(authentication, fallbackUserId);
+    }
+
+    private String resolveCurrentUserId(Authentication authentication, String fallbackUserId) {
+        if (isRealAuthentication(authentication)) {
+            return currentUserService.getCurrentUserId(authentication);
+        }
+        if (fallbackUserId != null && !fallbackUserId.isBlank()) {
+            return fallbackUserId;
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+    }
+
+    private boolean isRealAuthentication(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        Object principal = authentication.getPrincipal();
+        return !(principal instanceof String principalName && "anonymousUser".equals(principalName));
     }
 }

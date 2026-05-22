@@ -2,7 +2,7 @@ package id.ac.ui.cs.advprog.donatjs;
 
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
-import id.ac.ui.cs.advprog.donatjs.repository.InMemoryCampaignRepository;
+import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class CampaignIntegrationTest {
     private CampaignService campaignService;
 
     @Autowired
-    private InMemoryCampaignRepository campaignRepository;
+    private CampaignRepository campaignRepository;
 
     @BeforeEach
     void setUp() {

@@ -2,7 +2,6 @@ package id.ac.ui.cs.advprog.donatjs.repository;
 
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
-import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 
-@Repository
 public class InMemoryCampaignRepository implements CampaignRepository {
 
     private final Map<Long, Campaign> storage = new ConcurrentHashMap<>();
@@ -76,4 +74,3 @@ public class InMemoryCampaignRepository implements CampaignRepository {
         return Optional.ofNullable(holder[0]);
     }
 }
-
