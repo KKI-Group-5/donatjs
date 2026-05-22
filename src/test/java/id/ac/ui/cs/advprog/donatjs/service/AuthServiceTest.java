@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.donatjs.service;
 import id.ac.ui.cs.advprog.donatjs.dto.RegisterRequest;
 import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
+import id.ac.ui.cs.advprog.donatjs.repository.VerificationTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +29,12 @@ class AuthServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private VerificationTokenRepository tokenRepository;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private AuthService authService;
