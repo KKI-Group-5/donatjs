@@ -39,6 +39,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("io.micrometer:micrometer-registry-prometheus")
@@ -119,6 +120,12 @@ tasks.named<Jar>("jar") {
 
 tasks.bootRun {
     environment(env.allVariables())
+    // Pass -Pprofile to capture a JFR recording for profiling analysis:
+    //   ./gradlew bootRun -Pprofile
+    // Output: build/donatjs-profile.jfr — open with JDK Mission Control.
+    if (project.hasProperty("profile")) {
+        jvmArgs("-XX:StartFlightRecording=duration=120s,filename=build/donatjs-profile.jfr,settings=profile,name=donatjs")
+    }
 }
 
 tasks.jacocoTestReport {
