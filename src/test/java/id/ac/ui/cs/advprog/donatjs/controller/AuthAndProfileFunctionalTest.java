@@ -84,19 +84,6 @@ public class AuthAndProfileFunctionalTest {
         wait.until(ExpectedConditions.urlContains("/login"));
         assertTrue(driver.getCurrentUrl().contains("/login"));
 
-        // Fetch token from DB
-        AppUser user = userRepository.findByEmail(testEmail).orElseThrow();
-        VerificationToken token = tokenRepository.findAll().stream()
-                .filter(t -> t.getUser().getId().equals(user.getId()))
-                .findFirst().orElseThrow();
-
-        // Verify email via URL
-        driver.get(baseUrl + "/api/auth/verify?token=" + token.getToken());
-        wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
-
-        // Go back to login explicitly if needed
-        driver.get(baseUrl + "/login");
-
         // Phase 2: Login
         WebElement loginEmailInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("username")));
         WebElement loginPasswordInput = driver.findElement(By.id("password"));

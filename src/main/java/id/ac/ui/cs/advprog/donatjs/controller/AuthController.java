@@ -27,10 +27,24 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public org.springframework.web.servlet.ModelAndView verifyEmail(@RequestParam String token) {
-        boolean isVerified = authService.verifyEmail(token);
+    public org.springframework.web.servlet.ModelAndView showVerifyPage(@RequestParam(value = "token", required = false) String token) {
         org.springframework.web.servlet.ModelAndView mav = new org.springframework.web.servlet.ModelAndView("auth/verify");
-        mav.addObject("success", isVerified);
+        if (token != null) {
+            boolean isVerified = authService.verifyEmail(token);
+            mav.addObject("success", isVerified);
+        }
         return mav;
+    }
+
+    @PostMapping("/verify")
+    @ResponseBody
+    public ResponseEntity<String> verifyEmailPost(@RequestBody java.util.Map<String, String> payload) {
+        String token = payload.get("token");
+        boolean isVerified = authService.verifyEmail(token);
+        if (isVerified) {
+            return ResponseEntity.ok("Verified successfully");
+        } else {
+            return ResponseEntity.badRequest().body("Invalid or expired code");
+        }
     }
 }
