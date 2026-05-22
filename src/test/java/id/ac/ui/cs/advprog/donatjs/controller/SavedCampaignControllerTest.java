@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -85,6 +85,75 @@ class SavedCampaignControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.campaignId").value(CAMPAIGN_ID))
                 .andExpect(jsonPath("$.campaignTitle").value("Test Campaign"));
+    }
+
+    @Test
+    void saveCampaign_authenticatedUser_usesSessionIdentity() throws Exception {
+        // Override: requireCurrentUserId() returns a valid user — the session identity is used
+        // Must use doReturn style to avoid triggering the @BeforeEach throw stub during setup
+        doReturn(USER_ID).when(currentUserService).requireCurrentUserId();
+
+        SaveCampaignRequest request = SaveCampaignRequest.builder()
+                .userId("ignored-body-userId")
+                .campaignId(CAMPAIGN_ID)
+                .campaignTitle("Test Campaign")
+                .campaignOrganizer("Test Organizer")
+                .campaignImageUrl("https://example.com/img.jpg")
+                .build();
+
+        SavedCampaign saved = SavedCampaign.builder()
+                .id(1L).userId(USER_ID).campaignId(CAMPAIGN_ID)
+                .campaignTitle("Test Campaign").campaignOrganizer("Test Organizer")
+                .campaignImageUrl("https://example.com/img.jpg")
+                .savedAt(java.time.LocalDateTime.now()).build();
+
+        when(savedCampaignService.saveCampaign(eq(USER_ID), anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(saved);
+
+        mockMvc.perform(post("/api/saved-campaigns")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userId").value(USER_ID));
+    }
+
+    @Test
+    void saveCampaign_noAuthAndNullUserId_returnsUnauthorized() throws Exception {
+        // requireCurrentUserId() already throws (wired in @BeforeEach); userId in body is null
+        SaveCampaignRequest request = SaveCampaignRequest.builder()
+                .userId(null)
+                .campaignId(CAMPAIGN_ID)
+                .campaignTitle("Test Campaign")
+                .campaignOrganizer("Test Organizer")
+                .campaignImageUrl("https://example.com/img.jpg")
+                .build();
+
+        mockMvc.perform(post("/api/saved-campaigns")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Authentication required"));
+    }
+
+    @Test
+    void saveCampaign_noAuthAndBlankUserId_returnsUnauthorized() throws Exception {
+        // requireCurrentUserId() already throws (wired in @BeforeEach); userId in body is blank
+        SaveCampaignRequest request = SaveCampaignRequest.builder()
+                .userId("   ")
+                .campaignId(CAMPAIGN_ID)
+                .campaignTitle("Test Campaign")
+                .campaignOrganizer("Test Organizer")
+                .campaignImageUrl("https://example.com/img.jpg")
+                .build();
+
+        mockMvc.perform(post("/api/saved-campaigns")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Authentication required"));
     }
 
     @Test

@@ -29,6 +29,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         String password = appUser.getPassword() != null ? appUser.getPassword() : "";
         String role = appUser.isAdmin() ? "ROLE_ADMIN" : "ROLE_USER";
 
-        return new User(appUser.getEmail(), password, appUser.isVerified(), true, true, !appUser.isSuspended(), new ArrayList<>());
+        return new User(appUser.getEmail(), password, appUser.isVerified(), true, true, !appUser.isSuspended(), List.of(new SimpleGrantedAuthority(role)));
     }
 }

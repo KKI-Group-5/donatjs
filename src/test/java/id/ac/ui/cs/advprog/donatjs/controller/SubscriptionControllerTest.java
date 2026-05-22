@@ -166,6 +166,38 @@ class SubscriptionControllerTest {
     }
 
     @Test
+    void updateFrequency_notFound_returns404() throws Exception {
+        UpdateSubscriptionRequest request = new UpdateSubscriptionRequest(SubscriptionFrequency.WEEKLY);
+
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
+        when(subscriptionService.updateFrequency(SUB_ID, USER_ID, SubscriptionFrequency.WEEKLY))
+                .thenThrow(new EntityNotFoundException("Subscription not found: " + SUB_ID));
+
+        mockMvc.perform(patch("/api/subscriptions/{id}/frequency", SUB_ID)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Subscription not found: " + SUB_ID));
+    }
+
+    @Test
+    void updateFrequency_wrongUser_returnsForbidden() throws Exception {
+        UpdateSubscriptionRequest request = new UpdateSubscriptionRequest(SubscriptionFrequency.WEEKLY);
+
+        when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
+        when(subscriptionService.updateFrequency(SUB_ID, USER_ID, SubscriptionFrequency.WEEKLY))
+                .thenThrow(new IllegalStateException("You do not own this subscription"));
+
+        mockMvc.perform(patch("/api/subscriptions/{id}/frequency", SUB_ID)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("You do not own this subscription"));
+    }
+
+    @Test
     void getSubscriptionsByUser_returnsList() throws Exception {
         when(currentUserService.getCurrentUserId(any())).thenReturn(USER_ID);
         when(subscriptionService.getSubscriptionsByUser(USER_ID))
