@@ -26,6 +26,6 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         String password = appUser.getPassword() != null ? appUser.getPassword() : "";
 
-        return new User(appUser.getEmail(), password, new ArrayList<>());
+        return new User(appUser.getEmail(), password, appUser.isVerified(), true, true, !appUser.isSuspended(), new ArrayList<>());
     }
 }

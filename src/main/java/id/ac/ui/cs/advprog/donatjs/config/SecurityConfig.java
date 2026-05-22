@@ -10,12 +10,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import id.ac.ui.cs.advprog.donatjs.security.OAuth2LoginSuccessHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private static final String LOGIN_URL = "/login";
+    
+    @Autowired(required = false)
+    private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -52,10 +58,14 @@ public class SecurityConfig {
                         .permitAll()
                         .defaultSuccessUrl("/", false)
                 )
-                .oauth2Login(oauth2 -> oauth2
-                        .loginPage(LOGIN_URL)
-                        .defaultSuccessUrl("/", true)
-                );
+                .oauth2Login(oauth2 -> {
+                        oauth2.loginPage(LOGIN_URL);
+                        if (oAuth2LoginSuccessHandler != null) {
+                            oauth2.successHandler(oAuth2LoginSuccessHandler);
+                        } else {
+                            oauth2.defaultSuccessUrl("/", true);
+                        }
+                });
 
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
 
