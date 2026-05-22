@@ -645,9 +645,10 @@
                 entries.forEach(function (e) {
                     var medal = e.rank <= 3 ? medals[e.rank - 1] : '#' + e.rank;
                     var amount = 'Rp ' + Number(e.totalAmount).toLocaleString('id-ID');
+                    var name = e.displayName || e.userId;
                     html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--soft-gray);">'
                         + '<span style="font-size:18px;width:32px;text-align:center;flex-shrink:0;">' + medal + '</span>'
-                        + '<span style="flex:1;font-size:14px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.userId + '</span>'
+                        + '<span style="flex:1;font-size:14px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + name + '</span>'
                         + '<span style="font-size:14px;font-weight:700;color:var(--kelly-green);flex-shrink:0;">' + amount + '</span>'
                         + '</div>';
                 });
