@@ -177,6 +177,26 @@ class SubscriptionServiceImplTest {
     }
 
     @Test
+    void updateFrequency_notFound_throwsEntityNotFoundException() {
+        when(subscriptionRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class,
+                () -> subscriptionService.updateFrequency(99L, USER_ID, SubscriptionFrequency.WEEKLY));
+        verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void updateFrequency_monthly_advancesByOneMonth() {
+        when(subscriptionRepository.findById(1L)).thenReturn(Optional.of(activeSubscription));
+        when(subscriptionRepository.save(any(Subscription.class))).thenAnswer(i -> i.getArgument(0));
+
+        SubscriptionResponse response = subscriptionService.updateFrequency(1L, USER_ID, SubscriptionFrequency.MONTHLY);
+
+        assertEquals(SubscriptionFrequency.MONTHLY, response.getFrequency());
+        assertEquals(LocalDate.now().plusMonths(1), response.getNextDebitDate());
+    }
+
+    @Test
     void getSubscriptionsByUser_returnsList() {
         Subscription sub2 = Subscription.builder()
                 .id(2L).userId(USER_ID).campaignId(2L).amount(30_000L)

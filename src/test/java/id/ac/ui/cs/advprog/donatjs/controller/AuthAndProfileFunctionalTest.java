@@ -22,8 +22,10 @@ import id.ac.ui.cs.advprog.donatjs.model.VerificationToken;
 import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 public class AuthAndProfileFunctionalTest {
 
     @LocalServerPort
