@@ -246,28 +246,6 @@ class WalletServiceImplTest {
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         walletService.deductBalance("user-001", 100000.0, "");
-    void deductBalance_success_deductsBalanceAndSavesSubscriptionTransaction() {
-        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
-        when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        Wallet result = walletService.deductBalance("user-001", 50000.0, "Monthly Subscription");
-
-        assertThat(result.getBalance()).isEqualTo(950000.0);
-
-        ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
-        verify(transactionRepository).save(txCaptor.capture());
-        Transaction saved = txCaptor.getValue();
-        assertThat(saved.getType()).isEqualTo(TransactionType.SUBSCRIPTION);
-        assertThat(saved.getAmount()).isEqualTo(50000.0);
-        assertThat(saved.getDescription()).isEqualTo("Monthly Subscription");
-    }
-
-    @Test
-    void deductBalance_noDescription_usesDefaultDescription() {
-        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
-        when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        walletService.deductBalance("user-001", 50000.0, "");
 
         ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionRepository).save(txCaptor.capture());
@@ -287,7 +265,6 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void deductBalance_insufficientBalance_throwsIllegalStateException() {
     void deductBalance_insufficientBalance_throwsAndNothingSaved() {
         when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
 
