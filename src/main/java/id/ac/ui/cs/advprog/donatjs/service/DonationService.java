@@ -11,8 +11,10 @@ import id.ac.ui.cs.advprog.donatjs.model.Donation.DonationType;
 import id.ac.ui.cs.advprog.donatjs.model.Donation.PaymentMethod;
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
+import id.ac.ui.cs.advprog.donatjs.model.AppUser;
 import id.ac.ui.cs.advprog.donatjs.model.PaymentFee;
 import id.ac.ui.cs.advprog.donatjs.repository.DonationRepository;
+import id.ac.ui.cs.advprog.donatjs.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import org.springframework.data.domain.PageRequest;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -37,6 +40,7 @@ public class DonationService {
     private final CampaignService campaignService;
     private final WalletService walletService;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserRepository userRepository;
 
     @Transactional
     @SuppressWarnings("null")
@@ -163,9 +167,11 @@ public class DonationService {
         List<LeaderboardEntry> result = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
             Object[] r = rows.get(i);
+            String userId = (String) r[0];
             result.add(LeaderboardEntry.builder()
                     .rank(i + 1)
-                    .userId((String) r[0])
+                    .userId(userId)
+                    .displayName(resolveDisplayName(userId))
                     .totalAmount((Long) r[1])
                     .donationCount((Long) r[2])
                     .build());
@@ -179,15 +185,29 @@ public class DonationService {
         List<LeaderboardEntry> result = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
             Object[] r = rows.get(i);
+            String userId = (String) r[0];
             result.add(LeaderboardEntry.builder()
                     .rank(i + 1)
-                    .userId((String) r[0])
+                    .userId(userId)
+                    .displayName(resolveDisplayName(userId))
                     .totalAmount((Long) r[1])
                     .donationCount((Long) r[2])
                     .campaignCount((Long) r[3])
                     .build());
         }
         return result;
+    }
+
+    private String resolveDisplayName(String userId) {
+        if (userId == null) return "Anonymous";
+        try {
+            return userRepository.findById(UUID.fromString(userId))
+                    .map(AppUser::getName)
+                    .filter(n -> n != null && !n.isBlank())
+                    .orElse(userId);
+        } catch (IllegalArgumentException e) {
+            return userId; // not a valid UUID, show as-is
+        }
     }
 
     @Transactional

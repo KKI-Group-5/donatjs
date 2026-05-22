@@ -259,16 +259,20 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
-    function initial(userId) { return userId ? esc(userId.charAt(0).toUpperCase()) : '?'; }
+    function initial(userId) {
+        var name = userId || '?';
+        return esc(name.charAt(0).toUpperCase());
+    }
     function fmtRp(amount)   { return 'Rp ' + Number(amount).toLocaleString('id-ID'); }
 
     /* ── podium card HTML builder ── */
     function podiumCard(entry, medal, avatarClass) {
         var dc = Number(entry.donationCount);
+        var name = entry.displayName || entry.userId;
         return '<div class="podium-card">'
-            + '<div class="podium-avatar ' + avatarClass + '">' + initial(entry.userId) + '</div>'
+            + '<div class="podium-avatar ' + avatarClass + '">' + initial(name) + '</div>'
             + '<span class="podium-medal">' + medal + '</span>'
-            + '<div class="podium-name">' + esc(entry.userId) + '</div>'
+            + '<div class="podium-name">' + esc(name) + '</div>'
             + '<div class="podium-meta">' + dc + ' donation' + (dc !== 1 ? 's' : '') + '</div>'
             + '<div class="podium-amount">' + fmtRp(entry.totalAmount) + '</div>'
             + '<div class="podium-amount-label">total donated</div>'
@@ -300,11 +304,12 @@
     function buildList(rest) {
         return rest.map(function (e) {
             var dc = Number(e.donationCount), cc = Number(e.campaignCount);
+            var name = e.displayName || e.userId;
             return '<div class="leaderboard-row">'
                 + '<div class="rank-badge">' + e.rank + '</div>'
-                + '<div class="list-avatar">' + initial(e.userId) + '</div>'
+                + '<div class="list-avatar">' + initial(name) + '</div>'
                 + '<div class="donor-info">'
-                +   '<div class="donor-name">' + esc(e.userId) + '</div>'
+                +   '<div class="donor-name">' + esc(name) + '</div>'
                 +   '<div class="donor-meta">' + dc + ' donation' + (dc !== 1 ? 's' : '')
                 +     ' across ' + cc + ' campaign' + (cc !== 1 ? 's' : '') + '</div>'
                 + '</div>'

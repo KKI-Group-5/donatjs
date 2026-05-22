@@ -36,8 +36,13 @@ public class CampaignController {
     }
 
     @GetMapping
-    public String listCampaigns(Model model) {
-        model.addAttribute("campaigns", campaignService.findOpenCampaigns());
+    public String listCampaigns(
+            @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
+            Model model) {
+        model.addAttribute("campaigns", isAdmin
+                ? campaignService.findAllCampaigns()
+                : campaignService.findOpenCampaigns());
+        model.addAttribute("isAdmin", isAdmin);
         return "campaigns/list";
     }
 
@@ -64,10 +69,13 @@ public class CampaignController {
     }
 
     @GetMapping("/{id}")
-    public String campaignDetail(@PathVariable("id") Long id, Model model) {
+    public String campaignDetail(@PathVariable("id") Long id,
+                                 @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
+                                 Model model) {
         Campaign campaign = campaignService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("campaign", campaign);
+        model.addAttribute("isAdmin", isAdmin);
         return "campaigns/detail";
     }
 
