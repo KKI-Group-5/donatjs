@@ -89,7 +89,8 @@ class AuthControllerTest {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/auth/verify")
                         .param("token", "valid-token"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Email verified successfully! You can now log in."));
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("auth/verify"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("success", true));
     }
 
     @Test
@@ -98,7 +99,8 @@ class AuthControllerTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/auth/verify")
                         .param("token", "invalid-token"))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("Invalid or expired verification token."));
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("auth/verify"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("success", false));
     }
 }

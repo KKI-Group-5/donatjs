@@ -66,12 +66,16 @@ jobs:
           image: ${{ env.IMAGE }}:${{ github.sha }}
           region: ${{ env.REGION }}
           flags: "--allow-unauthenticated"
+          env_vars: |
+            SPRING_PROFILES_ACTIVE=supabase
+            MAIL_FROM_ADDRESS=onboarding@resend.dev
           secrets: |
             DB_URL=DB_URL:latest
             DB_USERNAME=DB_USERNAME:latest
             DB_PASSWORD=DB_PASSWORD:latest
             GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest
             GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest
+            RESEND_API_KEY=RESEND_API_KEY:latest
 
       - name: Print deployed URL
         run: echo "Deployed to ${{ steps.deploy.outputs.url }}"
