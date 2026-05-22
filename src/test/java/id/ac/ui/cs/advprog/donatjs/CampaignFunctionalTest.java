@@ -2,7 +2,7 @@ package id.ac.ui.cs.advprog.donatjs;
 
 import id.ac.ui.cs.advprog.donatjs.model.Campaign;
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
-import id.ac.ui.cs.advprog.donatjs.repository.InMemoryCampaignRepository;
+import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import net.serenitybdd.junit5.SerenityJUnit5Extension;
@@ -54,7 +54,7 @@ class CampaignFunctionalTest {
     int port;
 
     @Autowired
-    InMemoryCampaignRepository campaignRepository;
+    CampaignRepository campaignRepository;
 
     @BeforeEach
     void setUp() {

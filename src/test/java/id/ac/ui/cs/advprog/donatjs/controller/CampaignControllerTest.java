@@ -166,7 +166,8 @@ public class CampaignControllerTest {
     @Test
     void deleteCampaignSuccess() throws Exception {
         mockMvc.perform(post("/campaigns/1/delete")
-                        .with(csrf()))
+                        .with(csrf())
+                        .header("X-User-Id", "user123"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/campaigns"));
     }
@@ -176,7 +177,8 @@ public class CampaignControllerTest {
         doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete")).when(campaignService).deleteIfNoDonations(anyLong(), any(), anyBoolean());
 
         mockMvc.perform(post("/campaigns/1/delete")
-                        .with(csrf()))
+                        .with(csrf())
+                        .header("X-User-Id", "user123"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/campaigns/1"));
     }
