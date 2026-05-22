@@ -52,6 +52,9 @@ public class Campaign {
 
     private String creatorId;
 
+    @Column(length = 512)
+    private String imageUrl;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -134,6 +137,14 @@ public class Campaign {
 
     public void setCreatorId(String creatorId) {
         this.creatorId = creatorId;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public LocalDateTime getCreatedAt() {

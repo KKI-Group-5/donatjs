@@ -53,6 +53,12 @@
                 <span class="field-error" th:if="${#fields.hasErrors('targetAmount')}" th:errors="*{targetAmount}"></span>
             </div>
 
+            <div class="form-group">
+                <label for="imageUrl">Campaign Image URL <span style="font-weight:400; color:#9ca3af;">(optional)</span></label>
+                <input id="imageUrl" type="url" th:field="*{imageUrl}" placeholder="https://example.com/image.jpg"/>
+                <span class="field-error" th:if="${#fields.hasErrors('imageUrl')}" th:errors="*{imageUrl}"></span>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn-cta" style="height:44px; font-size:15px; padding:0 32px;">Create Campaign</button>
                 <a th:href="@{/campaigns}">

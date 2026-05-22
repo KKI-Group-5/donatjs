@@ -95,6 +95,16 @@
     <!-- Campaign list -->
     <div class="campaigns-grid" th:unless="${#lists.isEmpty(campaigns)}">
         <div class="campaign-card" th:each="campaign : ${campaigns}">
+            <img th:if="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-img"
+                 th:src="${campaign.imageUrl}"
+                 th:alt="${campaign.title}"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/>
+            <div th:if="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-img-placeholder" style="display:none;">&#128248;</div>
+            <div th:unless="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-img-placeholder">&#128248;</div>
+
             <div class="campaign-card-content" style="padding:24px; flex:1; display:flex; flex-direction:column; gap:10px;">
 
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
