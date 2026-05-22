@@ -15,8 +15,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     @SuppressWarnings("null")
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
-        // Apply status checks to all API endpoints
+        // Apply status checks to all endpoints, including page navigations
         registry.addInterceptor(userStatusInterceptor)
-                .addPathPatterns("/api/**");
+                .addPathPatterns("/**")
+                .excludePathPatterns("/css/**", "/js/**", "/images/**");
     }
 }

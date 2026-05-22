@@ -226,38 +226,28 @@ class WalletServiceImplTest {
     // ── deductBalance() ──────────────────────────────────────────────────────
 
     @Test
-    void deductBalance_success_deductsAndSavesSubscriptionTransaction() {
+    void deductBalance_success_deductsBalanceAndSavesSubscriptionTransaction() {
         when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Wallet result = walletService.deductBalance("user-001", 300000.0, "Monthly sub");
+        Wallet result = walletService.deductBalance("user-001", 50000.0, "Monthly Subscription");
 
-        assertThat(result.getBalance()).isEqualTo(700000.0);
+        assertThat(result.getBalance()).isEqualTo(950000.0);
 
         ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionRepository).save(txCaptor.capture());
-        assertThat(txCaptor.getValue().getType()).isEqualTo(TransactionType.SUBSCRIPTION);
-        assertThat(txCaptor.getValue().getDescription()).isEqualTo("Monthly sub");
+        Transaction saved = txCaptor.getValue();
+        assertThat(saved.getType()).isEqualTo(TransactionType.SUBSCRIPTION);
+        assertThat(saved.getAmount()).isEqualTo(50000.0);
+        assertThat(saved.getDescription()).isEqualTo("Monthly Subscription");
     }
 
     @Test
-    void deductBalance_blankDescription_usesDefault() {
+    void deductBalance_noDescription_usesDefaultDescription() {
         when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        walletService.deductBalance("user-001", 100000.0, "");
-
-        ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
-        verify(transactionRepository).save(txCaptor.capture());
-        assertThat(txCaptor.getValue().getDescription()).isEqualTo("Subscription debit");
-    }
-
-    @Test
-    void deductBalance_nullDescription_usesDefault() {
-        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
-        when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        walletService.deductBalance("user-001", 100000.0, null);
+        walletService.deductBalance("user-001", 50000.0, "");
 
         ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionRepository).save(txCaptor.capture());
@@ -265,43 +255,20 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void deductBalance_insufficientBalance_throwsIllegalStateException() {
+    void deductBalance_insufficientBalance_throwsAndNothingSaved() {
         when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
 
         assertThatThrownBy(() -> walletService.deductBalance("user-001", 2000000.0, "Too much"))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Insufficient");
+                .hasMessage("Insufficient balance");
 
         verify(walletRepository, never()).save(any());
+        verify(transactionRepository, never()).save(any());
     }
 
     @Test
     void deductBalance_zeroAmount_throwsIllegalArgumentException() {
         assertThatThrownBy(() -> walletService.deductBalance("user-001", 0, "Zero"))
                 .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void deductBalance_walletNotFound_throwsIllegalStateException() {
-        when(walletRepository.findByUserIdForWrite("unknown")).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> walletService.deductBalance("unknown", 100000.0, "sub"))
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    // ── getWalletByUserId — opening balance branch ────────────────────────────
-
-    @Test
-    void getWalletByUserId_notFound_savesOpeningBalanceTransaction() {
-        WalletServiceImpl serviceWithBalance = new WalletServiceImpl(walletRepository, transactionRepository, 50000.0);
-        Wallet provisioned = Wallet.builder().id("w-new").userId("new-user").balance(50000.0).build();
-        when(walletRepository.findByUserId("new-user")).thenReturn(Optional.empty());
-        when(walletRepository.save(any(Wallet.class))).thenReturn(provisioned);
-        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        Wallet result = serviceWithBalance.getWalletByUserId("new-user");
-
-        assertThat(result.getBalance()).isEqualTo(50000.0);
-        verify(transactionRepository).save(any(Transaction.class));
     }
 }

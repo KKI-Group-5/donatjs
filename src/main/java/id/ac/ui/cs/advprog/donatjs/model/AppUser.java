@@ -39,6 +39,9 @@ public class AppUser {
     @Column(nullable = false)
     private boolean admin = false;
 
+    @Column(nullable = false)
+    private boolean isVerified = true;
+
     public AppUser() {
     }
 
@@ -83,4 +86,7 @@ public class AppUser {
 
     public boolean isAdmin() { return admin; }
     public void setAdmin(boolean admin) { this.admin = admin; }
+
+    public boolean isVerified() { return isVerified; }
+    public void setVerified(boolean verified) { isVerified = verified; }
 }

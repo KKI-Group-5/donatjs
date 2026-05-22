@@ -28,6 +28,9 @@ public class EndToEndModerationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private id.ac.ui.cs.advprog.donatjs.service.EmailService emailService;
+
     private AppUser testUser;
 
     @BeforeEach
