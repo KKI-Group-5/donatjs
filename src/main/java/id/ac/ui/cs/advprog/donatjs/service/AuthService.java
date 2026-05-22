@@ -44,15 +44,14 @@ public class AuthService {
 
         AppUser savedUser = userRepository.save(newUser);
 
-        // Generate and save verification token
-        String token = UUID.randomUUID().toString();
+        // Generate and save verification token (6-digit OTP)
+        String token = String.format("%06d", new java.util.Random().nextInt(1000000));
         VerificationToken vToken = new VerificationToken(token, savedUser);
         tokenRepository.save(vToken);
 
         // Send verification email
-        String verifyUrl = "http://localhost:8080/api/auth/verify?token=" + token;
-        emailService.sendEmail(savedUser.getEmail(), "Verify your DonatJS account",
-                "Please click the following link to verify your email address:\n\n" + verifyUrl);
+        emailService.sendEmail(savedUser.getEmail(), "Your DonatJS Verification Code",
+                "Your verification code is:\n\n" + token + "\n\nPlease enter this code on the website to verify your account.");
 
         return savedUser;
     }

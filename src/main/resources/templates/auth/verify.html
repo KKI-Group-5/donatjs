@@ -14,33 +14,22 @@
 <main class="auth-container">
     <div class="auth-card" style="text-align: center;">
         <div class="auth-header" style="margin-bottom: 2rem;">
-            <div th:if="${success}">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--kelly-green-hover)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <h1 class="auth-title">Email Verified!</h1>
-                <p class="auth-subtitle">Your email address has been successfully verified.</p>
-            </div>
-            
-            <div th:unless="${success}">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <h1 class="auth-title">Verification Failed</h1>
-                <p class="auth-subtitle">The verification link is invalid, malformed, or has expired.</p>
-            </div>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--kelly-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h1 class="auth-title">Verify Your Email</h1>
+            <p class="auth-subtitle">We sent a 6-digit code to your email. Please enter it below.</p>
         </div>
 
-        <a th:if="${success}" th:href="@{/login}" style="text-decoration: none;">
-            <button class="btn-auth">Proceed to Login</button>
-        </a>
+        <div id="statusBox" class="status-message"></div>
 
-        <a th:unless="${success}" th:href="@{/register}" style="text-decoration: none;">
-            <button class="btn-auth">Register Again</button>
-        </a>
+        <form id="verifyForm">
+            <div class="form-group">
+                <input type="text" id="otpCode" class="form-input" placeholder="123456" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;" required/>
+            </div>
+            <button type="submit" class="btn-auth">Verify Code</button>
+        </form>
 
         <div class="auth-footer" style="margin-top: 1.5rem;">
             Need help? <a th:href="@{/support}" class="auth-link">Contact Support</a>
@@ -49,6 +38,45 @@
 </main>
 
 <div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+    document.getElementById('verifyForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const statusBox = document.getElementById('statusBox');
+        const code = document.getElementById('otpCode').value;
+
+        fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ token: code })
+        })
+        .then(async response => {
+            const message = await response.text();
+            statusBox.style.display = 'block';
+            if (response.ok) {
+                statusBox.style.background = '#ECFDF5';
+                statusBox.style.color = '#065F46';
+                statusBox.textContent = 'Verification successful! Redirecting to login...';
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            } else {
+                statusBox.style.background = '#FEE2E2';
+                statusBox.style.color = '#991B1B';
+                statusBox.textContent = 'Error: ' + message;
+            }
+        })
+        .catch(error => {
+            statusBox.style.display = 'block';
+            statusBox.style.background = '#FEE2E2';
+            statusBox.style.color = '#991B1B';
+            statusBox.textContent = 'Something went wrong. Please try again.';
+        });
+    });
+</script>
 
 </body>
 </html>
