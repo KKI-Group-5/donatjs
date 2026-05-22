@@ -18,16 +18,19 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * End-to-end functional tests using Serenity BDD and REST Assured.
@@ -40,14 +43,29 @@ import static org.hamcrest.Matchers.notNullValue;
 @Import(CampaignFunctionalTest.PermitAllSecurityConfig.class)
 class CampaignFunctionalTest {
 
+    static final String ADMIN_USER = "testadmin";
+    static final String ADMIN_PASS = "testpass";
+
     @TestConfiguration
     static class PermitAllSecurityConfig {
+        @Bean
+        @Primary
+        UserDetailsService testUserDetailsService() {
+            UserDetails admin = User.builder()
+                    .username(ADMIN_USER)
+                    .password("{noop}" + ADMIN_PASS)
+                    .roles("ADMIN")
+                    .build();
+            return new InMemoryUserDetailsManager(admin);
+        }
+
         @Bean
         @Order(1)
         SecurityFilterChain functionalTestChain(HttpSecurity http) throws Exception {
             http.securityMatcher("/**")
                     .authorizeHttpRequests(a -> a.anyRequest().permitAll())
-                    .csrf(c -> c.disable());
+                    .csrf(c -> c.disable())
+                    .httpBasic(Customizer.withDefaults());
             return http.build();
         }
     }
@@ -77,7 +95,7 @@ class CampaignFunctionalTest {
     @DisplayName("Admin can access full campaign list including non-open campaigns")
     void adminCampaignListPage_isAccessible() {
         SerenityRest.given()
-                .header("X-Admin", "true")
+                .auth().preemptive().basic(ADMIN_USER, ADMIN_PASS)
                 .when().get("/campaigns")
                 .then().statusCode(200);
     }
@@ -100,7 +118,7 @@ class CampaignFunctionalTest {
         Campaign campaign = givenAWaitingCampaign("Approval Functional Test");
 
         SerenityRest.given()
-                .header("X-Admin", "true")
+                .auth().preemptive().basic(ADMIN_USER, ADMIN_PASS)
                 .contentType(ContentType.JSON)
                 .body("{\"approve\":true}")
                 .when().post("/campaigns/" + campaign.getId() + "/moderate")
@@ -114,7 +132,7 @@ class CampaignFunctionalTest {
         Campaign campaign = givenAWaitingCampaign("Rejection Functional Test");
 
         SerenityRest.given()
-                .header("X-Admin", "true")
+                .auth().preemptive().basic(ADMIN_USER, ADMIN_PASS)
                 .contentType(ContentType.JSON)
                 .body("{\"approve\":false}")
                 .when().post("/campaigns/" + campaign.getId() + "/moderate")
@@ -169,7 +187,7 @@ class CampaignFunctionalTest {
         Campaign campaign = givenAnOpenCampaign("Fraud Functional Test", new BigDecimal("500"));
 
         SerenityRest.given()
-                .header("X-Admin", "true")
+                .auth().preemptive().basic(ADMIN_USER, ADMIN_PASS)
                 .when().post("/campaigns/" + campaign.getId() + "/fraud")
                 .then()
                 .statusCode(200);
@@ -190,7 +208,7 @@ class CampaignFunctionalTest {
     @DisplayName("Admin can trigger deadline automation")
     void adminRunsDeadlineAutomation_returnsOk() {
         SerenityRest.given()
-                .header("X-Admin", "true")
+                .auth().preemptive().basic(ADMIN_USER, ADMIN_PASS)
                 .when().post("/campaigns/deadline-automation/run")
                 .then()
                 .statusCode(200);

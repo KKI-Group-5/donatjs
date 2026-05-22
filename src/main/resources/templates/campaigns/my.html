@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DonatJS | My Campaigns</title>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <style>
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-open     { background: #dcfce7; color: #065f46; }
+        .status-waiting  { background: #fef9c3; color: #78350f; }
+        .status-rejected { background: #fee2e2; color: #7f1d1d; }
+        .status-closed   { background: #e0f2fe; color: #075985; }
+        .status-fraud    { background: #fee2e2; color: #7f1d1d; }
+        .status-cancelled{ background: #f3f4f6; color: #374151; }
+        .status-deleted  { background: #f3f4f6; color: #374151; }
+
+        .progress-bar-track {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--kelly-green, #16a34a);
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .btn-secondary {
+            height: 36px;
+            padding: 0 16px;
+            border: 1px solid var(--soft-gray, #e5e7eb);
+            border-radius: 8px;
+            background: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary, #6b7280);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .btn-secondary:hover { border-color: #9ca3af; }
+
+        .btn-danger {
+            height: 36px;
+            padding: 0 16px;
+            border: none;
+            border-radius: 8px;
+            background: #dc2626;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-danger:hover { background: #b91c1c; }
+
+        .waiting-note {
+            font-size: 12px;
+            color: #92400e;
+            background: #fef9c3;
+            border: 1px solid #fcd34d;
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<section class="campaigns-section">
+    <div class="section-header">
+        <h2 class="section-title">My Campaigns</h2>
+        <p class="section-subtitle">Campaigns you have created</p>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <a th:href="@{/campaigns}" style="font-size:14px; color:var(--kelly-green, #16a34a); font-weight:600;">&#8592; All campaigns</a>
+        <a th:href="@{/campaigns/create}">
+            <button class="btn-cta" style="height:44px; font-size:15px; padding:0 24px;">+ New Campaign</button>
+        </a>
+    </div>
+
+    <!-- Campaign list -->
+    <div class="campaigns-grid" th:unless="${#lists.isEmpty(campaigns)}">
+        <div class="campaign-card" th:each="campaign : ${campaigns}">
+            <div class="campaign-card-content" style="padding:24px; flex:1; display:flex; flex-direction:column; gap:10px;">
+
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span class="status-badge"
+                          th:classappend="${campaign.status.name() == 'OPEN'}      ? ' status-open'      :
+                                          (${campaign.status.name() == 'WAITING'}  ? ' status-waiting'   :
+                                          (${campaign.status.name() == 'REJECTED'} ? ' status-rejected'  :
+                                          (${campaign.status.name() == 'CLOSED'}   ? ' status-closed'    :
+                                          (${campaign.status.name() == 'FRAUD'}    ? ' status-fraud'     :
+                                          (${campaign.status.name() == 'CANCELLED'}? ' status-cancelled' : ' status-deleted')))))"
+                          th:text="${campaign.status}">WAITING</span>
+                </div>
+
+                <h3 class="campaign-card-title" th:text="${campaign.title}">Campaign Title</h3>
+
+                <span class="campaign-card-organizer"
+                      th:text="'Deadline: ' + ${campaign.deadline}">Deadline</span>
+
+                <!-- Fundraising progress -->
+                <div style="font-size:13px; color:var(--text-secondary); display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span>Raised: <strong th:text="'Rp ' + ${#numbers.formatDecimal(campaign.totalRaised, 0, 'COMMA', 0, 'POINT')}">0</strong></span>
+                        <span>Target: <strong th:text="'Rp ' + ${#numbers.formatDecimal(campaign.targetAmount, 0, 'COMMA', 0, 'POINT')}">0</strong></span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill"
+                             th:style="${'width:' + (campaign.targetAmount.signum() > 0 ? campaign.totalRaised.doubleValue() * 100.0 / campaign.targetAmount.doubleValue() : 0) + '%'}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="waiting-note" th:if="${campaign.status.name() == 'WAITING'}">
+                    Awaiting admin approval before it appears publicly.
+                </div>
+                <div class="waiting-note" th:if="${campaign.status.name() == 'REJECTED'}"
+                     style="background:#fef2f2; border-color:#fca5a5; color:#7f1d1d;">
+                    This campaign was rejected by an admin.
+                </div>
+            </div>
+
+            <div class="campaign-card-actions" style="padding:0 24px 20px; display:flex; flex-direction:column; gap:8px;">
+                <a th:href="@{|/campaigns/${campaign.id}|}" style="flex:1;">
+                    <button class="btn-cta" style="height:40px; font-size:14px; padding:0 20px; width:100%;">View Details</button>
+                </a>
+                <div style="display:flex; gap:8px;">
+                    <a th:href="@{|/campaigns/${campaign.id}/edit|}" style="flex:1;">
+                        <button class="btn-secondary" style="width:100%;">Edit</button>
+                    </a>
+                    <form th:action="@{|/campaigns/${campaign.id}/delete|}" method="post" style="flex:1;">
+                        <button type="submit" class="btn-danger" style="width:100%;"
+                                onclick="return confirm('Delete this campaign? This cannot be undone.')">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div th:if="${#lists.isEmpty(campaigns)}"
+         style="text-align:center; padding:64px 0; color:var(--text-secondary);">
+        <p style="font-size:18px; font-weight:500;">You haven't created any campaigns yet.</p>
+        <p style="margin-top:8px;">
+            <a th:href="@{/campaigns/create}" style="color:var(--kelly-green, #16a34a); font-weight:600;">Start your first campaign →</a>
+        </p>
+    </div>
+</section>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

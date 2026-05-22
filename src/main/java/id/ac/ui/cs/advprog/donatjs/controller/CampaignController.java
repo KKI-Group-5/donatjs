@@ -6,8 +6,10 @@ import id.ac.ui.cs.advprog.donatjs.dto.CampaignModerationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationUpdateRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.UpdateCampaignDescriptionRequest;
 import id.ac.ui.cs.advprog.donatjs.service.CampaignService;
+import id.ac.ui.cs.advprog.donatjs.service.CurrentUserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -30,20 +32,34 @@ import java.time.LocalDate;
 public class CampaignController {
 
     private final CampaignService campaignService;
+    private final CurrentUserService currentUserService;
 
-    public CampaignController(CampaignService campaignService) {
+    public CampaignController(CampaignService campaignService, CurrentUserService currentUserService) {
         this.campaignService = campaignService;
+        this.currentUserService = currentUserService;
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
     @GetMapping
-    public String listCampaigns(
-            @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
-            Model model) {
-        model.addAttribute("campaigns", isAdmin
+    public String listCampaigns(Authentication authentication, Model model) {
+        boolean admin = isAdmin(authentication);
+        model.addAttribute("campaigns", admin
                 ? campaignService.findAllCampaigns()
                 : campaignService.findOpenCampaigns());
-        model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("isAdmin", admin);
         return "campaigns/list";
+    }
+
+    @GetMapping("/my")
+    public String myCampaigns(Authentication authentication, Model model) {
+        String userId = currentUserService.getCurrentUserId(authentication);
+        model.addAttribute("campaigns", campaignService.findByCreatorId(userId));
+        model.addAttribute("isAdmin", isAdmin(authentication));
+        return "campaigns/my";
     }
 
     @GetMapping("/create")
@@ -70,12 +86,12 @@ public class CampaignController {
 
     @GetMapping("/{id}")
     public String campaignDetail(@PathVariable("id") Long id,
-                                 @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
+                                 Authentication authentication,
                                  Model model) {
         Campaign campaign = campaignService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("campaign", campaign);
-        model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("isAdmin", isAdmin(authentication));
         return "campaigns/detail";
     }
 
@@ -98,7 +114,7 @@ public class CampaignController {
                                     @Valid @ModelAttribute("req") UpdateCampaignDescriptionRequest req,
                                     BindingResult bindingResult,
                                     @RequestHeader(value = "X-User-Id", required = false) String userId,
-                                    @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
+                                    Authentication authentication,
                                     Model model) {
         if (bindingResult.hasErrors()) {
             Campaign campaign = campaignService.findById(id)
@@ -107,17 +123,17 @@ public class CampaignController {
             return "campaigns/edit";
         }
 
-        Campaign updated = campaignService.updateDescription(id, userId, isAdmin, req.getDescription());
+        Campaign updated = campaignService.updateDescription(id, userId, isAdmin(authentication), req.getDescription());
         return "redirect:/campaigns/" + updated.getId();
     }
 
     @PostMapping("/{id}/delete")
     public String deleteCampaign(@PathVariable("id") Long id,
                                  @RequestHeader(value = "X-User-Id", required = false) String userId,
-                                 @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
+                                 Authentication authentication,
                                  RedirectAttributes redirectAttributes) {
         try {
-            campaignService.deleteIfNoDonations(id, userId, isAdmin);
+            campaignService.deleteIfNoDonations(id, userId, isAdmin(authentication));
             return "redirect:/campaigns";
         } catch (ResponseStatusException ex) {
             if (ex.getStatusCode() == HttpStatus.BAD_REQUEST) {
@@ -134,9 +150,9 @@ public class CampaignController {
     @PostMapping("/{id}/moderate")
     @ResponseBody
     public ResponseEntity<Campaign> moderateCampaign(@PathVariable("id") Long id,
-                                                     @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
+                                                     Authentication authentication,
                                                      @Valid @RequestBody CampaignModerationRequest request) {
-        if (!isAdmin) {
+        if (!isAdmin(authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin only endpoint");
         }
         return ResponseEntity.ok(campaignService.moderateCampaign(id, request.getApprove()));
@@ -145,9 +161,9 @@ public class CampaignController {
     @PostMapping("/{id}/admin-edit")
     @ResponseBody
     public ResponseEntity<Campaign> adminEditCampaign(@PathVariable("id") Long id,
-                                                      @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin,
+                                                      Authentication authentication,
                                                       @RequestBody AdminUpdateCampaignRequest request) {
-        if (!isAdmin) {
+        if (!isAdmin(authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin only endpoint");
         }
         return ResponseEntity.ok(campaignService.adminUpdateCampaign(
@@ -164,8 +180,8 @@ public class CampaignController {
     @PostMapping("/{id}/fraud")
     @ResponseBody
     public ResponseEntity<Campaign> markFraud(@PathVariable("id") Long id,
-                                              @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin) {
-        if (!isAdmin) {
+                                              Authentication authentication) {
+        if (!isAdmin(authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin only endpoint");
         }
         return ResponseEntity.ok(campaignService.markAsFraud(id));
@@ -173,13 +189,11 @@ public class CampaignController {
 
     @PostMapping("/deadline-automation/run")
     @ResponseBody
-    public ResponseEntity<String> runDeadlineAutomation(
-            @RequestHeader(value = "X-Admin", defaultValue = "false") boolean isAdmin) {
-        if (!isAdmin) {
+    public ResponseEntity<String> runDeadlineAutomation(Authentication authentication) {
+        if (!isAdmin(authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin only endpoint");
         }
         int processed = campaignService.processExpiredCampaigns(LocalDate.now());
         return ResponseEntity.ok("Processed expired campaigns: " + processed);
     }
 }
-

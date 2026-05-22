@@ -9,6 +9,9 @@ import id.ac.ui.cs.advprog.donatjs.event.CampaignPayoutRequestedEvent;
 import id.ac.ui.cs.advprog.donatjs.event.CampaignRefundRequestedEvent;
 import id.ac.ui.cs.advprog.donatjs.event.RejectedCampaignEvent;
 import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,20 +37,57 @@ public class SimpleCampaignService implements CampaignService {
     private final CampaignWalletGateway campaignWalletGateway;
     private final ApplicationEventPublisher eventPublisher;
     private final BigDecimal nearTargetThreshold;
+    private final Counter campaignsCreatedCounter;
+    private final Counter campaignsApprovedCounter;
+    private final Counter campaignsRejectedCounter;
+    private final Counter donationsRecordedCounter;
+    private final Counter fraudMarkedCounter;
+    private final Timer donationTimer;
 
     public SimpleCampaignService(CampaignRepository campaignRepository) {
-        this(campaignRepository, new NoopCampaignWalletGateway(), event -> {}, new BigDecimal("0.98"));
+        this(campaignRepository, new NoopCampaignWalletGateway(), event -> {}, new BigDecimal("0.98"), null);
+    }
+
+    public SimpleCampaignService(CampaignRepository campaignRepository,
+                                 CampaignWalletGateway campaignWalletGateway,
+                                 ApplicationEventPublisher eventPublisher,
+                                 BigDecimal nearTargetThreshold) {
+        this(campaignRepository, campaignWalletGateway, eventPublisher, nearTargetThreshold, null);
     }
 
     @Autowired
     public SimpleCampaignService(CampaignRepository campaignRepository,
                                  CampaignWalletGateway campaignWalletGateway,
                                  ApplicationEventPublisher eventPublisher,
-                                 @Value("${donatjs.email.near-target-threshold:0.98}") BigDecimal nearTargetThreshold) {
+                                 @Value("${donatjs.email.near-target-threshold:0.98}") BigDecimal nearTargetThreshold,
+                                 MeterRegistry meterRegistry) {
         this.campaignRepository = campaignRepository;
         this.campaignWalletGateway = campaignWalletGateway;
         this.eventPublisher = eventPublisher;
         this.nearTargetThreshold = nearTargetThreshold;
+        if (meterRegistry != null) {
+            this.campaignsCreatedCounter = Counter.builder("campaign.created")
+                    .description("Total number of campaigns created").register(meterRegistry);
+            this.campaignsApprovedCounter = Counter.builder("campaign.moderated")
+                    .tag("decision", "approved")
+                    .description("Total number of campaigns approved").register(meterRegistry);
+            this.campaignsRejectedCounter = Counter.builder("campaign.moderated")
+                    .tag("decision", "rejected")
+                    .description("Total number of campaigns rejected").register(meterRegistry);
+            this.donationsRecordedCounter = Counter.builder("campaign.donation.recorded")
+                    .description("Total number of donations recorded").register(meterRegistry);
+            this.fraudMarkedCounter = Counter.builder("campaign.fraud.marked")
+                    .description("Total number of campaigns marked as fraud").register(meterRegistry);
+            this.donationTimer = Timer.builder("campaign.donation.duration")
+                    .description("Time taken to process a donation").register(meterRegistry);
+        } else {
+            this.campaignsCreatedCounter = null;
+            this.campaignsApprovedCounter = null;
+            this.campaignsRejectedCounter = null;
+            this.donationsRecordedCounter = null;
+            this.fraudMarkedCounter = null;
+            this.donationTimer = null;
+        }
     }
 
     @Override
@@ -66,6 +106,7 @@ public class SimpleCampaignService implements CampaignService {
         campaign.setStatus(CampaignStatus.WAITING);
         campaign.setCreatorId(creatorId);
         Campaign saved = campaignRepository.save(campaign);
+        if (campaignsCreatedCounter != null) campaignsCreatedCounter.increment();
         log.info("Campaign {} created by creator '{}' with title '{}'",
                 saved.getId(), creatorId, saved.getTitle());
         return saved;
@@ -148,9 +189,11 @@ public class SimpleCampaignService implements CampaignService {
             eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, saved.getId(), previous, next));
         }
         if (!approve) {
+            if (campaignsRejectedCounter != null) campaignsRejectedCounter.increment();
             log.info("Campaign {} REJECTED (creator='{}')", id, campaign.getCreatorId());
             eventPublisher.publishEvent(new RejectedCampaignEvent(this, saved, campaign.getCreatorId()));
         } else {
+            if (campaignsApprovedCounter != null) campaignsApprovedCounter.increment();
             log.info("Campaign {} APPROVED (now OPEN)", id);
         }
         return saved;
@@ -192,6 +235,7 @@ public class SimpleCampaignService implements CampaignService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Donation amount must be positive");
         }
         boolean[] nearTargetJustTriggered = {false};
+        long startNanos = System.nanoTime();
         // computeAndSave ensures the read-check-write cycle is atomic, preventing
         // lost-update races when concurrent donations arrive for the same campaign.
         Campaign updated = campaignRepository.computeAndSave(id, campaign -> {
@@ -216,6 +260,8 @@ public class SimpleCampaignService implements CampaignService {
             return campaign;
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        if (donationTimer != null) donationTimer.record(System.nanoTime() - startNanos, java.util.concurrent.TimeUnit.NANOSECONDS);
+        if (donationsRecordedCounter != null) donationsRecordedCounter.increment();
         if (updated.getStatus() == CampaignStatus.CLOSED) {
             eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, updated.getId(), CampaignStatus.OPEN, CampaignStatus.CLOSED));
             log.info("Campaign {} auto-closed: target reached (raised={}, target={})",
@@ -252,6 +298,7 @@ public class SimpleCampaignService implements CampaignService {
         CampaignStatus previous = campaign.getStatus();
         campaign.setStatus(CampaignStatus.FRAUD);
         Campaign saved = campaignRepository.save(campaign);
+        if (fraudMarkedCounter != null) fraudMarkedCounter.increment();
         log.warn("Campaign {} marked as FRAUD", id);
         eventPublisher.publishEvent(new CampaignFraudDetectedEvent(this, saved));
         eventPublisher.publishEvent(new CampaignStatusChangedEvent(this, saved.getId(), previous, CampaignStatus.FRAUD));
