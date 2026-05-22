@@ -28,11 +28,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         if (email != null) {
             AppUser user = userRepository.findByEmail(email).orElse(null);
-            if (user != null) {
-                if (user.getBio() == null || user.getDateOfBirth() == null || user.getBio().isBlank()) {
-                    response.sendRedirect("/profile?incomplete=true");
-                    return;
-                }
+            if (user != null && (user.getBio() == null || user.getDateOfBirth() == null || user.getBio().isBlank())) {
+                response.sendRedirect("/profile?incomplete=true");
+                return;
             }
         }
         response.sendRedirect("/");

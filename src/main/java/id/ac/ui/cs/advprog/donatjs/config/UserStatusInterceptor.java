@@ -49,10 +49,12 @@ public class UserStatusInterceptor implements HandlerInterceptor {
             throw new UserStatusException("Action blocked: Your account is suspended. Please contact the administrator.");
         }
 
-        // Block users with incomplete profiles from specific action modules and force redirect
+        return handleIncompleteProfile(user, uri, method, response, isStateChanging);
+    }
+
+    private boolean handleIncompleteProfile(AppUser user, String uri, String method, HttpServletResponse response, boolean isStateChanging) throws java.io.IOException {
         if (user.getBio() == null || user.getDateOfBirth() == null || user.getBio().isBlank()) {
-            // Allow exceptions for profile completion endpoints and login/logout
-            if (uri.equals("/profile") || uri.startsWith("/api/profile") || uri.startsWith("/api/auth") || uri.equals("/login") || uri.equals("/logout") || uri.equals("/error") || uri.equals("/register")) {
+            if (isExemptUri(uri)) {
                 return true;
             }
             if ("GET".equalsIgnoreCase(method) && !uri.startsWith("/api/")) {
@@ -63,8 +65,11 @@ public class UserStatusInterceptor implements HandlerInterceptor {
                 throw new ProfileIncompleteException("Action blocked: Please complete your profile (Bio and Date of Birth) before performing this action.");
             }
         }
-
         return true;
+    }
+
+    private boolean isExemptUri(String uri) {
+        return uri.equals("/profile") || uri.startsWith("/api/profile") || uri.startsWith("/api/auth") || uri.equals("/login") || uri.equals("/logout") || uri.equals("/error") || uri.equals("/register");
     }
 
     private String getEmailFromPrincipal(Object principal) {
