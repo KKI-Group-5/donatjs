@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.donatjs.event;
 
 import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
+import id.ac.ui.cs.advprog.donatjs.repository.SavedCampaignRepository;
 import id.ac.ui.cs.advprog.donatjs.service.SubscriptionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.when;
 class CampaignStatusChangedEventListenerTest {
 
     @Mock private SubscriptionService subscriptionService;
+    @Mock private SavedCampaignRepository savedCampaignRepository;
 
     @InjectMocks
     private CampaignStatusChangedEventListener listener;
@@ -71,5 +73,57 @@ class CampaignStatusChangedEventListenerTest {
                 this, 7L, CampaignStatus.WAITING, CampaignStatus.OPEN));
 
         verify(subscriptionService, never()).terminateActiveSubscriptionsForCampaign(anyLong(), anyString());
+    }
+
+    // ── M5: saved-campaign orphan cleanup ───────────────────────────────
+
+    @Test
+    void deleted_removesSavedCampaignOrphans() {
+        when(savedCampaignRepository.deleteByCampaignId("7")).thenReturn(3L);
+
+        listener.removeOrphanSavedCampaigns(new CampaignStatusChangedEvent(
+                this, 7L, CampaignStatus.OPEN, CampaignStatus.DELETED));
+
+        verify(savedCampaignRepository).deleteByCampaignId("7");
+    }
+
+    @Test
+    void cancelled_removesSavedCampaignOrphans() {
+        listener.removeOrphanSavedCampaigns(new CampaignStatusChangedEvent(
+                this, 7L, CampaignStatus.OPEN, CampaignStatus.CANCELLED));
+
+        verify(savedCampaignRepository).deleteByCampaignId("7");
+    }
+
+    @Test
+    void fraud_removesSavedCampaignOrphans() {
+        listener.removeOrphanSavedCampaigns(new CampaignStatusChangedEvent(
+                this, 7L, CampaignStatus.OPEN, CampaignStatus.FRAUD));
+
+        verify(savedCampaignRepository).deleteByCampaignId("7");
+    }
+
+    @Test
+    void rejected_removesSavedCampaignOrphans() {
+        listener.removeOrphanSavedCampaigns(new CampaignStatusChangedEvent(
+                this, 7L, CampaignStatus.WAITING, CampaignStatus.REJECTED));
+
+        verify(savedCampaignRepository).deleteByCampaignId("7");
+    }
+
+    @Test
+    void closed_doesNotRemoveSavedCampaigns_healthyEndOfLife() {
+        listener.removeOrphanSavedCampaigns(new CampaignStatusChangedEvent(
+                this, 7L, CampaignStatus.OPEN, CampaignStatus.CLOSED));
+
+        verify(savedCampaignRepository, never()).deleteByCampaignId(anyString());
+    }
+
+    @Test
+    void open_doesNotRemoveSavedCampaigns_normalApprovalTransition() {
+        listener.removeOrphanSavedCampaigns(new CampaignStatusChangedEvent(
+                this, 7L, CampaignStatus.WAITING, CampaignStatus.OPEN));
+
+        verify(savedCampaignRepository, never()).deleteByCampaignId(anyString());
     }
 }

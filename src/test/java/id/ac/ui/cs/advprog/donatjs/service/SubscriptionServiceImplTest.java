@@ -158,6 +158,17 @@ class SubscriptionServiceImplTest {
     }
 
     @Test
+    void updateFrequency_daily_advancesByOneDay() {
+        when(subscriptionRepository.findById(1L)).thenReturn(Optional.of(activeSubscription));
+        when(subscriptionRepository.save(any(Subscription.class))).thenAnswer(i -> i.getArgument(0));
+
+        SubscriptionResponse response = subscriptionService.updateFrequency(1L, USER_ID, SubscriptionFrequency.DAILY);
+
+        assertEquals(SubscriptionFrequency.DAILY, response.getFrequency());
+        assertEquals(LocalDate.now().plusDays(1), response.getNextDebitDate());
+    }
+
+    @Test
     void updateFrequency_wrongUser_throwsException() {
         when(subscriptionRepository.findById(1L)).thenReturn(Optional.of(activeSubscription));
 

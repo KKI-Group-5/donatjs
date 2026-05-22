@@ -209,6 +209,214 @@ These changes preserve the core architectural principle — a single Spring Boot
 
 ---
 
+### Tutorial B (Individual Work)
+
+#### Detailed Container Diagram
+
+This diagram focuses on the **Authentication & User Profile** module's placement within the DonatJS ecosystem and its external dependencies.
+
+```mermaid
+C4Container
+    title Container Diagram — Authentication & User Profile Context
+
+    Person(user, "User", "A person who registers, logs in, and manages their profile.")
+    Person(admin, "Administrator", "Manages user accounts, flags, and resolves disputes.")
+
+    System_Boundary(donatjs_platform, "DonatJS Platform") {
+        Container(webapp, "Spring Boot Web App", "Java, Spring Boot", "Handles identity management, profile aggregation, and moderation logic.")
+        ContainerDb(database, "PostgreSQL (Supabase)", "Managed DB", "Stores user credentials, profile data, suspension status, and dispute records.")
+    }
+
+    System_Ext(google, "Google OAuth2", "Identity Provider for social sign-in.")
+
+    Rel(user, webapp, "Registers, Logs in, Updates Profile", "HTTPS/TLS")
+    Rel(admin, webapp, "Suspends accounts, Resolves disputes", "HTTPS/TLS")
+    Rel(webapp, google, "Authenticates users via", "OAuth2 / OIDC")
+    Rel(webapp, database, "Persists user and dispute data", "JDBC")
+```
+
+#### Component Diagram
+
+The following diagram breaks down the internal components of the **Authentication & User Profile** module within the Spring Boot application.
+
+```mermaid
+C4Component
+    title Component Diagram — Authentication & User Profile Module
+
+    Container_Boundary(auth_profile_module, "Authentication & User Profile Module") {
+        Component(auth_ctrl, "AuthController / PageController", "Spring MVC", "Handles login, registration, and social auth redirects.")
+        Component(profile_ctrl, "ProfileController", "Spring MVC Rest", "Handles profile management and activity aggregation.")
+        Component(dispute_ctrl, "DisputeController", "Spring MVC Rest", "Allows suspended users to submit appeals.")
+        Component(mod_ctrl, "UserModerationController", "Spring MVC Rest", "Admin interface for flagging and suspending users.")
+
+        Component(auth_svc, "AuthService", "Spring Service", "Handles registration logic and password hashing.")
+        Component(profile_svc, "ProfileService", "Spring Service", "Aggregates data from other modules and updates user info.")
+        Component(mod_svc, "UserModerationService", "Spring Service", "Implements suspension logic and threshold monitoring.")
+        Component(dispute_svc, "DisputeService", "Spring Service", "Manages the lifecycle of user disputes.")
+
+        Component(user_repo, "UserRepository", "Spring Data JPA", "Data access for AppUser entity.")
+        Component(dispute_repo, "DisputeRepository", "Spring Data JPA", "Data access for Dispute entity.")
+        
+        Component(event_pub, "ApplicationEventPublisher", "Spring Context", "Publishes ProfileUpdatedEvent for cross-module consistency.")
+    }
+
+    Rel(auth_ctrl, auth_svc, "Uses")
+    Rel(profile_ctrl, profile_svc, "Uses")
+    Rel(dispute_ctrl, dispute_svc, "Uses")
+    Rel(mod_ctrl, mod_svc, "Uses")
+
+    Rel(auth_svc, user_repo, "Reads/Writes")
+    Rel(profile_svc, user_repo, "Reads/Writes")
+    Rel(profile_svc, event_pub, "Publishes ProfileUpdatedEvent")
+    Rel(mod_svc, user_repo, "Updates status")
+    Rel(dispute_svc, dispute_repo, "Reads/Writes")
+```
+
+#### Code Diagrams (C4 Level 4)
+
+The following diagrams provide a "zoom-in" view of the internal implementation details (classes, interfaces, and their relationships) for the components within the **Authentication & User Profile** module.
+
+##### 1. Code Diagram: Authentication & Registration Implementation
+This diagram zooms into the `AuthService` and its implementation details for handling user identity and credentials.
+
+```mermaid
+classDiagram
+    class AuthController {
+        -AuthService authService
+        +loginPage()
+        +registerPage()
+        +register(RegisterRequest)
+    }
+    class AuthService {
+        <<interface>>
+        +registerUser(RegisterRequest) AppUser
+    }
+    class AuthServiceImpl {
+        -UserRepository userRepository
+        -PasswordEncoder passwordEncoder
+        +registerUser(RegisterRequest) AppUser
+    }
+    class AppUser {
+        +UUID id
+        +String email
+        +String password
+        +String name
+        +boolean isAdmin
+    }
+    class RegisterRequest {
+        +String email
+        +String password
+        +String name
+    }
+
+    AuthController --> AuthService : uses
+    AuthService <|.. AuthServiceImpl : implements
+    AuthServiceImpl --> UserRepository : uses
+    AuthServiceImpl ..> AppUser : creates
+    AuthServiceImpl ..> RegisterRequest : processes
+```
+
+##### 2. Code Diagram: User Profile Management & DTO Mapping
+This diagram shows how the `ProfileService` aggregates data from multiple modules to build the `UserProfileDTO`.
+
+```mermaid
+classDiagram
+    class ProfileController {
+        -ProfileService profileService
+        +viewProfile()
+        +updateProfile(UpdateProfileRequest)
+    }
+    class ProfileService {
+        -UserRepository userRepository
+        -CampaignService campaignService
+        -DonationService donationService
+        -ApplicationEventPublisher eventPublisher
+        +getUserProfile(email) UserProfileDTO
+        +updateUserProfile(email, UpdateProfileRequest) UserProfileDTO
+    }
+    class UserProfileDTO {
+        +String name
+        +String email
+        +List~Campaign~ createdCampaigns
+        +List~Donation~ donations
+        +boolean isSuspended
+    }
+    class ProfileUpdatedEvent {
+        +String userId
+        +String newName
+    }
+
+    ProfileController --> ProfileService : uses
+    ProfileService ..> UserProfileDTO : builds
+    ProfileService ..> ProfileUpdatedEvent : publishes
+    ProfileService --> UserRepository : fetches user
+```
+
+##### 3. Code Diagram: User Moderation & Fraud Detection
+This diagram illustrates the implementation of the fraud threshold logic and account flagging within the `UserModerationService`.
+
+```mermaid
+classDiagram
+    class UserModerationService {
+        <<interface>>
+        +reportFraudActivity(email, reason)
+        +suspendUser(userId)
+        +getFlaggedUsers() List~AppUser~
+    }
+    class UserModerationServiceImpl {
+        -int FRAUD_THRESHOLD = 3
+        -UserRepository userRepository
+        -AdminNotificationRepository notificationRepo
+        +reportFraudActivity(email, reason)
+    }
+    class AdminNotification {
+        +Long id
+        +String userEmail
+        +String message
+        +boolean read
+    }
+
+    UserModerationService <|.. UserModerationServiceImpl : implements
+    UserModerationServiceImpl --> UserRepository : updates AppUser
+    UserModerationServiceImpl --> AdminNotificationRepository : creates
+    AdminNotificationRepository ..> AdminNotification : persists
+```
+
+##### 4. Code Diagram: Dispute & Appeal System
+This diagram shows the domain model and service logic for the dispute resolution process.
+
+```mermaid
+classDiagram
+    class DisputeController {
+        -DisputeService disputeService
+        +submitAppeal(reason)
+        +resolveDispute(disputeId, approve)
+    }
+    class DisputeService {
+        <<interface>>
+        +submitDispute(userId, reason) DisputeDTO
+        +resolveDispute(disputeId, approve) DisputeDTO
+    }
+    class Dispute {
+        +UUID id
+        +AppUser user
+        +String reason
+        +String status
+        +String adminNotes
+    }
+    class DisputeRepository {
+        <<interface>>
+        +findByUser(AppUser) List~Dispute~
+        +findByStatus(status) List~Dispute~
+    }
+
+    DisputeController --> DisputeService : uses
+    DisputeService --> DisputeRepository : uses
+    DisputeRepository ..> Dispute : manages
+    Dispute "n" -- "1" AppUser : relates to
+```
+
+
 ## Work Plan & Milestones
 This project is divided into 5 main milestones. The tasks below detail the development plan for each module. Please add your specific module tasks and assign a Person In Charge (PIC) for each item.
 

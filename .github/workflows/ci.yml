@@ -1,21 +1,81 @@
 name: Continuous Integration (CI)
+
 on:
   push:
   pull_request:
+
 jobs:
   test:
-    name: Run tests
+    name: Run unit & integration tests
     runs-on: ubuntu-22.04
     steps:
       - name: Check out the Git repository
         uses: actions/checkout@v4
+
       - name: Set up Java toolchain
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "21"
           cache: "gradle"
-      - name: Run unit tests
+
+      - name: Run unit and integration tests with Jacoco coverage
         run: |
           chmod +x ./gradlew
-          ./gradlew test
+          ./gradlew test jacocoTestReport
+
+      - name: Upload JUnit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: build/reports/tests/test/
+
+      - name: Upload Jacoco HTML coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: build/reports/jacoco/test/html/
+
+      - name: Upload Jacoco XML (for code quality tools)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-xml
+          path: build/reports/jacoco/test/jacocoTestReport.xml
+
+  functional-test:
+    name: Run functional tests (Serenity)
+    runs-on: ubuntu-22.04
+    needs: test
+    steps:
+      - name: Check out the Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java toolchain
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "gradle"
+
+      - name: Run Serenity functional tests
+        run: |
+          chmod +x ./gradlew
+          ./gradlew functionalTest
+
+      - name: Upload Serenity functional test report (JUnit XML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: serenity-functional-test-report
+          path: build/reports/tests/functionalTest/
+
+      - name: Upload Serenity JSON results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: serenity-json-results
+          path: target/site/serenity/
+          if-no-files-found: ignore

@@ -4,30 +4,96 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>DonatJS | Campaigns</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <style>
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .status-open     { background: #dcfce7; color: #065f46; }
+        .status-waiting  { background: #fef9c3; color: #78350f; }
+        .status-rejected { background: #fee2e2; color: #7f1d1d; }
+        .status-closed   { background: #e0f2fe; color: #075985; }
+        .status-fraud    { background: #fee2e2; color: #7f1d1d; }
+        .status-cancelled{ background: #f3f4f6; color: #374151; }
+        .status-deleted  { background: #f3f4f6; color: #374151; }
+
+        .admin-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .btn-approve {
+            flex: 1;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: #16a34a;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-approve:hover { background: #15803d; }
+        .btn-reject {
+            flex: 1;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: #dc2626;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-reject:hover { background: #b91c1c; }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: #fff;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 2000;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .toast.show    { opacity: 1; }
+        .toast.success { background: #0f7b3a; }
+        .toast.error   { background: #b02121; }
+    </style>
 </head>
 <body>
 
 <div th:replace="~{fragments/header :: header}"></div>
 
-<!-- 75% Milestone: Deadline Automation Feature Info -->
-<div style="background-color: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #00aa00;">
-    <strong>✓ 75% Milestone Features Active:</strong>
-    <ul>
-        <li><strong>Deadline Automation:</strong> Campaigns automatically close/cancel at midnight (no manual action needed)</li>
-        <li><strong>Payout/Refund Events:</strong> Successful campaigns trigger creator payouts; failed campaigns trigger donor refunds</li>
-        <li><strong>Fraud Detection:</strong> Admins can mark campaigns as fraudulent, triggering automatic refunds</li>
-        <li><strong>Event Notifications:</strong> All events are logged and can integrate with external notification systems</li>
-    </ul>
-</div>
-
 <section class="campaigns-section">
     <div class="section-header">
-        <h2 class="section-title">Open Campaigns</h2>
-        <p class="section-subtitle">Support causes that matter to you</p>
+        <h2 class="section-title" th:text="${isAdmin} ? 'All Campaigns (Admin View)' : 'Open Campaigns'">Campaigns</h2>
+        <p class="section-subtitle" th:text="${isAdmin} ? 'Approve or reject waiting campaigns below.' : 'Support causes that matter to you'">
+            Support causes that matter to you
+        </p>
     </div>
 
-    <div style="display:flex; justify-content:flex-end;">
+    <div style="display:flex; justify-content:flex-end; gap:12px; align-items:center;">
+        <a th:if="${isLoggedIn}" th:href="@{/campaigns/my}"
+           style="font-size:14px; font-weight:600; color:var(--kelly-green); white-space:nowrap;">
+            My Campaigns
+        </a>
         <a th:href="@{/campaigns/create}">
             <button class="btn-cta" style="height:44px; font-size:15px; padding:0 24px;">+ New Campaign</button>
         </a>
@@ -36,6 +102,18 @@
     <div class="campaigns-grid" th:unless="${#lists.isEmpty(campaigns)}">
         <div class="campaign-card" th:each="campaign : ${campaigns}">
             <div class="campaign-card-content" style="padding:24px; flex:1; display:flex; flex-direction:column; gap:12px;">
+
+                <!-- Status badge — always shown to admin, hidden to regular users (they only see OPEN) -->
+                <span th:if="${isAdmin}"
+                      class="status-badge"
+                      th:classappend="${campaign.status.name() == 'OPEN'}      ? ' status-open'      :
+                                      (${campaign.status.name() == 'WAITING'}  ? ' status-waiting'   :
+                                      (${campaign.status.name() == 'REJECTED'} ? ' status-rejected'  :
+                                      (${campaign.status.name() == 'CLOSED'}   ? ' status-closed'    :
+                                      (${campaign.status.name() == 'FRAUD'}    ? ' status-fraud'     :
+                                      (${campaign.status.name() == 'CANCELLED'}? ' status-cancelled' : ' status-deleted')))))"
+                      th:text="${campaign.status}">OPEN</span>
+
                 <h3 class="campaign-card-title" th:text="${campaign.title}">Campaign Title</h3>
                 <span class="campaign-card-organizer"
                       th:text="'Deadline: ' + ${campaign.deadline}">Deadline</span>
@@ -44,10 +122,22 @@
                     <div>Raised: <strong th:text="'Rp ' + ${#numbers.formatDecimal(campaign.totalRaised, 0, 'COMMA', 0, 'POINT')}">0</strong></div>
                 </div>
             </div>
-            <div class="campaign-card-actions" style="padding:0 24px 20px;">
+
+            <div class="campaign-card-actions" style="padding:0 24px 20px; display:flex; flex-direction:column; gap:8px;">
                 <a th:href="@{|/campaigns/${campaign.id}|}" style="flex:1;">
                     <button class="btn-cta" style="height:40px; font-size:14px; padding:0 20px; width:100%;">View Details</button>
                 </a>
+
+                <!-- Approve / Reject — only shown to admin for WAITING campaigns -->
+                <div class="admin-actions"
+                     th:if="${isAdmin and campaign.status.name() == 'WAITING'}">
+                    <button class="btn-approve"
+                            th:onclick="'moderate(' + ${campaign.id} + ', true)'"
+                            type="button">Approve</button>
+                    <button class="btn-reject"
+                            th:onclick="'moderate(' + ${campaign.id} + ', false)'"
+                            type="button">Reject</button>
+                </div>
             </div>
         </div>
     </div>
@@ -61,7 +151,40 @@
     </div>
 </section>
 
+<div id="toast" class="toast"></div>
+
 <div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+    function showToast(msg, type) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast ' + type + ' show';
+        setTimeout(function () { t.className = 'toast'; }, 3000);
+    }
+
+    function moderate(campaignId, approve) {
+        var action = approve ? 'Approve' : 'Reject';
+        if (!confirm(action + ' this campaign?')) return;
+
+        fetch('/campaigns/' + campaignId + '/moderate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approve: approve })
+        })
+        .then(function (r) {
+            if (r.ok) {
+                showToast('Campaign ' + (approve ? 'approved' : 'rejected') + ' successfully.', 'success');
+                setTimeout(function () { location.reload(); }, 800);
+            } else if (r.status === 403) {
+                showToast('You do not have permission to do that.', 'error');
+            } else {
+                showToast('Action failed. Please try again.', 'error');
+            }
+        })
+        .catch(function () { showToast('Network error. Please try again.', 'error'); });
+    }
+</script>
 
 </body>
 </html>

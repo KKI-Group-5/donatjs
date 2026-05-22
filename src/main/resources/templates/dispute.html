@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dispute Suspension | DonatJS</title>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="profile-page">
+    <div class="profile-header">
+        <h1>Appeal Suspension</h1>
+        <p style="color: var(--text-secondary);">Submit a request to reinstate your account.</p>
+    </div>
+
+    <div class="profile-container" style="display: block; max-width: 800px; margin: 0 auto;">
+        <div class="glass-card">
+            <h3 style="margin-bottom: 20px; font-size: 20px; color: var(--text-primary);">Submit Appeal</h3>
+            <form id="disputeForm">
+                <div class="form-group">
+                    <label for="inputReason">Why should your account be reinstated?</label>
+                    <textarea id="inputReason" class="form-control" required 
+                              placeholder="Please provide details about why your account was suspended by mistake..."></textarea>
+                </div>
+                <button type="submit" id="btnSubmit" class="btn-primary">Submit Appeal</button>
+            </form>
+        </div>
+
+        <div class="activity-section" style="margin-top: 40px;">
+            <h3>My Previous Appeals</h3>
+            <div id="disputeList" class="activity-list">
+                <div th:if="${#lists.isEmpty(myDisputes)}">
+                    <p style="color: var(--text-light); font-size: 14px;">No appeals submitted yet.</p>
+                </div>
+                <div th:each="d : ${myDisputes}" class="activity-item">
+                    <div class="activity-details">
+                        <span class="activity-title" th:text="${d.reason}">Reason</span>
+                        <span class="activity-meta" th:text="'Status: ' + ${d.status} + ' | Submitted: ' + ${#temporals.format(d.createdAt, 'dd MMM yyyy HH:mm')}">Status</span>
+                        <p th:if="${d.adminNotes}" class="activity-meta" style="margin-top: 8px; font-style: italic;" 
+                           th:text="'Admin Note: ' + ${d.adminNotes}">Admin Note</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    function showToast(message, type) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function() {
+            toast.className = 'toast';
+        }, 3000);
+    }
+
+    document.getElementById('disputeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmit');
+        const reason = document.getElementById('inputReason').value;
+
+        btn.textContent = 'Submitting...';
+        btn.disabled = true;
+
+        fetch('/api/disputes/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(res => {
+            if (res.ok) {
+                showToast('Appeal submitted successfully!', 'success');
+                setTimeout(() => globalThis.location.reload(), 1500);
+            } else {
+                return res.json().then(errData => {
+                    throw new Error(errData.message || 'Failed to submit appeal');
+                });
+            }
+        })
+        .catch(err => {
+            showToast(err.message, 'error');
+            btn.textContent = 'Submit Appeal';
+            btn.disabled = false;
+        });
+    });
+</script>
+</body>
+</html>

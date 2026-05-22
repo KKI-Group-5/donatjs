@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.donatjs.service;
 
 import id.ac.ui.cs.advprog.donatjs.dto.CreateDonationRequest;
 import id.ac.ui.cs.advprog.donatjs.dto.DonationResponse;
+import id.ac.ui.cs.advprog.donatjs.dto.LeaderboardEntry;
 import id.ac.ui.cs.advprog.donatjs.event.RejectedDonationEvent;
 import id.ac.ui.cs.advprog.donatjs.exception.InsufficientBalanceException;
 import id.ac.ui.cs.advprog.donatjs.model.Donation;
@@ -19,7 +20,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -150,6 +154,40 @@ public class DonationService {
     @Transactional(readOnly = true)
     public long countRejectedDonationsByUser(String userId) {
         return donationRepository.countByUserIdAndStatus(userId, DonationStatus.REJECTED);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LeaderboardEntry> getCampaignLeaderboard(Long campaignId, int limit) {
+        List<Object[]> rows = donationRepository.findTopDonatorsByCampaign(
+                campaignId, PageRequest.of(0, limit));
+        List<LeaderboardEntry> result = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            Object[] r = rows.get(i);
+            result.add(LeaderboardEntry.builder()
+                    .rank(i + 1)
+                    .userId((String) r[0])
+                    .totalAmount((Long) r[1])
+                    .donationCount((Long) r[2])
+                    .build());
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<LeaderboardEntry> getOverallLeaderboard(int limit) {
+        List<Object[]> rows = donationRepository.findOverallTopDonators(PageRequest.of(0, limit));
+        List<LeaderboardEntry> result = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            Object[] r = rows.get(i);
+            result.add(LeaderboardEntry.builder()
+                    .rank(i + 1)
+                    .userId((String) r[0])
+                    .totalAmount((Long) r[1])
+                    .donationCount((Long) r[2])
+                    .campaignCount((Long) r[3])
+                    .build());
+        }
+        return result;
     }
 
     @Transactional
