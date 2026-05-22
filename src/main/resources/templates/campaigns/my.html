@@ -73,6 +73,25 @@
             padding: 6px 10px;
             margin-top: 8px;
         }
+
+        .campaign-card-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            display: block;
+        }
+        .campaign-card-img-placeholder {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 40px;
+        }
     </style>
 </head>
 <body>
@@ -95,6 +114,16 @@
     <!-- Campaign list -->
     <div class="campaigns-grid" th:unless="${#lists.isEmpty(campaigns)}">
         <div class="campaign-card" th:each="campaign : ${campaigns}">
+            <img th:if="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-img"
+                 th:src="${campaign.imageUrl}"
+                 th:alt="${campaign.title}"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/>
+            <div th:if="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-img-placeholder" style="display:none;">&#128248;</div>
+            <div th:unless="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-img-placeholder">&#128248;</div>
+
             <div class="campaign-card-content" style="padding:24px; flex:1; display:flex; flex-direction:column; gap:10px;">
 
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
