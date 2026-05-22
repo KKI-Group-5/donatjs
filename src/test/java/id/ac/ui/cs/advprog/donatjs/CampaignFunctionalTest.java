@@ -26,9 +26,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-
 /**
  * End-to-end functional tests using Serenity BDD and REST Assured.
  * Exercises the full HTTP API layer against a running Spring Boot server.

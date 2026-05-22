@@ -14,6 +14,7 @@
 
     <div class="profile-page">
         <div id="suspendedBanner" class="suspended-banner"></div>
+        <div id="incompleteBanner" class="suspended-banner" style="display: none; background-color: var(--warning); color: #000;"></div>
 
         <div class="profile-header">
             <h1>My Profile</h1>
@@ -113,6 +114,7 @@
                 .then(data => {
                     populateForm(data);
                     checkSuspended(data);
+                    checkIncompleteProfile(data);
                     renderList(data.createdCampaigns, 'campaignsList', renderCampaign, 'No campaigns created yet.');
                     renderList(data.donations, 'donationsList', renderDonation, 'No donations made yet.');
                     renderList(data.subscriptions, 'subscriptionsList', renderSubscription, 'No active subscriptions.');
@@ -162,6 +164,16 @@
                 banner.style.backgroundColor = 'var(--warning)';
                 banner.style.color = '#fff';
                 banner.textContent = `Account Flagged: Your account is under review due to ${data.rejectedDonationCount + data.rejectedCampaignCount} violations. Please be careful.`;
+            }
+        }
+
+        function checkIncompleteProfile(data) {
+            const urlParams = new URLSearchParams(globalThis.location.search);
+            const isIncomplete = urlParams.get('incomplete');
+            if (isIncomplete === 'true' && (!data.bio || !data.dateOfBirth)) {
+                const banner = document.getElementById('incompleteBanner');
+                banner.style.display = 'block';
+                banner.textContent = 'Please complete your Date of Birth and Bio to continue using DonatJS.';
             }
         }
 

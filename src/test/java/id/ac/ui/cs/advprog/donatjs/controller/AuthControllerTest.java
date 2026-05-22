@@ -81,4 +81,26 @@ class AuthControllerTest {
                         .content(invalidJson))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void verify_ValidToken_Returns200() throws Exception {
+        when(authService.verifyEmail("valid-token")).thenReturn(true);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/auth/verify")
+                        .param("token", "valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("auth/verify"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("success", true));
+    }
+
+    @Test
+    void verify_InvalidToken_Returns400() throws Exception {
+        when(authService.verifyEmail("invalid-token")).thenReturn(false);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/auth/verify")
+                        .param("token", "invalid-token"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("auth/verify"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("success", false));
+    }
 }
