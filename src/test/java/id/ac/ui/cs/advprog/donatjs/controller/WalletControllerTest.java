@@ -74,6 +74,34 @@ class WalletControllerTest {
     }
 
     @Test
+    void topUp_success_redirectsWithSuccessMessage() throws Exception {
+        when(walletService.topUp(TEST_USER_ID, 250000.0, ""))
+                .thenReturn(Wallet.builder().id("w-demo").userId(TEST_USER_ID).balance(1750000.0).build());
+
+        mockMvc.perform(post("/wallet/top-up")
+                        .param("amount", "250000")
+                        .param("description", ""))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/wallet"))
+                .andExpect(flash().attributeExists("successMessage"));
+
+        verify(walletService).topUp(TEST_USER_ID, 250000.0, "");
+    }
+
+    @Test
+    void topUp_illegalAmount_redirectsWithErrorMessage() throws Exception {
+        when(walletService.topUp(eq(TEST_USER_ID), anyDouble(), anyString()))
+                .thenThrow(new IllegalArgumentException("Top up amount must be positive."));
+
+        mockMvc.perform(post("/wallet/top-up")
+                        .param("amount", "0")
+                        .param("description", ""))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/wallet"))
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
     void withdraw_insufficientBalance_redirectsWithErrorMessage() throws Exception {
         when(walletService.withdraw(eq(TEST_USER_ID), anyDouble(), anyString()))
                 .thenThrow(new InsufficientBalanceException("Insufficient balance"));

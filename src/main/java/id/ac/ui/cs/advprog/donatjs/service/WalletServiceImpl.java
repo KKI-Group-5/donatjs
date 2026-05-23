@@ -64,6 +64,36 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     @SuppressWarnings("null")
+    public Wallet topUp(String userId, double amount, String description) {
+        long amt = IdrMoney.wholeRupiah(amount);
+        if (amt <= 0) {
+            throw new IllegalArgumentException("Top up amount must be a positive whole rupiah amount.");
+        }
+        Wallet wallet = walletRepository.findByUserIdForWrite(userId)
+                .orElseGet(() -> getWalletByUserId(userId));
+        long bal = IdrMoney.wholeRupiah(wallet.getBalance());
+        long newBal = Math.addExact(bal, amt);
+        wallet.setBalance(IdrMoney.asDouble(newBal));
+        walletRepository.save(wallet);
+
+        transactionRepository.save(Transaction.builder()
+                .wallet(wallet)
+                .amount(IdrMoney.asDouble(amt))
+                .type(TransactionType.DEPOSIT)
+                .description(description != null && !description.isBlank()
+                        ? description
+                        : "Wallet top up")
+                .timestamp(LocalDateTime.now())
+                .build());
+
+        log.info("[DEMO] Wallet top up of Rp {} processed for user {}. New balance: Rp {}",
+                amt, userId, newBal);
+        return wallet;
+    }
+
+    @Override
+    @Transactional
+    @SuppressWarnings("null")
     public Wallet deductBalance(String userId, double amount, String description) {
         long amt = IdrMoney.wholeRupiah(amount);
         if (amt <= 0) {

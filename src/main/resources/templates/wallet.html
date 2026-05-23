@@ -69,14 +69,13 @@
         .tx-amount.positive { color: var(--kelly-green); font-weight: 600; }
         .tx-amount.negative { color: #e74c3c; font-weight: 600; }
 
-        /* Withdraw form */
-        .withdraw-form {
+        .wallet-action-form {
             margin-top: var(--spacing-lg);
             border-top: 1px solid var(--soft-gray);
             padding-top: var(--spacing-lg);
             text-align: left;
         }
-        .withdraw-form h3 {
+        .wallet-action-form h3 {
             font-size: 18px;
             font-weight: 600;
             color: var(--text-primary);
@@ -162,10 +161,21 @@
     <div class="balance-card">
         <div class="balance-label">Total Available Balance</div>
         <div class="balance-amount" th:text="'Rp ' + ${#numbers.formatDecimal(wallet.balance, 0, 'COMMA', 0, 'POINT')}">Rp 0</div>
-        <button class="btn-cta" style="width: 100%; margin-bottom: 12px;">Top Up Wallet</button>
+
+        <div class="wallet-action-form">
+            <h3>Top Up Wallet</h3>
+            <form th:action="@{/wallet/top-up}" method="post">
+                <div class="form-group">
+                    <label for="topUpAmount">Amount (Rp)</label>
+                    <input type="number" id="topUpAmount" name="amount" min="1" step="1" inputmode="numeric"
+                           placeholder="e.g. 100000" required/>
+                </div>
+                <button type="submit" class="btn-cta" style="width: 100%;">Top Up</button>
+            </form>
+        </div>
 
         <!-- Withdraw Funds Form -->
-        <div class="withdraw-form">
+        <div class="wallet-action-form">
             <h3>Withdraw Funds</h3>
             <form th:action="@{/wallet/withdraw}" method="post">
                 <div class="form-group">

@@ -64,6 +64,42 @@ class WalletServiceImplTest {
     }
 
     @Test
+    void topUp_success_addsBalanceAndSavesDepositTransaction() {
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Wallet result = walletService.topUp("user-001", 300000.0, "Presentation demo");
+
+        assertThat(result.getBalance()).isEqualTo(1300000.0);
+
+        ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(txCaptor.capture());
+        Transaction saved = txCaptor.getValue();
+        assertThat(saved.getType()).isEqualTo(TransactionType.DEPOSIT);
+        assertThat(saved.getAmount()).isEqualTo(300000.0);
+        assertThat(saved.getDescription()).isEqualTo("Presentation demo");
+    }
+
+    @Test
+    void topUp_noDescription_usesDefaultDescription() {
+        when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        walletService.topUp("user-001", 100000.0, "");
+
+        ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(txCaptor.capture());
+        assertThat(txCaptor.getValue().getDescription()).isEqualTo("Wallet top up");
+    }
+
+    @Test
+    void topUp_zeroAmount_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> walletService.topUp("user-001", 0, "Zero"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("positive");
+    }
+
+    @Test
     void withdraw_noDescription_usesDefaultDescription() {
         when(walletRepository.findByUserIdForWrite("user-001")).thenReturn(Optional.of(wallet));
         when(walletRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

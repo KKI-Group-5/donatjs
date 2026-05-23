@@ -43,6 +43,29 @@ public class WalletController {
         return "wallet";
     }
 
+    @PostMapping("/top-up")
+    public String topUp(
+            @RequestParam("amount") double amount,
+            @RequestParam(value = "description", defaultValue = "") String description,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        try {
+            String currentUserId = currentUserService.getCurrentUserId(authentication);
+            walletService.topUp(currentUserId, amount, description);
+            NumberFormat nf = NumberFormat.getIntegerInstance(Locale.of("id", "ID"));
+            long rupiah = IdrMoney.wholeRupiah(amount);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Top up of Rp " + nf.format(rupiah) + " was successful.");
+        } catch (IllegalArgumentException | ArithmeticException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (DataAccessException e) {
+            log.warn("Top up failed (database)", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Could not complete top up due to a database error. Please try again.");
+        }
+        return "redirect:/wallet";
+    }
+
     @PostMapping("/withdraw")
     public String withdraw(
             @RequestParam("amount") double amount,
