@@ -18,6 +18,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -66,6 +67,7 @@ class WalletControllerTest {
                 .thenReturn(demoWallet());
 
         mockMvc.perform(post("/wallet/withdraw")
+                        .with(csrf())
                         .param("amount", "200000")
                         .param("description", "ATM"))
                 .andExpect(status().is3xxRedirection())
@@ -79,6 +81,7 @@ class WalletControllerTest {
                 .thenReturn(Wallet.builder().id("w-demo").userId(TEST_USER_ID).balance(1750000.0).build());
 
         mockMvc.perform(post("/wallet/top-up")
+                        .with(csrf())
                         .param("amount", "250000")
                         .param("description", ""))
                 .andExpect(status().is3xxRedirection())
@@ -94,6 +97,7 @@ class WalletControllerTest {
                 .thenThrow(new IllegalArgumentException("Top up amount must be positive."));
 
         mockMvc.perform(post("/wallet/top-up")
+                        .with(csrf())
                         .param("amount", "0")
                         .param("description", ""))
                 .andExpect(status().is3xxRedirection())
@@ -107,6 +111,7 @@ class WalletControllerTest {
                 .thenThrow(new InsufficientBalanceException("Insufficient balance"));
 
         mockMvc.perform(post("/wallet/withdraw")
+                        .with(csrf())
                         .param("amount", "9999999")
                         .param("description", "Too much"))
                 .andExpect(status().is3xxRedirection())
@@ -120,6 +125,7 @@ class WalletControllerTest {
                 .thenThrow(new IllegalArgumentException("Withdrawal amount must be positive."));
 
         mockMvc.perform(post("/wallet/withdraw")
+                        .with(csrf())
                         .param("amount", "-100")
                         .param("description", ""))
                 .andExpect(status().is3xxRedirection())

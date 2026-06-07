@@ -26,7 +26,7 @@
         </div>
         <div class="auth-buttons" th:if="${isLoggedIn}" style="align-items:center;">
             <a href="/profile" class="profile-link" th:text="${currentUserName}">User</a>
-            <form action="/logout" method="post" style="display:inline; margin:0;">
+            <form th:action="@{/logout}" method="post" style="display:inline; margin:0;">
                 <button type="submit" class="btn-login" style="cursor:pointer; background:none; font-family:'Montserrat',sans-serif; font-size:14px;">Log Out</button>
             </form>
         </div>

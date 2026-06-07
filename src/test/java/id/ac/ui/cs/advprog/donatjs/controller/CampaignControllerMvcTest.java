@@ -52,7 +52,7 @@ class CampaignControllerMvcTest {
         SecurityFilterChain testChain(HttpSecurity http) throws Exception {
             http.securityMatcher("/**")
                     .authorizeHttpRequests(a -> a.anyRequest().permitAll())
-                    .csrf(c -> c.disable());
+                    .csrf(c -> c.ignoringRequestMatchers("/**"));
             return http.build();
         }
     }
