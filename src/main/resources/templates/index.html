@@ -43,8 +43,10 @@
              th:data-campaign-title="${campaign.title}"
              th:data-campaign-organizer="${campaign.creatorId != null ? 'Creator ' + campaign.creatorId : 'DonatJS Community'}">
             <img class="campaign-card-image"
-                 src="https://images.unsplash.com/photo-1593113630400-ea4288922497?w=600&q=80"
-                 th:alt="${campaign.title}"/>
+                 src="https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&w=900&q=80"
+                 th:src="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl) ? campaign.imageUrl : 'https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&w=900&q=80'}"
+                 th:alt="${campaign.title}"
+                 onerror="this.src='https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&w=900&q=80'"/>
             <div class="campaign-card-content">
                 <h3 class="campaign-card-title" th:text="${campaign.title}">Campaign Title</h3>
                 <span class="campaign-card-organizer"
@@ -73,7 +75,8 @@
                             class="btn-save"
                             th:attr="data-cid=${campaign.id},
                                      data-title=${campaign.title},
-                                     data-organizer=${campaign.creatorId != null ? 'Creator ' + campaign.creatorId : 'DonatJS Community'}"
+                                     data-organizer=${campaign.creatorId != null ? 'Creator ' + campaign.creatorId : 'DonatJS Community'},
+                                     data-image-url=${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl) ? campaign.imageUrl : 'https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&w=900&q=80'}"
                             onclick="toggleSaveCard(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -94,6 +97,7 @@
 <script th:inline="javascript">
     var CURRENT_USER_ID = /*[[${currentUserId}]]*/ null;
     var IS_LOGGED_IN = /*[[${isLoggedIn}]]*/ false;
+    var FALLBACK_CAMPAIGN_IMAGE_URL = 'https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&w=900&q=80';
 
     function showToast(message, type) {
         var toast = document.getElementById('toast');
@@ -120,6 +124,7 @@
         var campaignId = button.dataset.cid;
         var title = button.dataset.title;
         var organizer = button.dataset.organizer;
+        var imageUrl = button.dataset.imageUrl || FALLBACK_CAMPAIGN_IMAGE_URL;
         var isSaved = button.classList.contains('saved');
 
         if (isSaved) {
@@ -139,7 +144,7 @@
                 campaignId: String(campaignId),
                 campaignTitle: title,
                 campaignOrganizer: organizer,
-                campaignImageUrl: 'https://images.unsplash.com/photo-1593113630400-ea4288922497?w=600&q=80'
+                campaignImageUrl: imageUrl
             })
         })
         .then(function (r) {

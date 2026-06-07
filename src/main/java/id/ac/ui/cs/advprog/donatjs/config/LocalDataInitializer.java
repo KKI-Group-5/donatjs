@@ -40,6 +40,19 @@ public class LocalDataInitializer {
 
     private static final String TEST_EMAIL  = "test@donatjs.com";
     private static final String ADMIN_EMAIL = "admin@donatjs.com";
+    private static final String IMAGE_PARAMS = "?auto=format&fit=crop&w=900&q=80";
+    private static final String DEFAULT_CAMPAIGN_IMAGE_URL =
+            "https://images.unsplash.com/photo-1593113630400-ea4288922497" + IMAGE_PARAMS;
+    private static final String SCHOOL_IMAGE_URL =
+            "https://images.unsplash.com/photo-1763637675793-da207ba1fe18" + IMAGE_PARAMS;
+    private static final String FLOOD_MEDICAL_AID_IMAGE_URL =
+            "https://images.unsplash.com/photo-1741081288260-877057e3fa27" + IMAGE_PARAMS;
+    private static final String FOOD_PACKAGE_IMAGE_URL =
+            "https://images.unsplash.com/photo-1698795635937-31264cdbf359" + IMAGE_PARAMS;
+    private static final String REFORESTATION_IMAGE_URL =
+            "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09" + IMAGE_PARAMS;
+    private static final String ANIMAL_SHELTER_IMAGE_URL =
+            "https://images.unsplash.com/photo-1703113690613-e653df542c01" + IMAGE_PARAMS;
 
     @Value("${donatjs.local.test-user.password}")
     private String testUserPassword;
@@ -74,7 +87,8 @@ public class LocalDataInitializer {
                     new BigDecimal("50000000"),
                     new BigDecimal("12500000"),
                     CampaignStatus.OPEN,
-                    adminUser.getId().toString());
+                    adminUser.getId().toString(),
+                    SCHOOL_IMAGE_URL);
 
             Campaign medicalCampaign = ensureCampaign(campaignRepository,
                     "Emergency Medical Aid Flood Victims",
@@ -84,7 +98,8 @@ public class LocalDataInitializer {
                     new BigDecimal("25000000"),
                     new BigDecimal("8750000"),
                     CampaignStatus.OPEN,
-                    adminUser.getId().toString());
+                    adminUser.getId().toString(),
+                    FLOOD_MEDICAL_AID_IMAGE_URL);
 
             Campaign foodCampaign = ensureCampaign(campaignRepository,
                     "Monthly Food Packages for Orphanages",
@@ -94,7 +109,8 @@ public class LocalDataInitializer {
                     new BigDecimal("15000000"),
                     new BigDecimal("2100000"),
                     CampaignStatus.OPEN,
-                    testUser.getId().toString());
+                    testUser.getId().toString(),
+                    FOOD_PACKAGE_IMAGE_URL);
 
             ensureCampaign(campaignRepository,
                     "Awaiting Review: Reforestation Project",
@@ -103,7 +119,8 @@ public class LocalDataInitializer {
                     new BigDecimal("40000000"),
                     BigDecimal.ZERO,
                     CampaignStatus.WAITING,
-                    testUser.getId().toString());
+                    testUser.getId().toString(),
+                    REFORESTATION_IMAGE_URL);
 
             // Pre-loaded at 97% so a single small donation crosses the 98%
             // notification threshold and fires CampaignNearTargetEvent. The
@@ -117,7 +134,8 @@ public class LocalDataInitializer {
                     new BigDecimal("1000000"),
                     new BigDecimal("970000"),
                     CampaignStatus.OPEN,
-                    adminUser.getId().toString());
+                    adminUser.getId().toString(),
+                    ANIMAL_SHELTER_IMAGE_URL);
 
             ensureDonation(donationRepository, testUser.getId().toString(), schoolCampaign.getId(),
                     250_000L, Donation.PaymentMethod.WALLET);
@@ -171,11 +189,16 @@ public class LocalDataInitializer {
                                     String title, String description,
                                     LocalDate deadline,
                                     BigDecimal targetAmount, BigDecimal totalRaised,
-                                    CampaignStatus status, String creatorId) {
+                                    CampaignStatus status, String creatorId,
+                                    String imageUrl) {
         Campaign existing = repo.findAll().stream()
                 .filter(c -> title.equals(c.getTitle()))
                 .findFirst().orElse(null);
         if (existing != null) {
+            if (!imageUrl.equals(existing.getImageUrl())) {
+                existing.setImageUrl(imageUrl);
+                return repo.save(existing);
+            }
             return existing;
         }
         Campaign campaign = new Campaign();
@@ -186,6 +209,7 @@ public class LocalDataInitializer {
         campaign.setTotalRaised(totalRaised);
         campaign.setStatus(status);
         campaign.setCreatorId(creatorId);
+        campaign.setImageUrl(imageUrl);
         campaign.setCreatedAt(LocalDateTime.now().minusDays(5));
         return repo.save(campaign);
     }
@@ -215,7 +239,13 @@ public class LocalDataInitializer {
     @SuppressWarnings("null")
     private void ensureSavedCampaign(SavedCampaignRepository repo, String userId, Campaign campaign) {
         String campaignId = String.valueOf(campaign.getId());
-        if (repo.existsByUserIdAndCampaignId(userId, campaignId)) {
+        String imageUrl = campaignImageUrl(campaign);
+        SavedCampaign existing = repo.findByUserIdAndCampaignId(userId, campaignId).orElse(null);
+        if (existing != null) {
+            if (!imageUrl.equals(existing.getCampaignImageUrl())) {
+                existing.setCampaignImageUrl(imageUrl);
+                repo.save(existing);
+            }
             return;
         }
         repo.save(SavedCampaign.builder()
@@ -223,8 +253,15 @@ public class LocalDataInitializer {
                 .campaignId(campaignId)
                 .campaignTitle(campaign.getTitle())
                 .campaignOrganizer("DonatJS Team")
-                .campaignImageUrl("https://images.unsplash.com/photo-1488521787991-ed7bbaae773c")
+                .campaignImageUrl(imageUrl)
                 .savedAt(LocalDateTime.now().minusDays(1))
                 .build());
+    }
+
+    private String campaignImageUrl(Campaign campaign) {
+        if (campaign.getImageUrl() == null || campaign.getImageUrl().isBlank()) {
+            return DEFAULT_CAMPAIGN_IMAGE_URL;
+        }
+        return campaign.getImageUrl();
     }
 }
