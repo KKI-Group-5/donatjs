@@ -23,10 +23,10 @@ public class SubscriptionDebitFailedEventListener {
     private final UserRepository userRepository;
     private final EmailService emailService;
 
-    // Plain @EventListener (not @TransactionalEventListener) is intentional: the
-    // scheduler transaction is marked rollback-only by the inner wallet failure,
-    // so an AFTER_COMMIT listener would never fire. The notification is about
-    // the failure itself, so it must be delivered regardless of outer txn fate.
+    // Plain @EventListener (not @TransactionalEventListener) is intentional:
+    // failed debit attempts roll back their transaction, so there is no commit
+    // phase for an AFTER_COMMIT listener. The notification is about the failure
+    // itself and must be delivered after the failed debit is observed.
     @Async
     @EventListener
     public void handleDebitFailed(SubscriptionDebitFailedEvent event) {
