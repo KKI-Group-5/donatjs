@@ -68,9 +68,12 @@ public class DonationService {
                 : DonationStatus.SUCCESS;
 
         // Wallet-funded donations debit the wallet before we commit the donation.
+        // Subscription donations have already been debited by the subscription service/scheduler.
         // A failed debit (insufficient funds) surfaces as InsufficientBalanceException
         // to the caller; the donation itself is never persisted in that case.
-        if (status == DonationStatus.SUCCESS && request.getPaymentMethod() == PaymentMethod.WALLET) {
+        if (status == DonationStatus.SUCCESS 
+                && request.getPaymentMethod() == PaymentMethod.WALLET 
+                && request.getType() != DonationType.SUBSCRIPTION) {
             try {
                 walletService.deductForDonation(request.getUserId(), totalAmount, campaign.getTitle());
             } catch (InsufficientBalanceException ex) {

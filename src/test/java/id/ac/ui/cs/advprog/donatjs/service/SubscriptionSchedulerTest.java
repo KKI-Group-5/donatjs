@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.donatjs.model.Subscription;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionFrequency;
 import id.ac.ui.cs.advprog.donatjs.model.Subscription.SubscriptionStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.SubscriptionRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,6 +35,7 @@ class SubscriptionSchedulerTest {
     @Mock private WalletService walletService;
     @Mock private DonationService donationService;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private TransactionTemplate transactionTemplate;
 
     @InjectMocks
     private SubscriptionScheduler scheduler;
@@ -43,6 +48,11 @@ class SubscriptionSchedulerTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(mock(TransactionStatus.class));
+        });
+
         dueSubscription = Subscription.builder()
                 .id(1L)
                 .userId(USER_ID)
@@ -140,6 +150,36 @@ class SubscriptionSchedulerTest {
         assertEquals(CAMPAIGN_ID, event.getCampaignId());
         assertEquals(AMOUNT, event.getAmount());
         assertEquals("Insufficient balance", event.getReason());
+    }
+
+    @Test
+    void processSubscriptions_missingCampaignSkipsWithoutDebitFailedEvent() {
+        when(subscriptionRepository.findByStatusAndNextDebitDateLessThanEqual(
+                SubscriptionStatus.ACTIVE, LocalDate.now()))
+                .thenReturn(List.of(dueSubscription));
+        doThrow(new EntityNotFoundException("Campaign not found: " + CAMPAIGN_ID))
+                .when(donationService).createDonation(any());
+
+        scheduler.processSubscriptions();
+
+        verify(walletService).deductBalance(eq(USER_ID), eq(AMOUNT.doubleValue()), anyString());
+        verify(subscriptionRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any(SubscriptionDebitFailedEvent.class));
+    }
+
+    @Test
+    void processSubscriptions_incompleteSubscriptionSkipsWithoutCallingWallet() {
+        dueSubscription.setAmount(null);
+        when(subscriptionRepository.findByStatusAndNextDebitDateLessThanEqual(
+                SubscriptionStatus.ACTIVE, LocalDate.now()))
+                .thenReturn(List.of(dueSubscription));
+
+        scheduler.processSubscriptions();
+
+        verify(walletService, never()).deductBalance(anyString(), anyDouble(), anyString());
+        verify(donationService, never()).createDonation(any());
+        verify(subscriptionRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any(SubscriptionDebitFailedEvent.class));
     }
 
     @Test
