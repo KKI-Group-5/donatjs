@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,7 +38,7 @@ public class SecurityRedirectTest {
     @Test
     void testGuestAccess_CannotPostDonation_RedirectsToLogin() throws Exception {
         // POST to donations should be protected and redirect to login
-        mockMvc.perform(post("/api/donations"))
+        mockMvc.perform(post("/api/donations").with(csrf()))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "http://localhost/login"));
     }

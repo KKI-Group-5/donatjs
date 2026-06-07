@@ -51,8 +51,7 @@ class CampaignControllerMvcTest {
         @Order(1)
         SecurityFilterChain testChain(HttpSecurity http) throws Exception {
             http.securityMatcher("/**")
-                    .authorizeHttpRequests(a -> a.anyRequest().permitAll())
-                    .csrf(c -> c.ignoringRequestMatchers("/**"));
+                    .authorizeHttpRequests(a -> a.anyRequest().permitAll());
             return http.build();
         }
     }
@@ -134,6 +133,7 @@ class CampaignControllerMvcTest {
                 .thenReturn(created);
 
         mockMvc.perform(post("/campaigns/create")
+                        .with(csrf())
                         .header("X-User-Id", "user-123")
                         .param("title", "New Campaign")
                         .param("description", "A valid description")
@@ -146,6 +146,7 @@ class CampaignControllerMvcTest {
     @Test
     void postCreate_withPastDeadline_returnsCreateViewWithError() throws Exception {
         mockMvc.perform(post("/campaigns/create")
+                        .with(csrf())
                         .param("title", "Campaign")
                         .param("description", "Desc")
                         .param("deadline", LocalDate.now().minusDays(1).toString())
@@ -198,6 +199,7 @@ class CampaignControllerMvcTest {
                 .thenReturn(updated);
 
         mockMvc.perform(post("/campaigns/3/edit")
+                        .with(csrf())
                         .header("X-User-Id", "user-123")
                         .param("description", "Updated description"))
                 .andExpect(status().is3xxRedirection())
@@ -210,6 +212,7 @@ class CampaignControllerMvcTest {
         Mockito.when(campaignService.findById(3L)).thenReturn(Optional.of(campaign));
 
         mockMvc.perform(post("/campaigns/3/edit")
+                        .with(csrf())
                         .param("description", ""))
                 .andExpect(status().isOk())
                 .andExpect(view().name("campaigns/edit"));
@@ -222,10 +225,12 @@ class CampaignControllerMvcTest {
         Mockito.doNothing()
                 .when(campaignService).deleteIfNoDonations(anyLong(), any(), eq(false));
 
-        mockMvc.perform(post("/campaigns/4/delete"))
+        mockMvc.perform(post("/campaigns/4/delete")
+                        .with(csrf()))
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(post("/campaigns/4/delete")
+                        .with(csrf())
                         .header("X-User-Id", "user-123"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("/campaigns*"));
@@ -240,6 +245,7 @@ class CampaignControllerMvcTest {
         Mockito.when(campaignService.moderateCampaign(eq(1L), eq(true))).thenReturn(campaign);
 
         mockMvc.perform(post("/campaigns/1/moderate")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"approve\":true}"))
                 .andExpect(status().isOk());
@@ -248,6 +254,7 @@ class CampaignControllerMvcTest {
     @Test
     void postModerate_withoutAdminHeader_returnsForbidden() throws Exception {
         mockMvc.perform(post("/campaigns/1/moderate")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"approve\":true}"))
                 .andExpect(status().isForbidden());
@@ -263,6 +270,7 @@ class CampaignControllerMvcTest {
                 .thenReturn(campaign);
 
         mockMvc.perform(post("/campaigns/2/admin-edit")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Updated\"}"))
                 .andExpect(status().isOk());
@@ -271,6 +279,7 @@ class CampaignControllerMvcTest {
     @Test
     void postAdminEdit_withoutAdminHeader_returnsForbidden() throws Exception {
         mockMvc.perform(post("/campaigns/2/admin-edit")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Hack\"}"))
                 .andExpect(status().isForbidden());
@@ -286,6 +295,7 @@ class CampaignControllerMvcTest {
                 .thenReturn(campaign);
 
         mockMvc.perform(post("/campaigns/1/donations")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"amount\":50}"))
                 .andExpect(status().isOk());
@@ -306,7 +316,8 @@ class CampaignControllerMvcTest {
         Campaign campaign = buildCampaign(1L, "Fraud", CampaignStatus.FRAUD);
         Mockito.when(campaignService.markAsFraud(1L)).thenReturn(campaign);
 
-        mockMvc.perform(post("/campaigns/1/fraud"))
+        mockMvc.perform(post("/campaigns/1/fraud")
+                        .with(csrf()))
                 .andExpect(status().isOk());
     }
 
@@ -317,13 +328,15 @@ class CampaignControllerMvcTest {
     void postDeadlineAutomation_withAdminHeader_returnsOk() throws Exception {
         Mockito.when(campaignService.processExpiredCampaigns(any())).thenReturn(3);
 
-        mockMvc.perform(post("/campaigns/deadline-automation/run"))
+        mockMvc.perform(post("/campaigns/deadline-automation/run")
+                        .with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void postDeadlineAutomation_withoutAdminHeader_returnsForbidden() throws Exception {
-        mockMvc.perform(post("/campaigns/deadline-automation/run"))
+        mockMvc.perform(post("/campaigns/deadline-automation/run")
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 

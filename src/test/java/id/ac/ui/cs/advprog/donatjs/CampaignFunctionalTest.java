@@ -5,6 +5,8 @@ import id.ac.ui.cs.advprog.donatjs.model.CampaignStatus;
 import id.ac.ui.cs.advprog.donatjs.repository.CampaignRepository;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import net.serenitybdd.junit5.SerenityJUnit5Extension;
 import net.serenitybdd.rest.SerenityRest;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +46,7 @@ class CampaignFunctionalTest {
         @Order(1)
         SecurityFilterChain functionalTestChain(HttpSecurity http) throws Exception {
             http.securityMatcher("/**")
-                    .authorizeHttpRequests(a -> a.anyRequest().permitAll())
-                    .csrf(c -> c.ignoringRequestMatchers("/**"));
+                    .authorizeHttpRequests(a -> a.anyRequest().permitAll());
             return http.build();
         }
     }
@@ -86,7 +87,7 @@ class CampaignFunctionalTest {
     @Test
     @DisplayName("Non-admin cannot moderate a campaign — 403 Forbidden")
     void nonAdminModerateCampaign_returnsForbidden() {
-        SerenityRest.given()
+        givenWithCsrf()
                 .contentType(ContentType.JSON)
                 .body("{\"approve\":true}")
                 .when().post("/campaigns/999/moderate")
@@ -101,7 +102,7 @@ class CampaignFunctionalTest {
     void donation_updatesTotal() {
         Campaign campaign = givenAnOpenCampaign("Donation Functional Test", new BigDecimal("1000"));
 
-        SerenityRest.given()
+        givenWithCsrf()
                 .contentType(ContentType.JSON)
                 .body("{\"amount\":300}")
                 .when().post("/campaigns/" + campaign.getId() + "/donations")
@@ -114,7 +115,7 @@ class CampaignFunctionalTest {
     void donation_autoCloses_whenTargetReached() {
         Campaign campaign = givenAnOpenCampaign("Target Reached Functional Test", new BigDecimal("100"));
 
-        SerenityRest.given()
+        givenWithCsrf()
                 .contentType(ContentType.JSON)
                 .body("{\"amount\":100}")
                 .when().post("/campaigns/" + campaign.getId() + "/donations")
@@ -127,7 +128,7 @@ class CampaignFunctionalTest {
     @Test
     @DisplayName("Non-admin cannot mark a campaign as fraud — 403 Forbidden")
     void nonAdminMarkFraud_returnsForbidden() {
-        SerenityRest.given()
+        givenWithCsrf()
                 .when().post("/campaigns/999/fraud")
                 .then()
                 .statusCode(403);
@@ -138,7 +139,7 @@ class CampaignFunctionalTest {
     @Test
     @DisplayName("Non-admin cannot trigger deadline automation — 403 Forbidden")
     void nonAdminRunsDeadlineAutomation_returnsForbidden() {
-        SerenityRest.given()
+        givenWithCsrf()
                 .when().post("/campaigns/deadline-automation/run")
                 .then()
                 .statusCode(403);
@@ -177,5 +178,30 @@ class CampaignFunctionalTest {
         c.setTargetAmount(targetAmount);
         c.setTotalRaised(BigDecimal.ZERO);
         return campaignRepository.save(c);
+    }
+
+    private RequestSpecification givenWithCsrf() {
+        Response response = SerenityRest.given()
+                .when().get("/campaigns")
+                .then().statusCode(200)
+                .extract().response();
+        RequestSpecification request = SerenityRest.given()
+                .header("X-CSRF-TOKEN", csrfTokenFrom(response.asString()));
+        String sessionId = response.getCookie("JSESSIONID");
+        if (sessionId != null) {
+            request.cookie("JSESSIONID", sessionId);
+        }
+        return request;
+    }
+
+    private String csrfTokenFrom(String html) {
+        String marker = "name=\"_csrf\" content=\"";
+        int tokenStart = html.indexOf(marker);
+        if (tokenStart < 0) {
+            throw new IllegalStateException("CSRF token meta tag was not rendered");
+        }
+        tokenStart += marker.length();
+        int tokenEnd = html.indexOf('"', tokenStart);
+        return html.substring(tokenStart, tokenEnd);
     }
 }
