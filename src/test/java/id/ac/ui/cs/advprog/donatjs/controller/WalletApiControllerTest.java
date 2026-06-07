@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -47,6 +48,7 @@ class WalletApiControllerTest {
                 .thenReturn(updated);
 
         mockMvc.perform(post("/api/internal/wallet/deduct")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"userId":"user-001","amount":100000,"campaignName":"Build a School"}
@@ -59,6 +61,7 @@ class WalletApiControllerTest {
     @Test
     void deduct_missingUserId_returns400() throws Exception {
         mockMvc.perform(post("/api/internal/wallet/deduct")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"amount":100000}
@@ -70,6 +73,7 @@ class WalletApiControllerTest {
     @Test
     void deduct_missingAmount_returns400() throws Exception {
         mockMvc.perform(post("/api/internal/wallet/deduct")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"userId":"user-001"}
@@ -84,6 +88,7 @@ class WalletApiControllerTest {
                 .thenThrow(new InsufficientBalanceException("Insufficient balance"));
 
         mockMvc.perform(post("/api/internal/wallet/deduct")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"userId":"user-001","amount":9999999,"campaignName":"Expensive"}
@@ -98,6 +103,7 @@ class WalletApiControllerTest {
                 .thenThrow(new IllegalArgumentException("amount must be positive"));
 
         mockMvc.perform(post("/api/internal/wallet/deduct")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"userId":"user-001","amount":-100,"campaignName":"Bad"}
@@ -112,6 +118,7 @@ class WalletApiControllerTest {
                 .thenThrow(new RuntimeException("Wallet not found"));
 
         mockMvc.perform(post("/api/internal/wallet/deduct")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"userId":"unknown","amount":50000,"campaignName":"X"}

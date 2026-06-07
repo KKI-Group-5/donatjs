@@ -5,7 +5,42 @@
     <th:block th:fragment="head">
         <meta charset="UTF-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+        <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
         <link rel="stylesheet" th:href="@{/css/style.css}"/>
+        <script>
+            (function () {
+                var tokenMeta = document.querySelector('meta[name="_csrf"]');
+                var headerMeta = document.querySelector('meta[name="_csrf_header"]');
+                if (!window.fetch || !tokenMeta || !headerMeta || !tokenMeta.content || !headerMeta.content) {
+                    return;
+                }
+
+                var originalFetch = window.fetch.bind(window);
+                var unsafeMethods = { POST: true, PUT: true, PATCH: true, DELETE: true };
+
+                window.fetch = function (input, init) {
+                    var request = input instanceof Request ? input : null;
+                    var method = ((init && init.method) || (request && request.method) || 'GET').toUpperCase();
+                    if (!unsafeMethods[method]) {
+                        return originalFetch(input, init);
+                    }
+
+                    var target = new URL(request ? request.url : String(input), window.location.href);
+                    if (target.origin !== window.location.origin) {
+                        return originalFetch(input, init);
+                    }
+
+                    var nextInit = init ? Object.assign({}, init) : {};
+                    var headers = new Headers((init && init.headers) || (request && request.headers) || undefined);
+                    if (!headers.has(headerMeta.content)) {
+                        headers.set(headerMeta.content, tokenMeta.content);
+                    }
+                    nextInit.headers = headers;
+                    return originalFetch(input, nextInit);
+                };
+            })();
+        </script>
     </th:block>
 </head>
 <body>
