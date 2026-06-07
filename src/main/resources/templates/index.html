@@ -42,9 +42,15 @@
              th:data-campaign-id="${campaign.id}"
              th:data-campaign-title="${campaign.title}"
              th:data-campaign-organizer="${campaign.creatorId != null ? 'Creator ' + campaign.creatorId : 'DonatJS Community'}">
-            <img class="campaign-card-image"
-                 src="https://images.unsplash.com/photo-1593113630400-ea4288922497?w=600&q=80"
-                 th:alt="${campaign.title}"/>
+            <img th:if="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-image"
+                 th:src="${campaign.imageUrl}"
+                 th:alt="${campaign.title}"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/>
+            <div th:if="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-img-placeholder" style="display:none; height:280px;">&#128248;</div>
+            <div th:unless="${campaign.imageUrl != null and !#strings.isEmpty(campaign.imageUrl)}"
+                 class="campaign-card-img-placeholder" style="height:280px;">&#128248;</div>
             <div class="campaign-card-content">
                 <h3 class="campaign-card-title" th:text="${campaign.title}">Campaign Title</h3>
                 <span class="campaign-card-organizer"
@@ -73,7 +79,8 @@
                             class="btn-save"
                             th:attr="data-cid=${campaign.id},
                                      data-title=${campaign.title},
-                                     data-organizer=${campaign.creatorId != null ? 'Creator ' + campaign.creatorId : 'DonatJS Community'}"
+                                     data-organizer=${campaign.creatorId != null ? 'Creator ' + campaign.creatorId : 'DonatJS Community'},
+                                     data-image=${campaign.imageUrl}"
                             onclick="toggleSaveCard(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -120,6 +127,7 @@
         var campaignId = button.dataset.cid;
         var title = button.dataset.title;
         var organizer = button.dataset.organizer;
+        var imageUrl = button.dataset.image || '';
         var isSaved = button.classList.contains('saved');
 
         if (isSaved) {
@@ -139,7 +147,7 @@
                 campaignId: String(campaignId),
                 campaignTitle: title,
                 campaignOrganizer: organizer,
-                campaignImageUrl: 'https://images.unsplash.com/photo-1593113630400-ea4288922497?w=600&q=80'
+                campaignImageUrl: imageUrl
             })
         })
         .then(function (r) {
